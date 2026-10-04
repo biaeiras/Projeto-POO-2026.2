@@ -1,0 +1,11 @@
+package model;
+
+enum TipoBonus {
+    VOTO_EXTRA,
+    DUAS_ESPADAS,
+    DUAS_MOEDAS,
+    DOIS_YURTS,
+    MOVIMENTOS_EXTRAS,
+    PEGAR_TRIBUTOS_EXTRAS,
+    ESCOLHER_TESOURO
+}
