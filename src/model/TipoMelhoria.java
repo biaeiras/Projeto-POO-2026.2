@@ -1,0 +1,10 @@
+package model;
+
+enum TipoMelhoria {
+    MOEDA_VIRTUAL,
+    TESOURO_VIRTUAL,
+    ESPADA_VIRTUAL,
+    YURT_VIRTUAL,
+    PEGAR_TRIBUTO_EXTRA,
+    MOVIMENTO_EXTRA
+}
