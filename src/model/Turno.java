@@ -9,7 +9,7 @@ class Turno {
 
 	private HashMap<TipoAcao, Integer> acoesDisponiveis;
 
-	private HashMap<TipoMelhoria, Integer> melhoriasDisponiveis;
+	private HashMap<TipoMelhoria, Integer> recursosVirtuais;
 
 	private boolean khanPendente;
 
@@ -20,7 +20,7 @@ class Turno {
 	    this.jogador = jogador;
 
 	    this.acoesDisponiveis = new HashMap<>();
-	    this.melhoriasDisponiveis = new HashMap<>();
+	    this.recursosVirtuais = new HashMap<>();
 
 	    this.khanPendente = false;
 
@@ -67,7 +67,7 @@ class Turno {
 	                    break;
 
 	                default:
-	                    melhoriasDisponiveis.put(
+	                    recursosVirtuais.put(
 	                        melhoria,
 	                        quantidade
 	                    );
@@ -77,10 +77,71 @@ class Turno {
 	    }
 	}
 	
+	Jogador getJogador() {
+	    return jogador;
+	}
+	
 	private void adicionarAcao(TipoAcao tipo, int quantidade) {
 
 	    int atual = acoesDisponiveis.getOrDefault(tipo, 0);
 
 	    acoesDisponiveis.put(tipo, atual + quantidade);
+	}
+	
+	int getQuantidadeAcao(TipoAcao tipo) {
+	    return acoesDisponiveis.getOrDefault(tipo, 0);
+	}
+	
+	boolean usarAcao(TipoAcao tipo) {
+
+	    int quantidade = getQuantidadeAcao(tipo);
+
+	    if (quantidade <= 0) {
+	        return false;
+	    }
+
+	    acoesDisponiveis.put(tipo, quantidade - 1);
+
+	    return true;
+	}
+	
+	int getQuantidadeRecursoVirtual(TipoMelhoria tipo) {
+	    return recursosVirtuais.getOrDefault(tipo, 0);
+	}
+
+	boolean usarRecursoVirtual(TipoMelhoria tipo) {
+
+	    int quantidade = getQuantidadeRecursoVirtual(tipo);
+
+	    if (quantidade <= 0) {
+	        return false;
+	    }
+
+	    recursosVirtuais.put(tipo, quantidade - 1);
+
+	    return true;
+	}
+	
+	boolean isKhanPendente() {
+	    return khanPendente;
+	}
+	
+	void concluirAcaoKhan() {
+	    khanPendente = false;
+	}
+	
+	void adicionarProvinciasVisitadas(HashSet<Provincia> provincias) {
+
+	    provinciasVisitadas.addAll(provincias);
+	}
+	
+	boolean visitouProvincia(Provincia provincia) {
+
+	    return provinciasVisitadas.contains(provincia);
+	}
+	
+	HashSet<Provincia> getProvinciasVisitadas() {
+
+	    return new HashSet<>(provinciasVisitadas);
 	}
 }

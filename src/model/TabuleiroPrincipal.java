@@ -518,7 +518,6 @@ class TabuleiroPrincipal {
 		for(int i = 0; i<MELHORIAS_MOEDAS; i++) pilhaMelhorias.push(TipoMelhoria.MOEDA_VIRTUAL);
 		for(int i = 0; i<MELHORIAS_ESPADAS; i++) pilhaMelhorias.push(TipoMelhoria.ESPADA_VIRTUAL);
 		for(int i = 0; i<MELHORIAS_PEGAR_TRIBUTO; i++) pilhaMelhorias.push(TipoMelhoria.PEGAR_TRIBUTO_EXTRA);
-		for(int i = 0; i<MELHORIAS_TESOURO; i++) pilhaMelhorias.push(TipoMelhoria.TESOURO_VIRTUAL);
 		for(int i = 0; i<MELHORIAS_YURT; i++) pilhaMelhorias.push(TipoMelhoria.YURT_VIRTUAL);
 		for(int i = 0; i<MELHORIAS_MOVIMENTO; i++) pilhaMelhorias.push(TipoMelhoria.MOVIMENTO_EXTRA);
 		for(int i = 0; i<MELHORIAS; i++) { 
