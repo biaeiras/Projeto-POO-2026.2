@@ -1,20 +1,34 @@
 package model;
 
-enum Personagem {
+import java.util.HashMap;
 
-    ALTANI(Cor.VERDE),
-    CHAGATAI(Cor.VERMELHO),
-    JOCHI(Cor.CINZA),
-    OGEDEI(Cor.AZUL),
-    TOLUI(Cor.AMARELO);
+abstract class Personagem {
 
+    private final String nome;
     private final Cor cor;
 
-    Personagem(Cor cor) {
+    Personagem(String nome, Cor cor) {
+        this.nome = nome;
         this.cor = cor;
+    }
+
+    String getNome() {
+        return nome;
     }
 
     Cor getCor() {
         return cor;
     }
+    
+    HashMap<TipoAcao, Integer> getAcoesBase(Regiao regiao) {
+        HashMap<TipoAcao, Integer> acoes = new HashMap<>();
+
+        acoes.put(TipoAcao.MOVIMENTO, 1);
+        acoes.put(TipoAcao.PEGAR_TRIBUTO, 1);
+        acoes.put(TipoAcao.USAR_KHAN, 0);
+
+        return acoes;
+    }
+    
+    
 }
