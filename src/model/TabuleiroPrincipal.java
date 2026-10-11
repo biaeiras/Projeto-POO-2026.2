@@ -18,7 +18,7 @@ class TabuleiroPrincipal {
 	private final static int MELHORIAS_YURT = 8;
 	private final static int MELHORIAS_MOVIMENTO = 9;
 	private final static int MULTIPLICIDADE_TESOURO = 8;
-	private final static TipoMelhoria[] MELHORIAS_EXTRAS= {null, TipoMelhoria.MOEDA_VIRTUAL, null, TipoMelhoria.ESPADA_VIRTUAL, null};
+	protected final static TipoMelhoria[] MELHORIAS_EXTRAS= {null, TipoMelhoria.MOEDA_VIRTUAL, null, TipoMelhoria.ESPADA_VIRTUAL, null};
 	
 	private class ProvinciaKhan{
 
@@ -27,7 +27,7 @@ class TabuleiroPrincipal {
 				yurt = new Provincia(TipoTributo.YURT);
 		private HashMap<TipoTributo, Provincia> provincias = new HashMap<TipoTributo, Provincia>();
 		
-		public ProvinciaKhan() {
+		ProvinciaKhan() {
 			provincias.put(TipoTributo.ESPADA, espada);
 			provincias.put(TipoTributo.MOEDA, moeda);
 			provincias.put(TipoTributo.YURT, yurt);
@@ -36,39 +36,39 @@ class TabuleiroPrincipal {
 			yurt.carregar();
 		}
 		
-		public Provincia getEspada() {
+		Provincia getEspada() {
 			return this.espada;
 		}
-		public Provincia getMoeda() {
+		Provincia getMoeda() {
 			return this.moeda;
 		}
-		public Provincia getYurt() {
+		Provincia getYurt() {
 			return this.yurt;
 		}
-		public void activate(TipoTributo tributo1, TipoTributo tributo2) {
+		void activate(TipoTributo tributo1, TipoTributo tributo2) {
 			provincias.get(tributo1).carregar();
 			provincias.get(tributo2).carregar();
 			
 		}
 	}
 	private class SlotMelhoria{
-		private TipoMelhoria melhoria = null;
+		private Melhoria melhoria = null;
 		private TipoMelhoria melhoriaExtra;
 		
-		public SlotMelhoria(TipoMelhoria melhoriaExtra) {
+		SlotMelhoria(TipoMelhoria melhoriaExtra) {
 			this.melhoriaExtra = melhoriaExtra;
 		}
 		
-		public TipoMelhoria getMelhoriaExtra() {
+		TipoMelhoria getMelhoriaExtra() {
 			return this.melhoriaExtra;
 		}
 		
-		public void setMelhoria(TipoMelhoria melhoria) {
+		void setMelhoria(Melhoria melhoria) {
 			this.melhoria = melhoria;
 			return;
 		}
 		
-		public TipoMelhoria getMelhoria() {
+		Melhoria getMelhoria() {
 			return this.melhoria;
 		}
 	}
@@ -80,7 +80,7 @@ class TabuleiroPrincipal {
 	private HashMap<ProvinciaKhanID, ProvinciaKhan> provinciasKhan = new HashMap<ProvinciaKhanID, ProvinciaKhan>();
 	private Stack<CidadeID> pilhaCidades = new Stack<CidadeID>();
 	private Stack<TipoTesouro> pilhaTesouros = new Stack<TipoTesouro>();
-	private Stack<TipoMelhoria> pilhaMelhorias = new Stack<TipoMelhoria>();
+	private Stack<Melhoria> pilhaMelhorias;
 	private ArrayList<SlotMelhoria> melhorias = new ArrayList<SlotMelhoria>();
 	private ProvinciaKhanID khan = null;
 	
@@ -515,11 +515,12 @@ class TabuleiroPrincipal {
 		return;
 	}
 	private void initMelhorias() {
-		for(int i = 0; i<MELHORIAS_MOEDAS; i++) pilhaMelhorias.push(TipoMelhoria.MOEDA_VIRTUAL);
-		for(int i = 0; i<MELHORIAS_ESPADAS; i++) pilhaMelhorias.push(TipoMelhoria.ESPADA_VIRTUAL);
-		for(int i = 0; i<MELHORIAS_PEGAR_TRIBUTO; i++) pilhaMelhorias.push(TipoMelhoria.PEGAR_TRIBUTO_EXTRA);
-		for(int i = 0; i<MELHORIAS_YURT; i++) pilhaMelhorias.push(TipoMelhoria.YURT_VIRTUAL);
-		for(int i = 0; i<MELHORIAS_MOVIMENTO; i++) pilhaMelhorias.push(TipoMelhoria.MOVIMENTO_EXTRA);
+		for(int i = 0; i<MELHORIAS_MOEDAS; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.MOEDA_VIRTUAL, Regiao.CHINA));
+		for(int i = 0; i<MELHORIAS_ESPADAS; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.ESPADA_VIRTUAL, Regiao.CHINA));
+		for(int i = 0; i<MELHORIAS_PEGAR_TRIBUTO; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.PEGAR_TRIBUTO_EXTRA, Regiao.CHINA));
+		for(int i = 0; i<MELHORIAS_TESOURO; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.FERRO_VIRTUAL, Regiao.CHINA));
+		for(int i = 0; i<MELHORIAS_YURT; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.YURT_VIRTUAL, Regiao.CHINA));
+		for(int i = 0; i<MELHORIAS_MOVIMENTO; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.MOVIMENTO_EXTRA, Regiao.CHINA));
 		for(int i = 0; i<MELHORIAS; i++) { 
 			melhorias.add(i, new SlotMelhoria(MELHORIAS_EXTRAS[i]));
 			melhorias.get(i).setMelhoria(pilhaMelhorias.pop());
@@ -535,8 +536,9 @@ class TabuleiroPrincipal {
 		}
 		
 	}
-	public TabuleiroPrincipal(HashMap<Peao, Jogador> peoes) {
+	TabuleiroPrincipal(HashMap<Peao, Jogador> peoes, Stack<Melhoria> pilhaMelhorias) {
 		this.peoes = peoes;
+		this.pilhaMelhorias = pilhaMelhorias;
 		initTesouros();
 		initCidades();
 		initProvincias();
@@ -545,7 +547,7 @@ class TabuleiroPrincipal {
 		initPeoes();
 	}
 	
-	public HashSet<Provincia> moverPeao(Peao peao, Parada parada){
+	HashSet<Provincia> moverPeao(Peao peao, Parada parada){
 		HashSet<Provincia> provincias = new HashSet<Provincia>();
 		peao.getPosicao().removePeao(peao);
 		peao.setPosicao(parada);
@@ -553,7 +555,7 @@ class TabuleiroPrincipal {
 		for(Provincia p: parada.getProvincias().values()) provincias.add(p);
 		return provincias;
 	}
-	public HashSet<Provincia> moverPeao(Peao peao, ParadaID id){
+	HashSet<Provincia> moverPeao(Peao peao, ParadaID id){
 		HashSet<Provincia> provincias = new HashSet<Provincia>();
 		Parada parada = mapa.get(id);
 		peao.getPosicao().removePeao(peao);
@@ -562,7 +564,7 @@ class TabuleiroPrincipal {
 		for(Provincia p: parada.getProvincias().values()) provincias.add(p);
 		return provincias;
 	}
-	public HashMap<Parada, Integer> getMovimentosPossiveis(Peao peao, int movimentos){
+	HashMap<Parada, Integer> getMovimentosPossiveis(Peao peao, int movimentos){
 		HashMap<Parada, Integer> ret = new HashMap<Parada, Integer>();
 		Queue<Parada> fila = new LinkedList<Parada>();
 		ret.put(peao.getPosicao(), 0);
@@ -591,20 +593,21 @@ class TabuleiroPrincipal {
 		ret.keySet().removeAll(ocupados);
 		return ret;
 	}
-	public HashMap<ParadaID, Parada> getMapa(){
+	HashMap<ParadaID, Parada> getMapa(){
 		return this.mapa;
 	}
-	public HashMap<ProvinciaID, Provincia> getProvincias(){
+	HashMap<ProvinciaID, Provincia> getProvincias(){
 		return this.provincias;
 	}
-	public ProvinciaKhanID getKhan() {
+	ProvinciaKhanID getKhan() {
 		return this.khan;
 	}
-	public void ativarProvinciaKhan(ProvinciaKhanID id, TipoTributo tributo1, TipoTributo tributo2) {
-		this.khan = id;
+	void ativarProvinciaKhan(ProvinciaKhanID id, TipoTributo tributo1, TipoTributo tributo2) {
 		provinciasKhan.get(id).activate(tributo1, tributo2);
+		this.khan = id;
 	}
-	public void ativarMelhoriasKhan() {
+	void ativarMelhoriasKhan() {
+		for(SlotMelhoria slot: melhorias) if(slot.getMelhoria() == null) slot.setMelhoria(pilhaMelhorias.pop());
 		this.khan = null;
 		
 	}

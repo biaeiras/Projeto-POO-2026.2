@@ -12,59 +12,59 @@ class Parada {
 	private HashSet<Peao> peoes = new HashSet<Peao>();
 	private TipoBonus bonus = null;
 	
-	public int getNumPeoes() {
+	int getNumPeoes() {
 		return peoes.size();
 	}
- 	public void insertVizinhos(ParadaID id, Parada parada) {
+ 	void insertVizinhos(ParadaID id, Parada parada) {
 		this.vizinhos.put(id, parada);
 		return;
 	}
-	public void insertProvincia(ProvinciaID nome, Provincia provincia) {
+	void insertProvincia(ProvinciaID nome, Provincia provincia) {
 		this.provincias.put(nome, provincia);
 	}
-	public void setYurt(Jogador yurt) {
+	void setYurt(Jogador yurt) {
 		this.yurt = yurt;
 		return;
 	}
-	public void setMultiplicidade(int multiplicidade) {
+	void setMultiplicidade(int multiplicidade) {
 		this.multiplicidade = multiplicidade;
 		return;
 	}
-	public void setCidade(Cidade cidade) {
+	void setCidade(Cidade cidade) {
 		this.cidade = cidade;
 		return;
 	}
-	public void setBonus(TipoBonus bonus) {
+	void setBonus(TipoBonus bonus) {
 		this.bonus = bonus;
 		return;
 	}
-	public HashMap<ParadaID, Parada> getVizinhos(){
+	HashMap<ParadaID, Parada> getVizinhos(){
 		return this.vizinhos;
 	}
-	public HashMap<ProvinciaID, Provincia> getProvincias(){
+	HashMap<ProvinciaID, Provincia> getProvincias(){
 		return this.provincias;
 	}
-	public Jogador getYurt() {
+	Jogador getYurt() {
 		return this.yurt;
 	}
-	public int getMultiplicidade() {
+	int getMultiplicidade() {
 		return this.multiplicidade;
 	}
-	public Cidade getCidade() {
+	Cidade getCidade() {
 		return this.cidade;
 	}
-	public boolean isMoveble() {
+	boolean isMoveble() {
 		return (peoes.size() < multiplicidade);
 	}
-	public void insertPeao(Peao p) {
+	void insertPeao(Peao p) {
 		this.peoes.add(p);
 		return;
 	}
-	public void removePeao(Peao p) {
+	void removePeao(Peao p) {
 		this.peoes.remove(p);
 		return;
 	}
-	public TipoBonus getBonus() {
+	TipoBonus getBonus() {
 		return this.bonus;
 	}
 

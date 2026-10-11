@@ -18,7 +18,7 @@ class Cidade {
 		return;
 	}
 	
-	public void atacar(Jogador jogador, TipoTesouro tesouro) {
+	void atacar(Jogador jogador, TipoTesouro tesouro) {
 		int quantidade = tesouros.get(tesouro);
 		quantidade--;
 		tesouros.put(tesouro, quantidade);
@@ -27,23 +27,23 @@ class Cidade {
 		return;
 	}
 	
-	public HashMap<TipoTesouro, Integer> getTesouros() {
+	HashMap<TipoTesouro, Integer> getTesouros() {
 		return this.tesouros;
 	}
 	
-	public int getContadorDeTesouros() {
+	int getContadorDeTesouros() {
 		return tesouros.size();
 	}
 	
-	public Jogador getConquistador() {
+	Jogador getConquistador() {
 		return this.conquistador;
 	}
 	
-	public void setRegiao(Regiao regiao) {
+	void setRegiao(Regiao regiao) {
 		this.regiao = regiao;
 	}
 	
-	public Regiao getRegiao() {
+	Regiao getRegiao() {
 		return this.regiao;
 	}
 
