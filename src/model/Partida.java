@@ -3,6 +3,7 @@ package model;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 class Partida  {
 	private ArrayList<Jogador> jogadores;
@@ -581,6 +582,65 @@ class Partida  {
 	    acaoRestritaFeita = true;
 
 	    return true;
+	}
+	
+	
+	
+	//FIM DA PARTIDA
+	
+	// Compara os votos acumulados; em caso de empate, vence quem tiver
+	// mais tesouros não entregues.
+	// Se o empate persistir, retorna todos os jogadores empatados.
+	// O desempate por distância até Karakorum ainda não está implementado.
+	// Os votos finais de influência regional e das cartas secretas
+	// precisam ser contabilizados antes de chamar este método.
+	
+	List<Jogador> calcularVencedores() {
+	    if (!encerrada) {
+	        throw new IllegalStateException(
+	            "A partida ainda não terminou." );
+	    }
+
+	    ArrayList<Jogador> melhores = new ArrayList<>();
+
+	    for (Jogador jogador : jogadores) {
+	        if (melhores.isEmpty()) {
+	            melhores.add(jogador);
+	            continue;
+	        }
+
+	        int comparacao = comparar(jogador, melhores.get(0));
+
+	        if (comparacao > 0) {
+	            melhores.clear();
+	            melhores.add(jogador);
+	        } else if (comparacao == 0) {
+	            melhores.add(jogador);
+	        }
+	    }
+
+	    return melhores;
+	}
+
+	// Retorna um valor positivo se a for melhor que b,
+	// negativo se b for melhor que a e zero em caso de empate.
+	private int comparar(Jogador a, Jogador b) {
+	    if (a.getVotos() != b.getVotos()) {
+	        return Integer.compare(a.getVotos(), b.getVotos());
+	    }
+
+	    return Integer.compare(totalTesouros(a), totalTesouros(b));
+	}
+
+	// Soma os tesouros que o jogador ainda possui.
+	private int totalTesouros(Jogador jogador) {
+	    int total = 0;
+
+	    for (TipoTesouro tipo : TipoTesouro.values()) {
+	        total += jogador.getQuantidadeTesouro(tipo);
+	    }
+
+	    return total;
 	}
 	
 	
