@@ -103,53 +103,33 @@ class Partida  {
 	}
 	
 	private void criarJogadores(ArrayList<Cor> coresEscolhidas) {
-		
-		 ArrayList<TipoConselheiroSecreto> baralho = new ArrayList<>();
 
-	    for (TipoConselheiroSecreto tipo : TipoConselheiroSecreto.values()) {
-	        baralho.add(tipo);
-	    }
+		ArrayList<TipoConselheiroSecreto> baralho = new ArrayList<>();
 
-	    java.util.Collections.shuffle(baralho);
-	    
-	    
+		for (TipoConselheiroSecreto tipo : TipoConselheiroSecreto.values()) {
+		    baralho.add(tipo);
+		}
+
+		java.util.Collections.shuffle(baralho);
+
 		for (Cor cor : coresEscolhidas) {
 
-	        Personagem personagem = criarPersonagem(cor);
+		    Personagem personagem = criarPersonagem(cor);
 
-	        TabuleiroJogador tabuleiroJogador =new TabuleiroJogador(personagem);
-	       
-	        ArrayList<Peao> peoes = new ArrayList<>();
+		    TabuleiroJogador tabuleiroJogador =
+		            new TabuleiroJogador(personagem);
 
-	        int quantidadePeoes = 1;
+		    ArrayList<ConselheiroSecreto> conselheiros =
+		            sortearConselheiros(baralho);
 
-	        if (personagem instanceof Altani) {
-	            quantidadePeoes = 2;
-	        }
+		    Jogador jogador = new Jogador(
+		            conselheiros,
+		            tabuleiroJogador
+		    );
 
-	        for (int i = 0; i < quantidadePeoes; i++) {
-	            peoes.add(new Peao());
-	        }
+		    jogadores.add(jogador);
+		}
 
-	        ArrayList<ConselheiroSecreto> conselheiros = sortearConselheiros(baralho);
-
-	        
-	        Jogador jogador = new Jogador(
-	                peoes,
-	                conselheiros,
-	                tabuleiroJogador
-	        );
-
-	        
-	        for (Peao peao : peoes) {
-	            peao.setJogador(jogador);
-	        }
-
-	  
-	        jogadores.add(jogador);
-	    }
-		
-		
 	}
 	
 	private  void distribuirMoedasInicias() {

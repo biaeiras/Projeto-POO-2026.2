@@ -30,5 +30,7 @@ abstract class Personagem {
         return acoes;
     }
     
-    
+    int getQuantidadePeoesIniciais() {
+        return 1;
+    }
 }

@@ -15,15 +15,9 @@ class Jogador {
     private final TabuleiroJogador tabuleiroJogador;
 
     Jogador(
-            ArrayList<Peao> peoesIniciais,
             ArrayList<ConselheiroSecreto> opcoesConselheiro,
             TabuleiroJogador tabuleiroJogador
     ) {
-        if (peoesIniciais == null || peoesIniciais.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "O jogador precisa ter pelo menos um peão."
-            );
-        }
 
         if (tabuleiroJogador == null) {
             throw new IllegalArgumentException(
@@ -39,19 +33,8 @@ class Jogador {
             );
         }
 
-        this.peoes = new ArrayList<Peao>();
 
-        for (Peao peao : peoesIniciais) {
-            if (peao == null || this.peoes.contains(peao)) {
-                throw new IllegalArgumentException(
-                        "A lista não pode conter peões nulos ou repetidos."
-                );
-            }
-
-            this.peoes.add(peao);
-        }
-
-        this.tributos = new HashMap<TipoTributo, Integer>(); //adicionar os tributos iniciais (0 yurts, 0 espadas e 1 ou 2 moedas)
+        this.tributos = new HashMap<TipoTributo, Integer>();
 
         for (TipoTributo tipo : TipoTributo.values()) {
             this.tributos.put(tipo, 0);
@@ -66,6 +49,16 @@ class Jogador {
         this.yurtsDisponiveis = 12;
         this.votos = 0;
         this.tabuleiroJogador = tabuleiroJogador; 
+        
+        this.peoes = new ArrayList<>();
+
+        Personagem personagem = tabuleiroJogador.getPersonagem();
+
+        int quantidadePeoes = personagem.getQuantidadePeoesIniciais();
+
+        for (int i = 0; i < quantidadePeoes; i++) {
+            this.peoes.add(new Peao(this));
+        }
 
         this.opcoesConselheiro =
                 new ArrayList<ConselheiroSecreto>(opcoesConselheiro);

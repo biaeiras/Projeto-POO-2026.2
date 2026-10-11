@@ -46,6 +46,23 @@ public class JogadorTest {
         assertEquals(0, jogador.getQuantidadeTesouro(TipoTesouro.FERRO));
         assertEquals(1, jogador.getQuantidadeTesouro(TipoTesouro.TECIDO));
     }
+    
+    @Test
+    public void testeCriacaoPeoesAltani() {
+
+        Jogador jogador = criarJogadorTeste();
+
+        // Altani deve possuir dois peões
+        assertEquals(2, jogador.getQuantidadePeoes());
+
+        // Os dois peões devem pertencer ao jogador
+        assertSame(jogador, jogador.getPeao(0).getJogador());
+        assertSame(jogador, jogador.getPeao(1).getJogador());
+
+        // Os peões devem ser objetos diferentes
+        assertNotSame(jogador.getPeao(0), jogador.getPeao(1));
+    }
+    
 
     private Jogador criarJogadorTeste() {
 
@@ -54,18 +71,13 @@ public class JogadorTest {
 
         TabuleiroJogador tabuleiro = new TabuleiroJogador(personagem);
 
-        // Cria a lista de peões
-        ArrayList<Peao> peoes = new ArrayList<>();
-
-        peoes.add(new Peao(null));
-
         // Cria as duas opções de conselheiro secreto
         ArrayList<ConselheiroSecreto> conselheiros = new ArrayList<>();
 
         conselheiros.add(new ConselheiroSecreto(TipoConselheiroSecreto.values()[0]));
         conselheiros.add(new ConselheiroSecreto(TipoConselheiroSecreto.values()[1]));
 
-        // Cria o jogador
-        return new Jogador(peoes, conselheiros, tabuleiro);
+        // Cria o jogador (os peões são criados automaticamente)
+        return new Jogador(conselheiros, tabuleiro);
     }
 }
