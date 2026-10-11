@@ -27,7 +27,7 @@ class ConselheiroAberto extends CartaConselheiro {
 	}
 	 
 	void marcarCumprida(Jogador jogador) {
-		if( jogador != null) {
+		if( jogador == null) {
 			throw new IllegalStateException("Jogador não pode ser nulo"); 
 	}
 	

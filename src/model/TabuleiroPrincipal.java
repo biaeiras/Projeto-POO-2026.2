@@ -131,6 +131,7 @@ class TabuleiroPrincipal {
 			//Karakorum
 		Parada paradaTemp = mapa.get(ParadaID.KARAKORUM);
 		Cidade cidadeTemp = cidades.get(CidadeID.KARAKORUM);
+		paradaTemp.setMultiplicidade(Integer.MAX_VALUE); // COMEÇA EM KARAKORUM
 		cidadeTemp.setRegiao(null);
 		paradaTemp.setBonus(pilhaBonus.pop());
 		paradaTemp.setCidade(cidadeTemp);
