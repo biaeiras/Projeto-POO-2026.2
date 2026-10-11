@@ -67,5 +67,15 @@ class Parada {
 	TipoBonus getBonus() {
 		return this.bonus;
 	}
+	boolean podeReceberYurt() {
+	    return yurt == null && cidade == null
+	            && multiplicidade > 0;
+	}
+
+	void adicionarYurt(Jogador jogador) {
+	    if (jogador != null && podeReceberYurt()) {
+	        yurt = jogador;
+	    }
+	}
 
 }

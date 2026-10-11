@@ -547,6 +547,10 @@ class TabuleiroPrincipal {
 		initPeoes();
 	}
 	
+	TabuleiroPrincipal(HashMap<Peao, Jogador> peoes) {
+	    this(peoes, new Stack<Melhoria>());
+	}
+	
 	HashSet<Provincia> moverPeao(Peao peao, Parada parada){
 		HashSet<Provincia> provincias = new HashSet<Provincia>();
 		peao.getPosicao().removePeao(peao);
@@ -610,5 +614,19 @@ class TabuleiroPrincipal {
 		for(SlotMelhoria slot: melhorias) if(slot.getMelhoria() == null) slot.setMelhoria(pilhaMelhorias.pop());
 		this.khan = null;
 		
+	}
+	
+	public boolean todasCidadesConquistadas() {
+	    if (!pilhaCidades.isEmpty()) {
+	        return false;
+	    }
+
+	    for (Cidade cidade : cidades.values()) {
+	        if (cidade.getConquistador() == null) {
+	            return false;
+	        }
+	    }
+
+	    return true;
 	}
 }

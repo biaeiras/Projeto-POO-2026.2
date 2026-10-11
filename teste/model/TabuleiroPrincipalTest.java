@@ -124,11 +124,10 @@ public class TabuleiroPrincipalTest {
 
 	    ArrayList<ConselheiroSecreto> conselheiros = new ArrayList<>();
 
-	    conselheiros.add(new ConselheiroSecreto());
-	    conselheiros.add(new ConselheiroSecreto());
+	    conselheiros.add(new ConselheiroSecreto(TipoConselheiroSecreto.values()[0]));
+	    conselheiros.add(new ConselheiroSecreto(TipoConselheiroSecreto.values()[1]));
 
 	    return new Jogador(conselheiros, tabuleiro);
 	}
 
 }
-
