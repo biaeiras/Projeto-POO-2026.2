@@ -518,7 +518,7 @@ class TabuleiroPrincipal {
 		for(int i = 0; i<MELHORIAS_MOEDAS; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.MOEDA_VIRTUAL, Regiao.CHINA));
 		for(int i = 0; i<MELHORIAS_ESPADAS; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.ESPADA_VIRTUAL, Regiao.CHINA));
 		for(int i = 0; i<MELHORIAS_PEGAR_TRIBUTO; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.PEGAR_TRIBUTO_EXTRA, Regiao.CHINA));
-		for(int i = 0; i<MELHORIAS_TESOURO; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.TESOURO_VIRTUAL, Regiao.CHINA));
+		for(int i = 0; i<MELHORIAS_TESOURO; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.FERRO_VIRTUAL, Regiao.CHINA));
 		for(int i = 0; i<MELHORIAS_YURT; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.YURT_VIRTUAL, Regiao.CHINA));
 		for(int i = 0; i<MELHORIAS_MOVIMENTO; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.MOVIMENTO_EXTRA, Regiao.CHINA));
 		for(int i = 0; i<MELHORIAS; i++) { 

@@ -3,6 +3,7 @@ package model;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Stack;
@@ -14,7 +15,7 @@ public class TabuleiroPrincipalTest {
 	@Test
 	public void testTabuleiroPrincipal() {
 		HashMap<Peao, Jogador> peoes = new HashMap<Peao, Jogador>();
-		Jogador jogador = new Jogador();
+		Jogador jogador = criarJogadorTeste();
 		peoes.put(new Peao(jogador), jogador);
 		TabuleiroPrincipal tabuleiro = new TabuleiroPrincipal(peoes, new Stack<Melhoria>());
 		HashMap<ParadaID, Parada> mapa = tabuleiro.getMapa();
@@ -26,7 +27,7 @@ public class TabuleiroPrincipalTest {
 	@Test
 	public void testMoverPeao() {
 		HashMap<Peao, Jogador> peoes = new HashMap<Peao, Jogador>();
-		Jogador jogador = new Jogador();
+		Jogador jogador = criarJogadorTeste();
 		Peao peao = new Peao(jogador);
 		peoes.put(peao, jogador);
 		HashSet<Provincia> provincias = new HashSet<Provincia>();
@@ -64,8 +65,8 @@ public class TabuleiroPrincipalTest {
 	@Test
 	public void testGetMovimentosPossiveis() {
 		HashMap<Peao, Jogador> peoes = new HashMap<Peao, Jogador>();
-		Jogador jogador1 = new Jogador();
-		Jogador jogador2 = new Jogador();
+		Jogador jogador1 = criarJogadorTeste();
+		Jogador jogador2 = criarJogadorTeste();
 		Peao peao1 = new Peao(jogador1);
 		Peao peao2 = new Peao(jogador2);
 		peoes.put(peao1, jogador1);
@@ -88,6 +89,20 @@ public class TabuleiroPrincipalTest {
 		assertEquals(possiveis1, tabuleiro.getMovimentosPossiveis(peao1, 1));
 		assertEquals(possiveis2, tabuleiro.getMovimentosPossiveis(peao1, 2));
 
+	}
+	
+	private Jogador criarJogadorTeste() {
+
+	    Personagem personagem = new Altani();
+
+	    TabuleiroJogador tabuleiro = new TabuleiroJogador(personagem);
+
+	    ArrayList<ConselheiroSecreto> conselheiros = new ArrayList<>();
+
+	    conselheiros.add(new ConselheiroSecreto());
+	    conselheiros.add(new ConselheiroSecreto());
+
+	    return new Jogador(conselheiros, tabuleiro);
 	}
 
 }
