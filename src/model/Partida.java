@@ -279,20 +279,16 @@ class Partida  {
 	}
 
 	
-	
-	
-	
 	boolean TerminarTurno() {
 	    if (turnoAtual == null) {
-	    	return false;
-	    	
+	        return false;
 	    }
-	    	
+
 	    if (turnoAtual.isKhanPendente()) {
-	    	return false;
+	        return false;
 	    }
-	    
-	    VerificaFimDisparado(); 
+
+	    VerificaFimDisparado();
 
 	    turnoAtual = null;
 	    avancarJogador();
@@ -314,6 +310,7 @@ class Partida  {
 
 	    return true;
 	}
+	
 	
 	boolean concluirAcaoKhan(ProvinciaKhanID provincia, TipoTributo tributo1, TipoTributo tributo2) {
 
@@ -358,14 +355,15 @@ class Partida  {
 	}
 		
 	private void VerificaFimDisparado() {
-		if(fimDisparado) {
-			return; 
-		}
-		
-		if(votosFichaNeutra >= limiteVotos|| tabuleiroPrincipal.todasCidadesConquistadas()) {
-			fimDisparado = true;  
-			indiceJogadorInicialFim = indiceJogadorAtual;
-		}
+	    if (fimDisparado) {
+	        return;
+	    }
+
+	    if (votosFichaNeutra >= limiteVotos || tabuleiroPrincipal.todasCidadesConquistadas()) {
+	        fimDisparado = true;
+	        indiceJogadorInicialFim = indiceJogadorAtual;
+	        indicePrimeiroJogador = indiceJogadorAtual;
+	    }
 	}
 	
 	boolean registrarVoto(Jogador jogador, int quantidade) {
@@ -401,37 +399,27 @@ class Partida  {
 	    if (encerrada || turnoAtual == null || peao == null || destino == null) {
 	        return false;
 	    }
-	
-	    
+
 	    if (peao.getJogador() != turnoAtual.getJogador()) {
 	        return false;
 	    }
-	    
+
 	    Parada origem = peao.getPosicao();
-	
+
 	    if (origem == null || !origem.getVizinhos().containsValue(destino)) {
 	        return false;
 	    }
-	
+
 	    if (turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO) <= 0) {
 	        return false;
 	    }
-	    
-	    if (!peao.getPosicao().getVizinhos().containsValue(destino)) {
-	        return false;
-	    }
-	    
-	    if (turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO) <= 0) {
-	        return false;
-	    }
-	    //VERIFICAR SE É VALIDO NO MANUAL
-	    
+
 	    if (!destino.isMoveble()) {
 	        return false;
 	    }
-	
-	    HashSet<Provincia> provinciasVisitadas = tabuleiroPrincipal.moverPeao(peao, destino);
-	    
+
+	    HashSet<Provincia> provinciasVisitadas =
+	            tabuleiroPrincipal.moverPeao(peao, destino);
 
 	    if (!turnoAtual.usarAcao(TipoAcao.MOVIMENTO)) {
 	        return false;
@@ -473,46 +461,68 @@ class Partida  {
 	    return true;
 	}
 	
-
+	//verificar se um peão específico tem permissão para realizar uma ação naquele turno
+	private boolean peaoPodeAgir(Peao peao){
+			if (turnoAtual == null || peao == null || peao.getJogador() != turnoAtual.getJogador()) {
+		        return false;
+		    }
+			
+			//Altani tem dois peões e apenas um dos dois possa realizar certas ações restritas no mesmo turno
+			boolean altani = turnoAtual.getJogador().getTabuleiroJogador().getPersonagem() instanceof Altani;
+			
+			return !altani || peao == peaoAtivo;
+			
+	}
+	
+	//escolher qual peao do Altani usar 
+	boolean escolherPeaoAtivo(Peao peao) {
+		if(encerrada || turnoAtual == null || acaoRestritaFeita || peao == null || peao.getJogador() != turnoAtual.getJogador()) {
+			return false; 
+		}
+		peaoAtivo = peao; 
+		return true; 
+	
+	}
+	
+	
 	boolean construirYurt(Peao peao, Parada parada) {
-	    if (encerrada || turnoAtual == null || peao == null || parada == null) {
+	    if (encerrada || turnoAtual == null || peao == null || parada == null || !peaoPodeAgir(peao)) {
 	        return false;
 	    }
-	
+
 	    if (peao.getJogador() != turnoAtual.getJogador()) {
 	        return false;
 	    }
-	
+
 	    HashSet<Parada> percorridas = paradasPercorridas.get(peao);
-	
+
 	    if (percorridas == null || !percorridas.contains(parada)) {
 	        return false;
 	    }
-	
+
 	    if (!parada.podeReceberYurt()) {
 	        return false;
 	    }
-	
+
 	    Jogador jogador = turnoAtual.getJogador();
-	
+
 	    if (!jogador.usarYurt()) {
 	        return false;
 	    }
-	
+
 	    parada.adicionarYurt(jogador);
-	
+	    acaoRestritaFeita = true;
+
 	    return true;
 	}
 	
+
+	
 	boolean atacarCidade(Peao peao, Cidade cidade, TipoTesouro tesouro) {
-	    if (encerrada || turnoAtual == null || peao == null || cidade == null || tesouro == null) {
-	        return false;
-	    }
-
-	    if (peao.getJogador() != turnoAtual.getJogador()) {
-	        return false;
-	    }
-
+		if (encerrada || turnoAtual == null || cidade == null || tesouro == null || !peaoPodeAgir(peao)) {
+		    return false;
+		}
+		
 	    HashSet<Parada> percorridas = paradasPercorridas.get(peao);
 
 	    if (percorridas == null) {
@@ -567,11 +577,11 @@ class Partida  {
 	    jogador.adicionarTesouro(tesouro);
 
 	    tesourosTomadosNoTurno.put(cidade, tesourosAnteriores + 1);
+	    
+	    acaoRestritaFeita = true;
 
 	    return true;
 	}
-	
-	
 	
 	
 	
