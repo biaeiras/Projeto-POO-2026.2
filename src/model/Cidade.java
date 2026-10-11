@@ -19,7 +19,16 @@ class Cidade {
 	}
 	
 	public void atacar(Jogador jogador, TipoTesouro tesouro) {
+		if (jogador == null || tesouro == null) {
+	        return;
+	    }
+
 		int quantidade = tesouros.get(tesouro);
+		
+		if (quantidade <= 0) {
+		        return;
+		}
+		 
 		quantidade--;
 		tesouros.put(tesouro, quantidade);
 		if(quantidade<=0) tesouros.remove(tesouro);

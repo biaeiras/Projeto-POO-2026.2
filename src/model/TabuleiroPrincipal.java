@@ -608,4 +608,18 @@ class TabuleiroPrincipal {
 		this.khan = null;
 		
 	}
+	
+	public boolean todasCidadesConquistadas() {
+	    if (!pilhaCidades.isEmpty()) {
+	        return false;
+	    }
+
+	    for (Cidade cidade : cidades.values()) {
+	        if (cidade.getConquistador() == null) {
+	            return false;
+	        }
+	    }
+
+	    return true;
+	}
 }
