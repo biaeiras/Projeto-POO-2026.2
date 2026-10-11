@@ -7,7 +7,8 @@ class Altani extends Personagem {
     }
     
     
-    //Pecas base (tabuleiro Jogador)
-    
-    //Habilidades especiais
+    @Override
+    int getQuantidadePeoesIniciais() {
+        return 2;
+    }
 }
