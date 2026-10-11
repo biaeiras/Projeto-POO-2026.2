@@ -3,7 +3,6 @@ package model;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Stack;
@@ -14,8 +13,13 @@ public class TabuleiroPrincipalTest {
 
 	@Test
 	public void testTabuleiroPrincipal() {
+		/*
+		 * Testa o construtor do tabuleiro principal. Responsavel por inicializar o tabuleiro da forma correta.
+		 * Neste teste, e verificado que cada parada esta na lista de vizinhos de cada uma das paradas da sua propria lista de vizinhos.
+		 * Dessa forma, e testado as conexoes do grafo que representa o mapa do tabuleiro
+		 */
 		HashMap<Peao, Jogador> peoes = new HashMap<Peao, Jogador>();
-		Jogador jogador = criarJogadorTeste();
+		Jogador jogador = new Jogador();
 		peoes.put(new Peao(jogador), jogador);
 		TabuleiroPrincipal tabuleiro = new TabuleiroPrincipal(peoes, new Stack<Melhoria>());
 		HashMap<ParadaID, Parada> mapa = tabuleiro.getMapa();
@@ -26,8 +30,21 @@ public class TabuleiroPrincipalTest {
 
 	@Test
 	public void testMoverPeao() {
+		/*
+		 * Testa a funcao moverPeao, verificando se os objetos associados (Peao e parada) são atualizados corretamente e o valor de retorno.
+		 * Nesse teste, inicializa-se um peao e o tabuleiro. O peao e entao movido para a parada Pequim1 e depois Pequim_Cabul_Cantao.
+		 * A cada movimento, os objetos são verificados para que suas atualizaçoes sejam feitas de forma correta.
+		 * Ainda, o valor de retorno da funcao moverPeao, que representa o conjunto das provincias vizinhas à cidade alvo do movimento, é acrescentado num conjunto
+		 * que armazena todas as provincias retornadas durante o teste.
+		 * Por fim, o conjunto de provincias resultante e comparado com um conjunto de provincias criado e construido manualmente como referencia.
+		 * O teste verifica se o conjunto resultante e equivalente ao de referencia.
+		 * 
+		 */
+		
+		
+		
 		HashMap<Peao, Jogador> peoes = new HashMap<Peao, Jogador>();
-		Jogador jogador = criarJogadorTeste();
+		Jogador jogador = new Jogador();
 		Peao peao = new Peao(jogador);
 		peoes.put(peao, jogador);
 		HashSet<Provincia> provincias = new HashSet<Provincia>();
@@ -64,9 +81,16 @@ public class TabuleiroPrincipalTest {
 
 	@Test
 	public void testGetMovimentosPossiveis() {
+		/*
+		 * Teste da funcao getMovimentosPossiveis, que retorna um hashMap que associa as paradas alcancaveis por um peao e o numero de movimentos necessarios para alcanca-la.
+		 * O numero maximo de movimentos e passado como argumento.
+		 * Neste teste, sao inicializados dois jogadores. Um deles e estatico e usado como obstaculo. Ainda, uma das paradas adjacentes ao jogador que se movimenta tem um yurt do proprio
+		 * A funcao e chamada duas vezes, uma com o maximo de 1 movimento e uma com o maximo de 2 movimentos.
+		 * O retorno e comparado com dois HashMaps construidos manualmente.
+		 */
 		HashMap<Peao, Jogador> peoes = new HashMap<Peao, Jogador>();
-		Jogador jogador1 = criarJogadorTeste();
-		Jogador jogador2 = criarJogadorTeste();
+		Jogador jogador1 = new Jogador();
+		Jogador jogador2 = new Jogador();
 		Peao peao1 = new Peao(jogador1);
 		Peao peao2 = new Peao(jogador2);
 		peoes.put(peao1, jogador1);
@@ -89,20 +113,6 @@ public class TabuleiroPrincipalTest {
 		assertEquals(possiveis1, tabuleiro.getMovimentosPossiveis(peao1, 1));
 		assertEquals(possiveis2, tabuleiro.getMovimentosPossiveis(peao1, 2));
 
-	}
-	
-	private Jogador criarJogadorTeste() {
-
-	    Personagem personagem = new Altani();
-
-	    TabuleiroJogador tabuleiro = new TabuleiroJogador(personagem);
-
-	    ArrayList<ConselheiroSecreto> conselheiros = new ArrayList<>();
-
-	    conselheiros.add(new ConselheiroSecreto());
-	    conselheiros.add(new ConselheiroSecreto());
-
-	    return new Jogador(conselheiros, tabuleiro);
 	}
 
 }
