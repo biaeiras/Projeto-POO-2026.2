@@ -100,7 +100,7 @@ public class TabuleiroPrincipalTest {
 		HashMap<ParadaID, Parada> mapa = tabuleiro.getMapa();
 		tabuleiro.moverPeao(peao1, ParadaID.CANTAO2);
 		tabuleiro.moverPeao(peao2, ParadaID.CANTAO3);
-		mapa.get(ParadaID.CANTAO1).setYurt(jogador1);
+		mapa.get(ParadaID.CANTAO1).adicionarYurt(jogador1);
 		HashMap<Parada, Integer> possiveis1 = new HashMap<Parada,Integer>();
 		possiveis1.put(mapa.get(ParadaID.CANTAO1), 1);
 		possiveis1.put(mapa.get(ParadaID.PEQUIM2), 1);

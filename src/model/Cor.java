@@ -1,6 +1,6 @@
 package model;
 
-enum Cor {
+public enum Cor {
 	VERDE,
 	VERMELHO,
 	CINZA,

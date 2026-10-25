@@ -23,7 +23,7 @@ abstract class Personagem {
     HashMap<TipoAcao, Integer> getAcoesBase(Regiao regiao) {
         HashMap<TipoAcao, Integer> acoes = new HashMap<>();
 
-        acoes.put(TipoAcao.MOVIMENTO, 1);
+        acoes.put(TipoAcao.MOVIMENTO,2);
         acoes.put(TipoAcao.PEGAR_TRIBUTO, 1);
         acoes.put(TipoAcao.USAR_KHAN, 0);
 
