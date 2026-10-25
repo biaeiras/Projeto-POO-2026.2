@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Stack;
 
@@ -77,7 +78,8 @@ class TabuleiroPrincipal {
 	private HashMap<Peao, Jogador> peoes;
 	private HashMap<ParadaID, Parada> mapa = new HashMap<ParadaID, Parada>();
 	private HashMap<CidadeID, Cidade> cidades = new HashMap<CidadeID, Cidade>();
-	private HashMap<ProvinciaKhanID, ProvinciaKhan> provinciasKhan = new HashMap<ProvinciaKhanID, ProvinciaKhan>();
+	private HashMap<ProvinciaKhanID, ProvinciaKhan> provinciasKhan = new HashMap<ProvinciaKhanID, ProvinciaKhan>(); 
+	private HashMap<ParadaID, ArrayList<Cor>> yurts = new HashMap<ParadaID, ArrayList<Cor>>();
 	private Stack<CidadeID> pilhaCidades = new Stack<CidadeID>();
 	private Stack<TipoTesouro> pilhaTesouros = new Stack<TipoTesouro>();
 	private Stack<Melhoria> pilhaMelhorias;
@@ -116,6 +118,9 @@ class TabuleiroPrincipal {
 		provincias.put(ProvinciaID.BR_ESPADA, provinciasKhan.get(ProvinciaKhanID.BR).getEspada());
 		provincias.put(ProvinciaID.BR_MOEDA, provinciasKhan.get(ProvinciaKhanID.BR).getMoeda());
 		provincias.put(ProvinciaID.BR_YURT, provinciasKhan.get(ProvinciaKhanID.BR).getYurt());
+		
+		for(Map.Entry<ProvinciaID, Provincia> entry: provincias.entrySet()) entry.getValue().setId(entry.getKey());
+		
 		return;
 	}
 	private void initParadas() {
@@ -125,7 +130,7 @@ class TabuleiroPrincipal {
 		
 		//Gerando paradas
 		
-		for(ParadaID id : ParadaID.values()) mapa.put(id, new Parada());
+		for(ParadaID id : ParadaID.values()) mapa.put(id, new Parada(id));
 			
 		//Caracterizando paradas
 			//Karakorum
@@ -143,7 +148,7 @@ class TabuleiroPrincipal {
 		paradaTemp.insertProvincia(ProvinciaID.TR_YURT, provinciasKhan.get(ProvinciaKhanID.TR).getYurt());
 		paradaTemp.insertProvincia(ProvinciaID.TR_MOEDA, provinciasKhan.get(ProvinciaKhanID.TR).getMoeda());
 		paradaTemp.insertProvincia(ProvinciaID.TR_ESPADA, provinciasKhan.get(ProvinciaKhanID.TR).getEspada());
-		paradaTemp.insertProvincia(ProvinciaID.TR_YURT, provinciasKhan.get(ProvinciaKhanID.BL).getYurt());
+		paradaTemp.insertProvincia(ProvinciaID.BL_YURT, provinciasKhan.get(ProvinciaKhanID.BL).getYurt());
 		
 			//Kiev1
 		paradaTemp = mapa.get(ParadaID.KIEV1);
@@ -576,7 +581,36 @@ class TabuleiroPrincipal {
 		while (!fila.isEmpty()) {
 			Parada atual = fila.poll();
 			int i = ret.get(atual);
-			int custo = (peao.getJogador() == atual.getYurt())? 0:1;
+			int custo = (atual.getYurt().contains(peao.getJogador()))? 0:1;
+			if(i+custo>movimentos) continue;
+			for(Parada p: atual.getVizinhos().values()) {
+				int novoPasso = i + custo;
+				
+				if(!ret.containsKey(p)||novoPasso<ret.get(p)) {
+					ret.put(p, novoPasso);
+					fila.add(p);
+				}
+			}
+			
+		}
+		HashSet<Parada> ocupados = new HashSet<Parada>();
+		
+		for(Parada p: ret.keySet()) {
+			if(p.isMoveble()) continue;
+			ocupados.add(p);
+		}
+		ret.keySet().removeAll(ocupados);
+		return ret;
+	}
+	HashMap<Parada, Integer> getMovimentosPossiveis(Peao peao, Parada parada, int movimentos){
+		HashMap<Parada, Integer> ret = new HashMap<Parada, Integer>();
+		Queue<Parada> fila = new LinkedList<Parada>();
+		ret.put(parada, 0);
+		fila.add(parada);
+		while (!fila.isEmpty()) {
+			Parada atual = fila.poll();
+			int i = ret.get(atual);
+			int custo = (atual.getYurt().contains(peao.getJogador()))? 0:1;
 			if(i+custo>movimentos) continue;
 			for(Parada p: atual.getVizinhos().values()) {
 				int novoPasso = i + custo;
@@ -614,6 +648,21 @@ class TabuleiroPrincipal {
 		for(SlotMelhoria slot: melhorias) if(slot.getMelhoria() == null) slot.setMelhoria(pilhaMelhorias.pop());
 		this.khan = null;
 		
+	}
+	void adicionarYurt(Jogador jogador, Parada parada) {
+		if(!parada.adicionarYurt(jogador)) return;
+		if(!yurts.containsKey(parada.getId()))
+			yurts.put(parada.getId(), new ArrayList<Cor>());
+		yurts.get(parada.getId()).add(jogador.getTabuleiroJogador().getPersonagem().getCor());
+	}
+	HashMap<ParadaID, ArrayList<Cor>> getYurts(){
+		return yurts;
+	}
+	
+	HashMap<ProvinciaID, Integer> getCargasProvincias(){
+		HashMap<ProvinciaID, Integer> ret = new HashMap<ProvinciaID, Integer>();
+		for(Map.Entry<ProvinciaID, Provincia> entry: provincias.entrySet()) ret.put(entry.getKey(), entry.getValue().getCargas());
+		return ret;
 	}
 	
 	public boolean todasCidadesConquistadas() {

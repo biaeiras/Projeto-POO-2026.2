@@ -1,16 +1,22 @@
 package model;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
 class Parada {
 	private HashMap<ParadaID, Parada> vizinhos = new HashMap<ParadaID, Parada>();
 	private HashMap<ProvinciaID, Provincia> provincias = new HashMap<ProvinciaID, Provincia>();
-	private Jogador yurt = null;
+	private ArrayList<Jogador> yurt = new ArrayList<Jogador>();
 	private int multiplicidade = 1;
 	private Cidade cidade = null;
 	private HashSet<Peao> peoes = new HashSet<Peao>();
 	private TipoBonus bonus = null;
+	private ParadaID id;
+	
+	Parada(ParadaID id){
+		this.id = id;
+	}
 	
 	int getNumPeoes() {
 		return peoes.size();
@@ -22,7 +28,7 @@ class Parada {
 	void insertProvincia(ProvinciaID nome, Provincia provincia) {
 		this.provincias.put(nome, provincia);
 	}
-	void setYurt(Jogador yurt) {
+	void setYurt(ArrayList<Jogador> yurt) {
 		this.yurt = yurt;
 		return;
 	}
@@ -44,7 +50,7 @@ class Parada {
 	HashMap<ProvinciaID, Provincia> getProvincias(){
 		return this.provincias;
 	}
-	Jogador getYurt() {
+	ArrayList<Jogador> getYurt() {
 		return this.yurt;
 	}
 	int getMultiplicidade() {
@@ -68,14 +74,18 @@ class Parada {
 		return this.bonus;
 	}
 	boolean podeReceberYurt() {
-	    return yurt == null && cidade == null
-	            && multiplicidade > 0;
+	    return id!=ParadaID.KARAKORUM&&yurt.size()<multiplicidade;
 	}
 
-	void adicionarYurt(Jogador jogador) {
+	ParadaID getId() {
+		return id;
+	}
+	boolean adicionarYurt(Jogador jogador) {
 	    if (jogador != null && podeReceberYurt()) {
-	        yurt = jogador;
+	        yurt.add(jogador);
+	        return true;
 	    }
+	    return false;
 	}
 
 }

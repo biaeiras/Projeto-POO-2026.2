@@ -1,6 +1,6 @@
 package model;
 
-enum ProvinciaID {
+public enum ProvinciaID {
 	TL_ESPADA,
 	TL_MOEDA,
 	TL_YURT,
