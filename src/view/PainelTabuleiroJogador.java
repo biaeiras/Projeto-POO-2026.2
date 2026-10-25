@@ -40,7 +40,7 @@ public class PainelTabuleiroJogador extends JPanel {
 
     public PainelTabuleiroJogador(String nomePersonagem) {
 
-        String caminho = "/imagens/tabuleiros/"
+        String caminho = "/tabuleiros/"
                 + nomePersonagem.toLowerCase() + ".jpg";
 
         java.net.URL recurso = getClass().getResource(caminho);
@@ -106,7 +106,7 @@ public class PainelTabuleiroJogador extends JPanel {
             return imagensMelhorias.get(nomeArquivo);
         }
 
-        String caminho = "/imagens/melhorias/" + nomeArquivo;
+        String caminho = "/melhorias/" + nomeArquivo;
 
         java.net.URL recurso = getClass().getResource(caminho);
 
@@ -162,7 +162,8 @@ public class PainelTabuleiroJogador extends JPanel {
     
     public void atualizarMelhorias(ArrayList<MelhoriaVisual> melhorias) {
 
-        this.melhoriasVisuais = new ArrayList<>(melhorias);
+        this.melhoriasVisuais 
+        = new ArrayList<>(melhorias);
 
         repaint();
     }
