@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 class Partida  {
 	private ArrayList<Jogador> jogadores;
@@ -27,7 +28,8 @@ class Partida  {
 	private Peao peaoAtivo; 
 	private boolean acaoRestritaFeita; 
 	private int melhoriasGratisPendentes; 
-
+	private boolean skipped = false;
+	private boolean hasToMove = false;
 	
 	Partida(ArrayList<Cor> coresEscolhidas) {
 		//O jogo é de 2 a 5 jogadores 
@@ -55,7 +57,6 @@ class Partida  {
 	    
 	}
 	
-	
 	//limite  quantos votos a ficha neutra precisa alcançar para disparar o fim da partida
 	private int obterLimiteVotos(int quantidadeJogadores) {
 	    switch (quantidadeJogadores) {
@@ -72,7 +73,6 @@ class Partida  {
 	    }
 	}
 
-
 	private ArrayList<ConselheiroSecreto> sortearConselheiros( ArrayList<TipoConselheiroSecreto> baralho) {
 
 	    ArrayList<ConselheiroSecreto> opcoes = new ArrayList<>();
@@ -82,9 +82,7 @@ class Partida  {
 	    return opcoes;
 	}
 	
-	
 	//Personagem associado com a cor escolhida 
-	
 	private Personagem criarPersonagem(Cor cor) {
 		switch(cor) {
 			case VERDE:
@@ -163,6 +161,7 @@ class Partida  {
 	}
 	
 	void avancarJogador() {
+		//System.out.println(indiceJogadorAtual);
 		if (jogadores.isEmpty() || encerrada) {
 	        return;
 	    }
@@ -173,9 +172,7 @@ class Partida  {
 	
 	
 	//TURNO 
-	
-	
-	boolean escolherConselheiroJOgadorAtual(int indice) {
+	boolean escolherConselheiroJogadorAtual(int indice) {
 		if(encerrada || jogadores.isEmpty() || turnoAtual != null) {
 			return false; 
 		}
@@ -185,9 +182,7 @@ class Partida  {
 		
 	}
 	
-	
-	
-	 boolean todosEscolheramConselheiro() {
+	boolean todosEscolheramConselheiro() {
 	    for (Jogador jogador : jogadores) {
 	        if (!jogador.jaEscolheuConselheiro()) {
 	            return false;
@@ -197,8 +192,6 @@ class Partida  {
 	    return true;
 	}
 	 
-
-	
 	boolean iniciarTurno(Regiao regiao) {
 		if(encerrada || jogadores.isEmpty() || turnoAtual!= null || !todosEscolheramConselheiro() || regiao == null) {
 			return false; 
@@ -207,11 +200,11 @@ class Partida  {
 		Jogador jogador = getJogadorAtual();
 		
 		HashMap<Enum<?>, Integer> resultado = jogador.getTabuleiroJogador().ativarColuna(regiao);
+		//System.out.println(jogador.getTabuleiroJogador().getPersonagem().getCor());
 
+		//System.out.println("Turno iniciado");
+		
 	    return abrirTurno(jogador, resultado);
-		
-		
-		
 	}
 	
 	boolean iniciarTurnoColunaBranca() {
@@ -227,7 +220,6 @@ class Partida  {
 		
 		
 	}
-
 
 	private boolean abrirTurno(Jogador jogador, HashMap<Enum<?>, Integer> resultadoColuna) {
 	
@@ -255,20 +247,20 @@ class Partida  {
 	
 	        paradasPercorridas.put(peao, paradas);
 	    }
-	
+
+	    //System.out.println("turno aberto");
 	    return true;
 	}
 
-	
 	boolean TerminarTurno() {
+		//System.out.println("turno finalizado");
 	    if (turnoAtual == null) {
 	        return false;
 	    }
 
-	    if (turnoAtual.isKhanPendente()) {
+	    if (turnoAtual.isKhanPendente() || hasToMove) {
 	        return false;
 	    }
-
 	    VerificaFimDisparado();
 
 	    turnoAtual = null;
@@ -288,10 +280,9 @@ class Partida  {
 	            }
 	        }
 	    }
-
+	    
 	    return true;
 	}
-	
 	
 	boolean concluirAcaoKhan(ProvinciaKhanID provincia, TipoTributo tributo1, TipoTributo tributo2) {
 
@@ -329,8 +320,6 @@ class Partida  {
 	    return true;
 	}
 	
-	
-
 	Turno getTurnoAtual() {
 		return turnoAtual; 
 	}
@@ -365,7 +354,6 @@ class Partida  {
 		registrarVoto(getJogadorAtual(), qtd);
 	}
 	
-
 	boolean isFimDisparado() {
 	    return fimDisparado;
 	}
@@ -374,45 +362,53 @@ class Partida  {
 	    return encerrada;
 	}
 	
-	
-
-	boolean moverPeao(Peao peao, Parada destino) {
-	    if (encerrada || turnoAtual == null || peao == null || destino == null) {
+	boolean moverPeao(ParadaID id) {
+		Parada destino = tabuleiroPrincipal.getMapa().get(id);
+		//System.out.println(peaoAtivo.getJogador().getTabuleiroJogador().getPersonagem().getCor());
+	    if (encerrada || turnoAtual == null || peaoAtivo == null || destino == null) {
 	        return false;
 	    }
 
-	    if (peao.getJogador() != turnoAtual.getJogador()) {
+	    
+	    if (peaoAtivo.getJogador() != turnoAtual.getJogador()) {
 	        return false;
 	    }
 
-	    Parada origem = peao.getPosicao();
+	    
+	    Parada origem = peaoAtivo.getPosicao();
 
 	    if (origem == null || !origem.getVizinhos().containsValue(destino)) {
 	        return false;
 	    }
+	    //System.out.println(turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO));
 
 	    if (turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO) <= 0) {
 	        return false;
 	    }
 
+	    
 	    if (!destino.isMoveble()) {
-	        return false;
-	    }
+	    	if(tabuleiroPrincipal.getMovimentosPossiveis(peaoAtivo, turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO)-1).isEmpty())
+	    		return false;
+	    	else hasToMove = true;
+	    }else hasToMove = false;
 
 	    HashSet<Provincia> provinciasVisitadas =
-	            tabuleiroPrincipal.moverPeao(peao, destino);
-
-	    if (!turnoAtual.usarAcao(TipoAcao.MOVIMENTO)) {
-	        return false;
+	            tabuleiroPrincipal.moverPeao(peaoAtivo, destino);
+	    //System.out.println(peaoAtivo.getPosicao().getId());
+	    if(skipped || !destino.getYurt().contains(peaoAtivo.getJogador())) {
+	    	skipped = false;
+	    	if(!turnoAtual.usarAcao(TipoAcao.MOVIMENTO)) return false;
 	    }
+	    else skipped = true;
 
 	    turnoAtual.adicionarProvinciasVisitadas(provinciasVisitadas);
-	    paradasPercorridas.get(peao).add(destino);
-
+	    paradasPercorridas.get(peaoAtivo).add(destino);
 	    return true;
 	}
 	
-	boolean pegarTributo(Provincia provincia) {
+	boolean pegarTributo(ProvinciaID id) {
+		Provincia provincia = tabuleiroPrincipal.getProvincias().get(id);
 	    if (encerrada || turnoAtual == null || provincia == null) {
 	        return false;
 	    }
@@ -465,40 +461,44 @@ class Partida  {
 	
 	}
 	
-	
-	boolean construirYurt(Peao peao, Parada parada) {
-	    if (encerrada || turnoAtual == null || peao == null || parada == null || !peaoPodeAgir(peao)) {
+	boolean construirYurt(ParadaID id) {
+		int i = 0;
+		//System.out.println(i++);
+		Parada parada = tabuleiroPrincipal.getMapa().get(id);
+	    if (encerrada || turnoAtual == null || peaoAtivo == null || parada == null || !peaoPodeAgir(peaoAtivo)) {
 	        return false;
 	    }
-
-	    if (peao.getJogador() != turnoAtual.getJogador()) {
+	    //System.out.println(i++);
+	    if (peaoAtivo.getJogador() != turnoAtual.getJogador()) {
 	        return false;
 	    }
+	    //System.out.println(i++);
 
-	    HashSet<Parada> percorridas = paradasPercorridas.get(peao);
+	    HashSet<Parada> percorridas = paradasPercorridas.get(peaoAtivo);
 
 	    if (percorridas == null || !percorridas.contains(parada)) {
 	        return false;
 	    }
 
+	    //System.out.println(i++);
 	    if (!parada.podeReceberYurt()) {
 	        return false;
 	    }
 
+	    //System.out.println(i++);
 	    Jogador jogador = turnoAtual.getJogador();
 
 	    if (!jogador.usarYurt()) {
 	        return false;
 	    }
 
-	    parada.adicionarYurt(jogador);
+	    //System.out.println(i++);
+	    tabuleiroPrincipal.adicionarYurt(jogador, parada);
 	    acaoRestritaFeita = true;
 
 	    return true;
 	}
-	
 
-	
 	boolean atacarCidade(Peao peao, Cidade cidade, TipoTesouro tesouro) {
 		if (encerrada || turnoAtual == null || cidade == null || tesouro == null || !peaoPodeAgir(peao)) {
 		    return false;
@@ -564,8 +564,6 @@ class Partida  {
 	    return true;
 	}
 	
-	
-	
 	//FIM DA PARTIDA
 	
 	// Compara os votos acumulados; em caso de empate, vence quem tiver
@@ -623,9 +621,41 @@ class Partida  {
 	    return total;
 	}
 	
+	HashMap<ParadaID, ArrayList<Cor>> getYurts(){
+		return tabuleiroPrincipal.getYurts();
+	}
 	
+	ArrayList<Jogador> getJogadores(){
+		return jogadores;
+	}
 	
+	HashMap<ProvinciaID, Integer> getCargasProvincias(){
+		return tabuleiroPrincipal.getCargasProvincias();
+	}
 	
+	HashSet<ParadaID> getAlcancaveisTotais(){
+		HashSet<ParadaID> ret = new HashSet<ParadaID>();
+		int passos = turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO);
+		if(skipped) passos--;
+		for(Parada p: tabuleiroPrincipal.getMovimentosPossiveis(peaoAtivo, passos).keySet()) ret.add(p.getId());
+		return ret;
+		
+	}
 	
-
+	HashSet<ParadaID> getVizinhosPossiveis(){
+		HashSet<ParadaID> ret = new HashSet<ParadaID>();
+		if(turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO)<=0) return ret;
+		for(Parada viz: peaoAtivo.getPosicao().getVizinhos().values()) {
+			if(!tabuleiroPrincipal.getMovimentosPossiveis(peaoAtivo, viz, turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO)-1).isEmpty()) ret.add(viz.getId());
+		}
+		return ret;
+	}
+	
+	HashSet<ProvinciaID> getProvincias(){
+		HashSet<ProvinciaID> ret = new HashSet<ProvinciaID>();
+		if(turnoAtual.getQuantidadeAcao(TipoAcao.PEGAR_TRIBUTO)<=0) return ret;
+		for(Provincia p: turnoAtual.getProvinciasVisitadas())
+			ret.add(p.getId());
+		return ret;
+	}
 }
