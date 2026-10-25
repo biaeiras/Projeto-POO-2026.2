@@ -71,6 +71,10 @@ class TabuleiroJogador {
 	        return melhorias.size();
 	    }
 	    
+	    ArrayList<Melhoria> getMelhorias() {
+	        return new ArrayList<>(melhorias);
+	    }
+	    
 	}
 
     private Personagem personagem;
@@ -215,5 +219,20 @@ class TabuleiroJogador {
                 melhoriasRussia,
                 Math.min(melhoriasChina, melhoriasPersia)
         );
+    }
+    
+    ArrayList<Melhoria> getMelhorias(Regiao regiao) {
+
+        Coluna coluna = colunasRegiao.get(regiao);
+
+        if (coluna == null) {
+            return new ArrayList<>();
+        }
+
+        return coluna.getMelhorias();
+    }
+
+    ArrayList<Melhoria> getMelhoriasColunaBranca() {
+        return colunaBranca.getMelhorias();
     }
 }
