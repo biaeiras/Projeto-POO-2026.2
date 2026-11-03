@@ -8,7 +8,7 @@ import java.util.Map;
 import javax.swing.JPanel;
 
 import model.Cor;
-import model.ModelAPI;
+import model.FachadaJogo;
 import model.ParadaID;
 import model.ProvinciaID;
 
@@ -31,8 +31,8 @@ public class ViewAPI {
 	}
 	
 	JanelaTabuleiro janela;
-	public ViewAPI(ModelAPI modelAPI) {
-		janela = new JanelaTabuleiro(modelAPI);
+	public ViewAPI(FachadaJogo fachada) {
+		janela = new JanelaTabuleiro(fachada);
 		janela.setTitle("Tabuleiro");
 		janela.setVisible(true);	
 	}

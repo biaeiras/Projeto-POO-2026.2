@@ -2,7 +2,7 @@ package view;
 
 import javax.swing.JFrame;
 
-import model.ModelAPI;
+import model.FachadaJogo;
 
 class JanelaTabuleiro extends JFrame{
 
@@ -10,8 +10,8 @@ class JanelaTabuleiro extends JFrame{
 	static final int STANDARD_WIDTH = 720;
 	static final int STANDARD_HEIGHT = 480;
 	private PainelTabuleiro painel;
-	JanelaTabuleiro(ModelAPI modelAPI){
-		painel = new PainelTabuleiro(modelAPI);
+	JanelaTabuleiro(FachadaJogo fachada){
+		painel = new PainelTabuleiro(fachada);
 		setSize(STANDARD_WIDTH, STANDARD_HEIGHT);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		setResizable(true);
