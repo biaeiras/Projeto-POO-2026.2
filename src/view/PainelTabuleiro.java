@@ -20,7 +20,7 @@ import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 import model.Cor;
-import model.ModelAPI;
+import model.FachadaJogo;
 import model.ParadaID;
 import model.ProvinciaID;
 
@@ -37,7 +37,7 @@ class PainelTabuleiro extends JPanel{
 	private Image imagemTabuleiro;
 	private HashMap<ParadaID, Point2D.Double> posicoesParadas = new HashMap<ParadaID, Point2D.Double>();
 	private HashMap<ProvinciaID, Point2D.Double> posicoesProvincias = new HashMap<ProvinciaID, Point2D.Double>();
-	private ModelAPI modelAPI;
+	private FachadaJogo fachada;
 	
 	private void initImages() {
 		try {
@@ -142,8 +142,8 @@ class PainelTabuleiro extends JPanel{
  		}
  	}
  	
-	PainelTabuleiro(ModelAPI modelAPI){
-		this.modelAPI = modelAPI;
+	PainelTabuleiro(FachadaJogo fachada){
+		this.fachada = fachada;
 		initImages();
 		initParadas();
 		initProvincias();
@@ -191,10 +191,10 @@ class PainelTabuleiro extends JPanel{
 		
 		Graphics2D g2d = (Graphics2D) g;
 		g2d.drawImage(imagemTabuleiro, 0, 0, getWidth(), getHeight(), null);
-		drawParadas(g2d, modelAPI.getVizinhosPossiveis(), modelAPI.getAlcancaveisTotais());
-		drawProvincias(g2d, modelAPI.getCargasProvincias(), modelAPI.getProvincias());
-		drawYurts(g2d, modelAPI.getYurts());
-		drawPeoes(g2d, modelAPI.getPosicoesPeoes());
+		drawParadas(g2d, fachada.getVizinhosPossiveis(), fachada.getAlcancaveisTotais());
+		drawProvincias(g2d, fachada.getCargasProvincias(), fachada.getProvincias());
+		drawYurts(g2d, fachada.getYurts());
+		drawPeoes(g2d, fachada.getPosicoesPeoes());
 	}
 	
 	ParadaID getCollisionParada(int x, int y) {

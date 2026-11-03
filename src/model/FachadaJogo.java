@@ -1,8 +1,10 @@
 package model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 
-public class FachadaJogo {
+public class FachadaJogo implements ObservadoJogo {
 
     // Singleton
     private static FachadaJogo instancia = null;
@@ -26,6 +28,38 @@ public class FachadaJogo {
     // Inicia uma partida com as cores escolhidas
     public void iniciarPartida(ArrayList<Cor> coresEscolhidas) {
         definirPartida(new Partida(coresEscolhidas));
+        
+//        partida.escolherConselheiroJogadorAtual(0);
+//		partida.avancarJogador();
+//		partida.escolherConselheiroJogadorAtual(0);
+//		partida.avancarJogador();
+//		partida.iniciarTurno(Regiao.RUSSIA);
+    }
+    
+    public boolean escolherConselheiroJogadorAtual(int indice) {
+        verificarPartidaIniciada();
+
+        boolean escolheu =
+            partida.escolherConselheiroJogadorAtual(indice);
+
+        if (escolheu) {
+            notificarObservadores();
+        }
+
+        return escolheu;
+    }
+
+    public void avancarJogadorNaPreparacao() {
+        verificarPartidaIniciada();
+
+        if (partida.isEncerrada() || partida.getTurnoAtual() != null) {
+            throw new IllegalStateException(
+                "Não é possível avançar na preparação neste momento."
+            );
+        }
+
+        partida.avancarJogador();
+        notificarObservadores();
     }
 
     // Associa a partida criada à fachada
@@ -38,12 +72,50 @@ public class FachadaJogo {
         }
 
         this.partida = partida;
+        notificarObservadores();
     }
 
     // Consulta se existe uma partida
     public boolean existePartida() {
         return partida != null;
     }
+    
+    private void verificarPartidaIniciada() {
+        if (partida == null) {
+            throw new IllegalStateException(
+                "Nenhuma partida foi iniciada."
+            );
+        }
+    }
+    
+    private final ArrayList<ObservadorJogo> observadores = new ArrayList<>();
+
+	@Override
+	public void adicionarObservador(ObservadorJogo observador) {
+	    if (observador == null) {
+	        throw new IllegalArgumentException(
+	            "O observador deve ser informado."
+	        );
+	    }
+
+	    if (!observadores.contains(observador)) {
+	        observadores.add(observador);
+	    }
+	}
+
+	@Override
+	public void removerObservador(ObservadorJogo observador) {
+	    observadores.remove(observador);
+	}
+
+	private void notificarObservadores() {
+	    ArrayList<ObservadorJogo> copia =
+	        new ArrayList<>(observadores);
+
+	    for (ObservadorJogo observador : copia) {
+	        observador.atualizar(this);
+	    }
+	}
 
     // Consulta as melhorias de uma coluna do jogador atual
     public ArrayList<String> getMelhoriasTabuleiroJogador(
@@ -115,4 +187,203 @@ public class FachadaJogo {
 
         return nomesImagens;
     }
+
+    public void moverPeao(ParadaID id) {
+		partida.moverPeao(id);
+		return;
+	}
+	
+	public void pegarTributo(ProvinciaID id) {
+		partida.pegarTributo(id);
+		return;
+	}
+	
+	public HashMap<ProvinciaID, Integer> getCargasProvincias() {
+		return partida.getCargasProvincias();
+	}
+	
+	public void construirYurt(ParadaID id) {
+		partida.construirYurt(id);
+		return;
+	}
+	
+	public void avancarTurno() {
+		partida.TerminarTurno();
+		partida.iniciarTurno(Regiao.PERSIA);
+		return;
+	}
+	
+	public HashMap<ParadaID, ArrayList<Cor>> getYurts(){
+		return partida.getYurts();
+	}
+	
+	public HashMap<ParadaID, ArrayList<Cor>> getPosicoesPeoes(){
+		HashMap<ParadaID, ArrayList<Cor>> ret = new HashMap<ParadaID, ArrayList<Cor>>();
+		for(Jogador jogador: partida.getJogadores()) {
+			Cor cor = jogador.getTabuleiroJogador().getPersonagem().getCor();
+			for(int i = 0; i < jogador.getQuantidadePeoes(); ++i) {
+				ParadaID id = jogador.getPeao(i).getPosicao().getId();
+				if(!ret.containsKey(id)) ret.put(id, new ArrayList<Cor>());
+				ret.get(id).add(cor);
+			}
+		}
+		return ret;
+	}
+	
+	public HashSet<ParadaID> getAlcancaveisTotais(){
+		return partida.getAlcancaveisTotais();
+	}
+	
+	public HashSet<ParadaID> getVizinhosPossiveis(){
+		return partida.getVizinhosPossiveis();
+	}
+	
+	public HashSet<ProvinciaID> getProvincias(){
+		return partida.getProvincias();
+	}
+	
+	public boolean podeEscolherColuna() {
+	    return partida != null
+	        && !partida.isEncerrada()
+	        && partida.todosEscolheramConselheiro()
+	        && partida.getTurnoAtual() == null;
+	}
+
+	public boolean isTurnoEmAndamento() {
+	    return partida != null && partida.getTurnoAtual() != null;
+	}
+
+	public boolean isPartidaEncerrada() {
+	    return partida != null && partida.isEncerrada();
+	}
+
+	public String getNomePersonagemAtual() {
+	    verificarPartidaIniciada();
+
+	    return partida.getJogadorAtual()
+	                  .getTabuleiroJogador()
+	                  .getPersonagem()
+	                  .getNome();
+	}
+
+	public int getFichasAtivacaoJogadorAtual() {
+	    verificarPartidaIniciada();
+
+	    return partida.getJogadorAtual()
+	                  .getTabuleiroJogador()
+	                  .getFichasAtivacaoDisponiveis();
+	}
+
+	public boolean isColunaJogadorAtualAtivada(int coluna) {
+	    verificarPartidaIniciada();
+
+	    TabuleiroJogador tabuleiro =
+	        partida.getJogadorAtual().getTabuleiroJogador();
+
+	    switch (coluna) {
+	        case 0:
+	            return tabuleiro.colunaEstaAtivada(Regiao.CHINA);
+	        case 1:
+	            return tabuleiro.colunaEstaAtivada(Regiao.PERSIA);
+	        case 2:
+	            return tabuleiro.colunaEstaAtivada(Regiao.RUSSIA);
+	        case 3:
+	            return tabuleiro.colunaBrancaEstaAtivada();
+	        default:
+	            throw new IllegalArgumentException("Coluna inválida.");
+	    }
+	}
+
+	public boolean ativarColunaJogadorAtual(int coluna) {
+	    verificarPartidaIniciada();
+
+	    boolean ativou;
+
+	    switch (coluna) {
+	        case 0:
+	            ativou = partida.iniciarTurno(Regiao.CHINA);
+	            break;
+	        case 1:
+	            ativou = partida.iniciarTurno(Regiao.PERSIA);
+	            break;
+	        case 2:
+	            ativou = partida.iniciarTurno(Regiao.RUSSIA);
+	            break;
+	        case 3:
+	            ativou = partida.iniciarTurnoColunaBranca();
+	            break;
+	        default:
+	            throw new IllegalArgumentException("Coluna inválida.");
+	    }
+
+	    if (ativou) {
+	        notificarObservadores();
+	    }
+
+	    return ativou;
+	}
+
+	public boolean terminarTurnoJogadorAtual() {
+	    verificarPartidaIniciada();
+
+	    boolean terminou = partida.TerminarTurno();
+
+	    if (terminou) {
+	        notificarObservadores();
+	    }
+
+	    return terminou;
+	}
+
+	public int getMoedasJogadorAtual() {
+	    verificarPartidaIniciada();
+	    return partida.getJogadorAtual()
+	                  .getQuantidadeTributo(TipoTributo.MOEDA);
+	}
+
+	public int getEspadasJogadorAtual() {
+	    verificarPartidaIniciada();
+	    return partida.getJogadorAtual()
+	                  .getQuantidadeTributo(TipoTributo.ESPADA);
+	}
+
+	public int getYurtsEstoqueJogadorAtual() {
+	    verificarPartidaIniciada();
+	    return partida.getJogadorAtual().getYurtsDisponiveis();
+	}
+
+	public int getTributosYurtJogadorAtual() {
+	    verificarPartidaIniciada();
+	    return partida.getJogadorAtual()
+	                  .getQuantidadeTributo(TipoTributo.YURT);
+	}
+	
+	public boolean todosEscolheramConselheiro() {
+	    verificarPartidaIniciada();
+	    return partida.todosEscolheramConselheiro();
+	}
+
+	public ArrayList<String> getOpcoesConselheiroJogadorAtual() {
+	    verificarPartidaIniciada();
+
+	    ArrayList<String> nomes = new ArrayList<>();
+	    Jogador jogador = partida.getJogadorAtual();
+
+	    if (!jogador.jaEscolheuConselheiro()) {
+	        nomes.add(jogador.getOpcaoConselheiro(0).getNome());
+	        nomes.add(jogador.getOpcaoConselheiro(1).getNome());
+	    }
+
+	    return nomes;
+	}
+	
+	public Cor getCorJogadorAtual() {
+	    verificarPartidaIniciada();
+
+	    return partida.getJogadorAtual()
+	                  .getTabuleiroJogador()
+	                  .getPersonagem()
+	                  .getCor();
+	}
+
 }

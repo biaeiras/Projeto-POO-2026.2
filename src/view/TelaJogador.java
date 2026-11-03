@@ -21,7 +21,9 @@ public class TelaJogador extends JPanel {
     private JLabel valorYurtsEstoque; 
     private JLabel valorTributosYurt; 
     
-    
+    private PainelTabuleiroJogador painelTabuleiroJogador;
+    private JButton botaoTerminarTurno;
+    private JLabel informacaoTabuleiro;
     
 
     public TelaJogador() {
@@ -114,10 +116,10 @@ public class TelaJogador extends JPanel {
         gradeAcoes.add(criarBotao("Cumprir conselheiros"));
     
         
-        JButton terminarTurno = criarBotao("Terminar Turno"); 
+        botaoTerminarTurno = criarBotao("Terminar Turno");
         
         acoes.add(gradeAcoes,BorderLayout.CENTER ); 
-        acoes.add(terminarTurno, BorderLayout.SOUTH);
+        acoes.add(botaoTerminarTurno, BorderLayout.SOUTH);
         
         
         JPanel recursos = criarSecao("RECURSOS", azul);
@@ -138,30 +140,30 @@ public class TelaJogador extends JPanel {
     }
 
 
-	private JPanel criarGradeTabuleiro() {
-	    JPanel cartela = new JPanel(new BorderLayout());
-	
-	    cartela.setBackground(new Color(214, 190, 145));
-	    cartela.setBorder(new CompoundBorder(
-	        new LineBorder(dourado, 2),
-	        new EmptyBorder(5, 5, 5, 5)
-	    ));
-	
-	    JLabel legenda = new JLabel(
-	        "Área reservada para a cartela do jogador",
-	        SwingConstants.CENTER
-	    );
-	
-	    legenda.setForeground(this.texto);
-	    legenda.setFont(new Font("Serif", Font.PLAIN, 16));
-	
-	    cartela.add(legenda, BorderLayout.CENTER);
-	    cartela.setPreferredSize(new Dimension(500, 300));
-	
-	    return cartela;
-	}
+    private JPanel criarGradeTabuleiro() {
+        JPanel cartela = new JPanel(new BorderLayout(5, 5));
 
+        cartela.setBackground(new Color(214, 190, 145));
+        cartela.setBorder(new CompoundBorder(
+            new LineBorder(dourado, 2),
+            new EmptyBorder(5, 5, 5, 5)
+        ));
 
+        painelTabuleiroJogador =
+            new PainelTabuleiroJogador(null);
+
+        cartela.add(painelTabuleiroJogador, BorderLayout.CENTER);
+
+        informacaoTabuleiro = new JLabel(
+            "Aguardando início da partida.",
+            SwingConstants.CENTER
+        );
+
+        cartela.add(informacaoTabuleiro, BorderLayout.SOUTH);
+
+        return cartela;
+    }
+    
     private JPanel criarSecao(String titulo, Color fundo) {
         JPanel secao = new JPanel();
         secao.setLayout(new BoxLayout(secao, BoxLayout.Y_AXIS));
@@ -226,5 +228,29 @@ public class TelaJogador extends JPanel {
         botao.setMinimumSize(new Dimension(130,32));
         
         return botao;
+    }
+    
+    public PainelTabuleiroJogador getPainelTabuleiroJogador() {
+        return painelTabuleiroJogador;
+    }
+
+    public JButton getBotaoTerminarTurno() {
+        return botaoTerminarTurno;
+    }
+
+    public void mostrarInformacaoTabuleiro(String mensagem) {
+        informacaoTabuleiro.setText(mensagem);
+    }
+
+    public void atualizarEstadoColunas(
+            boolean[] usadas,
+            boolean podeEscolher,
+            boolean podeTerminar) {
+
+        painelTabuleiroJogador.atualizarEstadoColunas(
+            usadas, podeEscolher
+        );
+
+        botaoTerminarTurno.setEnabled(podeTerminar);
     }
 }
