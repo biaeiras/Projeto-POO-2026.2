@@ -28,12 +28,6 @@ public class FachadaJogo implements ObservadoJogo {
     // Inicia uma partida com as cores escolhidas
     public void iniciarPartida(ArrayList<Cor> coresEscolhidas) {
         definirPartida(new Partida(coresEscolhidas));
-        
-//        partida.escolherConselheiroJogadorAtual(0);
-//		partida.avancarJogador();
-//		partida.escolherConselheiroJogadorAtual(0);
-//		partida.avancarJogador();
-//		partida.iniciarTurno(Regiao.RUSSIA);
     }
     
     public boolean escolherConselheiroJogadorAtual(int indice) {
