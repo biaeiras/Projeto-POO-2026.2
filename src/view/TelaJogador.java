@@ -3,8 +3,13 @@ package view;
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
+import java.util.ArrayList;
 
-public class TelaJogador extends JPanel {
+import model.ObservadoJogo;
+import model.ObservadorJogo;
+import view.PainelTabuleiroJogador.MelhoriaVisual;
+
+public class TelaJogador extends JPanel implements ObservadorJogo {
 
     private final Color vermelho = new Color(166, 45, 48);
     private final Color dourado = new Color(190, 145, 68);
@@ -253,4 +258,115 @@ public class TelaJogador extends JPanel {
 
         botaoTerminarTurno.setEnabled(podeTerminar);
     }
+
+    @Override
+    public void atualizar(final ObservadoJogo observado) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    atualizarInterface(observado);
+                }
+            });
+            return;
+        }
+
+        atualizarInterface(observado);
+    }
+
+    private void atualizarInterface(ObservadoJogo observado) {
+        if (!observado.existePartida()) {
+            painelTabuleiroJogador.definirPersonagem(null);
+            painelTabuleiroJogador.definirCorFicha(null);
+            painelTabuleiroJogador.atualizarMelhorias(
+                new ArrayList<MelhoriaVisual>()
+            );
+
+            atualizarEstadoColunas(
+                new boolean[4], false, false
+            );
+
+            atualizarRecursos(0, 0, 0, 0);
+            mostrarInformacaoTabuleiro(
+                "Aguardando início da partida."
+            );
+
+            return;
+        }
+
+        painelTabuleiroJogador.definirPersonagem(
+            observado.getNomePersonagemAtual()
+        );
+        painelTabuleiroJogador.definirCorFicha(observado.getCorJogadorAtual());
+
+        painelTabuleiroJogador.atualizarMelhorias(
+            criarMelhoriasVisuais(observado)
+        );
+
+        boolean[] usadas = new boolean[4];
+
+        for (int coluna = 0; coluna < usadas.length; coluna++) {
+            usadas[coluna] =
+                observado.isColunaJogadorAtualAtivada(coluna);
+        }
+
+        boolean turnoAberto = observado.isTurnoEmAndamento();
+
+        atualizarEstadoColunas(
+            usadas,
+            observado.podeEscolherColuna(),
+            turnoAberto && !observado.isPartidaEncerrada()
+        );
+
+        atualizarRecursos(
+            observado.getMoedasJogadorAtual(),
+            observado.getEspadasJogadorAtual(),
+            observado.getYurtsEstoqueJogadorAtual(),
+            observado.getTributosYurtJogadorAtual()
+        );
+
+        String situacao;
+
+        if (observado.isPartidaEncerrada()) {
+            situacao = "Partida encerrada.";
+        } else if (turnoAberto) {
+            situacao = "Turno em andamento.";
+        } else if (observado.podeEscolherColuna()) {
+            situacao = "Clique no retângulo inferior de uma coluna.";
+        } else {
+            situacao = "Conclua a escolha dos conselheiros.";
+        }
+
+        mostrarInformacaoTabuleiro(
+            observado.getNomePersonagemAtual()
+            + " | Fichas: "
+            + observado.getFichasAtivacaoJogadorAtual()
+            + " | "
+            + situacao
+        );
+    }
+
+    public static ArrayList<MelhoriaVisual> criarMelhoriasVisuais(
+            ObservadoJogo observado) {
+        ArrayList<MelhoriaVisual> melhorias =
+            new ArrayList<>();
+
+        if (!observado.existePartida()) {
+            return melhorias;
+        }
+
+        for (int coluna = 0; coluna < 4; coluna++) {
+            ArrayList<String> lista =
+                observado.getMelhoriasTabuleiroJogador(coluna);
+
+            for (int linha = 0; linha < lista.size(); linha++) {
+                melhorias.add(new MelhoriaVisual(
+                    lista.get(linha), coluna, linha
+                ));
+            }
+        }
+
+        return melhorias;
+    }
+
 }

@@ -32,7 +32,7 @@ public class FachadaJogoTest {
         for (int coluna = 0; coluna < esperados.length; coluna++) {
             ArrayList<String> nomes = fachada.getMelhoriasTabuleiroJogador(coluna);
             assertEquals(Arrays.asList(esperados[coluna]), nomes);
-            java.net.URL recurso = getClass().getResource("/imagens/melhorias/" + nomes.get(0));
+            java.net.URL recurso = getClass().getResource("/melhorias/" + nomes.get(0));
             assertNotNull("Imagem da coluna " + coluna, recurso);
             assertNotNull(ImageIO.read(recurso));
         }

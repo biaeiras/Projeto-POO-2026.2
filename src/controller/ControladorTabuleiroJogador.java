@@ -5,19 +5,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 
-import javax.swing.SwingUtilities;
 
 import model.FachadaJogo;
 import model.ObservadoJogo;
 import model.ObservadorJogo;
 import view.PainelTabuleiroJogador;
-import view.PainelTabuleiroJogador.MelhoriaVisual;
 import view.TelaJogador;
 
-public class ControladorTabuleiroJogador
-        implements ObservadorJogo {
+public class ControladorTabuleiroJogador {
 
     private final FachadaJogo fachada;
     private final PainelTabuleiroJogador painel;
@@ -106,122 +102,32 @@ public class ControladorTabuleiroJogador
             }
         );
 
-        fachada.adicionarObservador(this);
+        ObservadoJogo observado = registrarObservador(tela);
 
-        // Carrega o estado existente ao abrir a tela.
-        atualizar(fachada);
+        // A View consulta o observado para carregar seu estado inicial.
+        tela.atualizar(observado);
     }
 
-    @Override
-    public void atualizar(ObservadoJogo observado) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    atualizarTela();
-                }
-            });
-
-            return;
-        }
-
-        atualizarTela();
+    public ObservadoJogo registrarObservador(ObservadorJogo observador) {
+        fachada.adicionarObservador(observador);
+        return fachada;
     }
 
-    private void atualizarTela() {
-        if (tela == null) {
-            return;
-        }
-
-        if (!fachada.existePartida()) {
-            painel.definirPersonagem(null);
-            painel.definirCorFicha(null);
-            painel.atualizarMelhorias(
-                new ArrayList<MelhoriaVisual>()
-            );
-
-            tela.atualizarEstadoColunas(
-                new boolean[4], false, false
-            );
-
-            tela.atualizarRecursos(0, 0, 0, 0);
-            tela.mostrarInformacaoTabuleiro(
-                "Aguardando início da partida."
-            );
-
-            return;
-        }
-
-        painel.definirPersonagem(
-            fachada.getNomePersonagemAtual()
-        );
-        painel.definirCorFicha(fachada.getCorJogadorAtual());
-
-        atualizarTabuleiro();
-
-        boolean[] usadas = new boolean[4];
-
-        for (int coluna = 0; coluna < usadas.length; coluna++) {
-            usadas[coluna] =
-                fachada.isColunaJogadorAtualAtivada(coluna);
-        }
-
-        boolean turnoAberto = fachada.isTurnoEmAndamento();
-
-        tela.atualizarEstadoColunas(
-            usadas,
-            fachada.podeEscolherColuna(),
-            turnoAberto && !fachada.isPartidaEncerrada()
-        );
-
-        tela.atualizarRecursos(
-            fachada.getMoedasJogadorAtual(),
-            fachada.getEspadasJogadorAtual(),
-            fachada.getYurtsEstoqueJogadorAtual(),
-            fachada.getTributosYurtJogadorAtual()
-        );
-
-        String situacao;
-
-        if (fachada.isPartidaEncerrada()) {
-            situacao = "Partida encerrada.";
-        } else if (turnoAberto) {
-            situacao = "Turno em andamento.";
-        } else if (fachada.podeEscolherColuna()) {
-            situacao = "Clique no retângulo inferior de uma coluna.";
-        } else {
-            situacao = "Conclua a escolha dos conselheiros.";
-        }
-
-        tela.mostrarInformacaoTabuleiro(
-            fachada.getNomePersonagemAtual()
-            + " | Fichas: "
-            + fachada.getFichasAtivacaoJogadorAtual()
-            + " | "
-            + situacao
-        );
-    }
-
+    // Mantém a entrada utilizada pelos testes visuais existentes.
     public void atualizarTabuleiro() {
-        ArrayList<MelhoriaVisual> melhorias =
-            new ArrayList<>();
-
-        for (int coluna = 0; coluna < 4; coluna++) {
-            ArrayList<String> lista =
-                fachada.getMelhoriasTabuleiroJogador(coluna);
-
-            for (int linha = 0; linha < lista.size(); linha++) {
-                melhorias.add(new MelhoriaVisual(
-                    lista.get(linha), coluna, linha
-                ));
-            }
+        if (tela != null) {
+            tela.atualizar(fachada);
+        } else {
+            painel.atualizarMelhorias(
+                TelaJogador.criarMelhoriasVisuais(fachada)
+            );
         }
-
-        painel.atualizarMelhorias(melhorias);
     }
 
     // Chamar quando a tela for descartada definitivamente.
     public void encerrar() {
-        fachada.removerObservador(this);
+        if (tela != null) {
+            fachada.removerObservador(tela);
+        }
     }
 }
