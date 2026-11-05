@@ -51,22 +51,33 @@ public class PainelCartaConselheiroSecreto extends JPanel {
             );
 
             int margem = 4;
-            int largura = getWidth() - 2 * margem;
-            int altura = getHeight() - 2 * margem;
+            int largura = Math.max(0, getWidth() - 2 * margem);
+            int altura = Math.max(0, getHeight() - 2 * margem);
+
+            if (imagemCarta != null && largura > 0 && altura > 0) {
+                double escala = Math.min(
+                    (double) largura / imagemCarta.getWidth(),
+                    (double) altura / imagemCarta.getHeight()
+                );
+                largura = (int) (imagemCarta.getWidth() * escala);
+                altura = (int) (imagemCarta.getHeight() * escala);
+            }
+            int x = (getWidth() - largura) / 2;
+            int y = (getHeight() - altura) / 2;
 
             g2.setColor(new Color(250, 237, 203));
-            g2.fillRect(margem, margem, largura, altura);
+            g2.fillRect(x, y, largura, altura);
 
             g2.setColor(new Color(190, 145, 68));
-            g2.drawRect(margem, margem, largura, altura);
+            g2.drawRect(x, y, largura, altura);
 
             if (imagemCarta != null) {
                 g2.drawImage(
                     imagemCarta,
-                    margem + 2,
-                    margem + 2,
-                    largura - 4,
-                    altura - 4,
+                    x,
+                    y,
+                    largura,
+                    altura,
                     this
                 );
             } else {

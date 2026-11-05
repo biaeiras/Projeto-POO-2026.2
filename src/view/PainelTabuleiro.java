@@ -5,27 +5,24 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 import model.Cor;
-import model.FachadaJogo;
+import model.ObservadoJogo;
+import model.ObservadorJogo;
 import model.ParadaID;
 import model.ProvinciaID;
 
-class PainelTabuleiro extends JPanel{
-	private static final String IMAGE_PATH = "res//tabuleiro.jpg";
+class PainelTabuleiro extends JPanel implements ObservadorJogo {
 	private static final long serialVersionUID = 1L;
 	private static final double RAIO_PARADA = 0.021;
 	private static final double RAIO_PEAO = 0.015;
@@ -37,20 +34,28 @@ class PainelTabuleiro extends JPanel{
 	private Image imagemTabuleiro;
 	private HashMap<ParadaID, Point2D.Double> posicoesParadas = new HashMap<ParadaID, Point2D.Double>();
 	private HashMap<ProvinciaID, Point2D.Double> posicoesProvincias = new HashMap<ProvinciaID, Point2D.Double>();
-	private FachadaJogo fachada;
+    private HashMap<ProvinciaID, Integer> cargas = new HashMap<>();
+    private HashMap<ParadaID, ArrayList<Cor>> yurts = new HashMap<>();
+    private HashMap<ParadaID, ArrayList<Cor>> peoes = new HashMap<>();
+    private HashSet<ParadaID> vizinhos = new HashSet<>();
+    private HashSet<ParadaID> alcancaveis = new HashSet<>();
+    private HashSet<ProvinciaID> provinciasDisponiveis = new HashSet<>();
 	
-	private void initImages() {
-		try {
-			File img = new File(IMAGE_PATH);
-			imagemTabuleiro = ImageIO.read(img);
-		}catch(IOException e) {
-			System.out.println(e.getMessage());
-			System.exit(1);
-			
-		}
-		return;
-	}
-	
+    private void initImages() {
+        java.net.URL recurso = getClass().getResource("/tabuleiro.jpg");
+        if (recurso == null) {
+            throw new IllegalStateException("Imagem não encontrada: /tabuleiro.jpg");
+        }
+        try {
+            imagemTabuleiro = ImageIO.read(recurso);
+            if (imagemTabuleiro == null) {
+                throw new IllegalStateException("Imagem do tabuleiro inválida.");
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Erro ao carregar o tabuleiro.", e);
+        }
+    }
+
 	private void initParadas() {
 		posicoesParadas.put(ParadaID.KARAKORUM, new Point2D.Double(0.44, 0.52));
 		posicoesParadas.put(ParadaID.KIEV1, new Point2D.Double(0.1687, 0.0891));
@@ -142,13 +147,42 @@ class PainelTabuleiro extends JPanel{
  		}
  	}
  	
-	PainelTabuleiro(FachadaJogo fachada){
-		this.fachada = fachada;
-		initImages();
-		initParadas();
-		initProvincias();
-	}
-	
+    PainelTabuleiro() {
+        initImages();
+        initParadas();
+        initProvincias();
+    }
+
+    // Compatibilidade com a janela antiga, que recebe a fachada como observado.
+    PainelTabuleiro(ObservadoJogo observado) {
+        this();
+        atualizar(observado);
+    }
+
+    @Override
+    public void atualizar(final ObservadoJogo observado) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    carregarEstado(observado);
+                }
+            });
+            return;
+        }
+        carregarEstado(observado);
+    }
+
+    private void carregarEstado(ObservadoJogo observado) {
+        cargas = observado.getCargasProvincias();
+        yurts = observado.getYurts();
+        peoes = observado.getPosicoesPeoes();
+        vizinhos = observado.getVizinhosPossiveis();
+        alcancaveis = observado.getAlcancaveisTotais();
+        provinciasDisponiveis = observado.getProvincias();
+        repaint();
+    }
+
 	private void drawPeao(Graphics2D g, ParadaID id, Cor cor, int i) {
 		double px = posicoesParadas.get(id).getX() - RAIO_PEAO;
 		double py = posicoesParadas.get(id).getY() - RAIO_PEAO - ESPACAMENTO_PEAO*i;
@@ -186,18 +220,23 @@ class PainelTabuleiro extends JPanel{
 		}
 	}
 	
-	protected void paintComponent(Graphics g) {
-		super.paintComponent(g);
-		
-		Graphics2D g2d = (Graphics2D) g;
-		g2d.drawImage(imagemTabuleiro, 0, 0, getWidth(), getHeight(), null);
-		drawParadas(g2d, fachada.getVizinhosPossiveis(), fachada.getAlcancaveisTotais());
-		drawProvincias(g2d, fachada.getCargasProvincias(), fachada.getProvincias());
-		drawYurts(g2d, fachada.getYurts());
-		drawPeoes(g2d, fachada.getPosicoesPeoes());
-	}
-	
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g.create();
+        try {
+            g2d.drawImage(imagemTabuleiro, 0, 0, getWidth(), getHeight(), this);
+            drawParadas(g2d, vizinhos, alcancaveis);
+            drawProvincias(g2d, cargas, provinciasDisponiveis);
+            drawYurts(g2d, yurts);
+            drawPeoes(g2d, peoes);
+        } finally {
+            g2d.dispose();
+        }
+    }
+
 	ParadaID getCollisionParada(int x, int y) {
+        if (getWidth() <= 0 || getHeight() <= 0) return null;
 		for(ParadaID p: posicoesParadas.keySet()) {
 			Point2D.Double pp = posicoesParadas.get(p);
 			double x0 = (double) x / getWidth();
@@ -215,6 +254,7 @@ class PainelTabuleiro extends JPanel{
 	}
 	
 	ProvinciaID getCollisionProvincia(int x, int y) {
+        if (getWidth() <= 0 || getHeight() <= 0) return null;
 		for(ProvinciaID p: posicoesProvincias.keySet()) {
 			Point2D.Double pp = posicoesProvincias.get(p);
 			double x0 = (double) x / getWidth();

@@ -13,6 +13,7 @@ class Jogador {
     private final ArrayList<ConselheiroSecreto> opcoesConselheiro;
     private ConselheiroSecreto conselheiroSecreto;
     private final TabuleiroJogador tabuleiroJogador;
+    private final HashMap<TipoBonus, PecaBonus> pecasBonus = new HashMap<>();
 
     Jogador(
             ArrayList<ConselheiroSecreto> opcoesConselheiro,
@@ -232,5 +233,36 @@ class Jogador {
 
     TabuleiroJogador getTabuleiroJogador() {
         return tabuleiroJogador;
+    }
+
+    int getTotalTesouros() {
+        int total = 0;
+        for (Integer quantidade : tesouros.values()) {
+            total += quantidade;
+        }
+        return total;
+    }
+
+    int getQuantidadeTiposTesouro() {
+        int total = 0;
+        for (Integer quantidade : tesouros.values()) {
+            if (quantidade > 0) {
+                total++;
+            }
+        }
+        return total;
+    }
+
+    boolean adicionarPecaBonus(PecaBonus peca) {
+        if (peca == null || peca.getTipo() == null || pecasBonus.containsKey(peca.getTipo())) {
+            return false;
+        }
+        pecasBonus.put(peca.getTipo(), peca);
+        return true;
+    }
+
+    int getQuantidadePecasBonus() {
+        // As peças usadas continuam pertencendo ao jogador, conforme o manual.
+        return pecasBonus.size();
     }
 }

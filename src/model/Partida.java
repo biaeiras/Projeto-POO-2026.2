@@ -30,8 +30,14 @@ class Partida  {
 	private int melhoriasGratisPendentes; 
 	private boolean skipped = false;
 	private boolean hasToMove = false;
+    private final HashMap<Integer, ConselheiroAberto> conselheirosAbertos = new HashMap<>();
 	
 	Partida(ArrayList<Cor> coresEscolhidas) {
+        this(coresEscolhidas, sortearConselheirosAbertos());
+    }
+
+    // Também permite preparar uma partida determinística nos testes do Model.
+    Partida(ArrayList<Cor> coresEscolhidas, List<TipoConselheiroAberto> cartasAbertas) {
 		//O jogo é de 2 a 5 jogadores 
 	    if (coresEscolhidas == null || coresEscolhidas.size() < 2 || coresEscolhidas.size() > 5) {
 	        throw new IllegalArgumentException( "A partida deve ter de 2 a 5 jogadores." );
@@ -42,6 +48,14 @@ class Partida  {
 	            throw new IllegalArgumentException("As cores devem ser válidas e diferentes.");
 	        }
 	    }
+
+        if (cartasAbertas == null || cartasAbertas.size() != 4
+                || cartasAbertas.contains(null) || new HashSet<>(cartasAbertas).size() != 4) {
+            throw new IllegalArgumentException("A partida deve ter quatro conselheiros abertos distintos.");
+        }
+        for (int i = 0; i < cartasAbertas.size(); i++) {
+            conselheirosAbertos.put(i, new ConselheiroAberto(cartasAbertas.get(i)));
+        }
 	    
 	    this.jogadores = new ArrayList<>();
 	    this.indiceJogadorAtual = 0;
@@ -56,6 +70,51 @@ class Partida  {
 	    
 	    
 	}
+
+    private static ArrayList<TipoConselheiroAberto> sortearConselheirosAbertos() {
+        ArrayList<TipoConselheiroAberto> baralho = new ArrayList<>();
+        java.util.Collections.addAll(baralho, TipoConselheiroAberto.values());
+        java.util.Collections.shuffle(baralho);
+        return new ArrayList<>(baralho.subList(0, 4));
+    }
+
+    ArrayList<ConselheiroAberto> getConselheirosAbertos() {
+        ArrayList<ConselheiroAberto> cartas = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            cartas.add(conselheirosAbertos.get(i));
+        }
+        return cartas;
+    }
+
+    int getVotosFichaNeutra() {
+        return votosFichaNeutra;
+    }
+
+    int verificarConselheirosAbertos() {
+        if (encerrada || turnoAtual == null) {
+            return 0;
+        }
+        Jogador jogador = turnoAtual.getJogador();
+        int cumpridas = 0;
+        for (ConselheiroAberto carta : getConselheirosAbertos()) {
+            if (carta.demandaCumprida(jogador, tabuleiroPrincipal)
+                    && registrarVoto(jogador, 1)) {
+                carta.marcarCumprida(jogador);
+                cumpridas++;
+            }
+        }
+        return cumpridas;
+    }
+
+    // Ponto de integração para a entrega de tesouros que concede uma peça bônus.
+    boolean receberPecaBonus(PecaBonus peca) {
+        if (encerrada || turnoAtual == null
+                || !turnoAtual.getJogador().adicionarPecaBonus(peca)) {
+            return false;
+        }
+        verificarConselheirosAbertos();
+        return true;
+    }
 	
 	//limite  quantos votos a ficha neutra precisa alcançar para disparar o fim da partida
 	private int obterLimiteVotos(int quantidadeJogadores) {
@@ -249,6 +308,7 @@ class Partida  {
 	    }
 
 	    //System.out.println("turno aberto");
+	    verificarConselheirosAbertos();
 	    return true;
 	}
 
@@ -261,6 +321,7 @@ class Partida  {
 	    if (turnoAtual.isKhanPendente() || hasToMove) {
 	        return false;
 	    }
+	    verificarConselheirosAbertos();
 	    VerificaFimDisparado();
 
 	    turnoAtual = null;
@@ -306,6 +367,7 @@ class Partida  {
 
 	    turnoAtual.concluirAcaoKhan();
 
+	    verificarConselheirosAbertos();
 	    return true;
 	}
 	
@@ -317,6 +379,7 @@ class Partida  {
 	    tabuleiroPrincipal.ativarMelhoriasKhan();
 	    turnoAtual.concluirAcaoKhan();
 
+	    verificarConselheirosAbertos();
 	    return true;
 	}
 	
@@ -404,6 +467,7 @@ class Partida  {
 
 	    turnoAtual.adicionarProvinciasVisitadas(provinciasVisitadas);
 	    paradasPercorridas.get(peaoAtivo).add(destino);
+	    verificarConselheirosAbertos();
 	    return true;
 	}
 	
@@ -435,6 +499,7 @@ class Partida  {
 
 	    turnoAtual.getJogador().adicionarTributo(tipo, 1);
 
+	    verificarConselheirosAbertos();
 	    return true;
 	}
 	
@@ -496,6 +561,7 @@ class Partida  {
 	    tabuleiroPrincipal.adicionarYurt(jogador, parada);
 	    acaoRestritaFeita = true;
 
+	    verificarConselheirosAbertos();
 	    return true;
 	}
 
@@ -561,6 +627,7 @@ class Partida  {
 	    
 	    acaoRestritaFeita = true;
 
+	    verificarConselheirosAbertos();
 	    return true;
 	}
 	

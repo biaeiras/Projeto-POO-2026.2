@@ -183,36 +183,49 @@ public class FachadaJogo implements ObservadoJogo {
     }
 
     public void moverPeao(ParadaID id) {
-		partida.moverPeao(id);
-		return;
+        verificarPartidaIniciada();
+        if (partida.moverPeao(id)) {
+            notificarObservadores();
+        }
 	}
 	
 	public void pegarTributo(ProvinciaID id) {
-		partida.pegarTributo(id);
-		return;
+        verificarPartidaIniciada();
+        if (partida.pegarTributo(id)) {
+            notificarObservadores();
+        }
 	}
 	
 	public HashMap<ProvinciaID, Integer> getCargasProvincias() {
-		return partida.getCargasProvincias();
+		return partida == null ? new HashMap<ProvinciaID, Integer>() : partida.getCargasProvincias();
 	}
 	
 	public void construirYurt(ParadaID id) {
-		partida.construirYurt(id);
-		return;
+        verificarPartidaIniciada();
+        if (partida.construirYurt(id)) {
+            notificarObservadores();
+        }
 	}
 	
 	public void avancarTurno() {
-		partida.TerminarTurno();
-		partida.iniciarTurno(Regiao.PERSIA);
-		return;
+		terminarTurnoJogadorAtual();
 	}
 	
 	public HashMap<ParadaID, ArrayList<Cor>> getYurts(){
-		return partida.getYurts();
+        HashMap<ParadaID, ArrayList<Cor>> copia = new HashMap<>();
+        if (partida != null) {
+            for (java.util.Map.Entry<ParadaID, ArrayList<Cor>> entrada : partida.getYurts().entrySet()) {
+                copia.put(entrada.getKey(), new ArrayList<>(entrada.getValue()));
+            }
+        }
+        return copia;
 	}
 	
 	public HashMap<ParadaID, ArrayList<Cor>> getPosicoesPeoes(){
 		HashMap<ParadaID, ArrayList<Cor>> ret = new HashMap<ParadaID, ArrayList<Cor>>();
+        if (partida == null) {
+            return ret;
+        }
 		for(Jogador jogador: partida.getJogadores()) {
 			Cor cor = jogador.getTabuleiroJogador().getPersonagem().getCor();
 			for(int i = 0; i < jogador.getQuantidadePeoes(); ++i) {
@@ -225,14 +238,23 @@ public class FachadaJogo implements ObservadoJogo {
 	}
 	
 	public HashSet<ParadaID> getAlcancaveisTotais(){
+        if (!isTurnoEmAndamento() || isPartidaEncerrada()) {
+            return new HashSet<>();
+        }
 		return partida.getAlcancaveisTotais();
 	}
 	
 	public HashSet<ParadaID> getVizinhosPossiveis(){
+        if (!isTurnoEmAndamento() || isPartidaEncerrada()) {
+            return new HashSet<>();
+        }
 		return partida.getVizinhosPossiveis();
 	}
 	
 	public HashSet<ProvinciaID> getProvincias(){
+        if (!isTurnoEmAndamento() || isPartidaEncerrada()) {
+            return new HashSet<>();
+        }
 		return partida.getProvincias();
 	}
 	
@@ -357,6 +379,13 @@ public class FachadaJogo implements ObservadoJogo {
 	    return partida.todosEscolheramConselheiro();
 	}
 
+    @Override
+    public String getNomeConselheiroSecretoJogadorAtual() {
+        verificarPartidaIniciada();
+        ConselheiroSecreto conselheiro = partida.getJogadorAtual().getConselheiroSecreto();
+        return conselheiro == null ? null : conselheiro.getNome();
+    }
+
 	public ArrayList<String> getOpcoesConselheiroJogadorAtual() {
 	    verificarPartidaIniciada();
 
@@ -379,5 +408,38 @@ public class FachadaJogo implements ObservadoJogo {
 	                  .getPersonagem()
 	                  .getCor();
 	}
+
+    @Override
+    public ArrayList<String> getConselheirosAbertos() {
+        ArrayList<String> nomes = new ArrayList<>();
+        if (partida == null) {
+            for (int i = 0; i < 4; i++) {
+                nomes.add(null);
+            }
+            return nomes;
+        }
+        for (ConselheiroAberto carta : partida.getConselheirosAbertos()) {
+            // Conserva a posição vazia, sem revelar uma carta substituta.
+            nomes.add(carta.isCumprida() ? null : carta.getNome());
+        }
+        return nomes;
+    }
+
+    @Override
+    public HashMap<String, Integer> getPlacarVotos() {
+        HashMap<String, Integer> placar = new HashMap<>();
+        if (partida != null) {
+            for (Jogador jogador : partida.getJogadores()) {
+                String nome = jogador.getTabuleiroJogador().getPersonagem().getNome();
+                placar.put(nome, jogador.getVotos());
+            }
+        }
+        return placar;
+    }
+
+    @Override
+    public int getVotosFichaNeutra() {
+        return partida == null ? 0 : partida.getVotosFichaNeutra();
+    }
 
 }

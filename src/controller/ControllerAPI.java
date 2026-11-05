@@ -8,11 +8,18 @@ import java.util.ArrayList;
 import java.awt.Cursor;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 import model.Cor;
 import model.FachadaJogo;
+import model.ObservadoJogo;
+import model.ObservadorJogo;
 import view.TelaJogador;
 import view.TelaMenuInicial;
 import view.TelaPreparacaoPartida;
@@ -27,9 +34,24 @@ public class ControllerAPI {
     private TelaPreparacaoPartida preparacao;
 
     private ControladorTabuleiroJogador controladorJogador;
+    private ViewAPI viewPrincipal;
+    private JFrame janelaJogador;
 
     public ControllerAPI() {
-        fachada = FachadaJogo.getInstancia();
+        this(FachadaJogo.getInstancia());
+    }
+
+    public ControllerAPI(FachadaJogo fachada) {
+        this.fachada = fachada;
+    }
+
+    public ObservadoJogo registrarObservador(ObservadorJogo observador) {
+        fachada.adicionarObservador(observador);
+        return fachada;
+    }
+
+    public void removerObservador(ObservadorJogo observador) {
+        fachada.removerObservador(observador);
     }
 
     public ControllerAPI(ViewAPI viewAPI, FachadaJogo fachada) {
@@ -58,6 +80,53 @@ public class ControllerAPI {
 
     private void abrirPreparacao() {
         preparacao = new TelaPreparacaoPartida();
+
+        for (Cor cor : Cor.values()) {
+            final Cor escolhida = cor;
+            final JPanel cartela = preparacao.getCartelaPersonagem(cor);
+            cartela.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent evento) {
+                    preparacao.destacarFocoTeclado(escolhida, false);
+                }
+
+                @Override
+                public void mouseClicked(MouseEvent evento) {
+                    if (evento.getButton() == MouseEvent.BUTTON1) {
+                        preparacao.destacarFocoTeclado(escolhida, false);
+                        cartela.requestFocusInWindow();
+                        preparacao.alternarPersonagem(escolhida);
+                    }
+                }
+            });
+            cartela.addKeyListener(new KeyAdapter() {
+                @Override
+                public void keyPressed(KeyEvent evento) {
+                    if (evento.getKeyCode() == KeyEvent.VK_SPACE
+                            || evento.getKeyCode() == KeyEvent.VK_ENTER) {
+                        preparacao.destacarFocoTeclado(escolhida, true);
+                        preparacao.alternarPersonagem(escolhida);
+                        evento.consume();
+                    }
+                }
+            });
+            cartela.addFocusListener(new FocusAdapter() {
+                @Override
+                public void focusGained(FocusEvent evento) {
+                    FocusEvent.Cause causa = evento.getCause();
+                    preparacao.destacarFocoTeclado(escolhida,
+                        causa == FocusEvent.Cause.TRAVERSAL
+                        || causa == FocusEvent.Cause.TRAVERSAL_FORWARD
+                        || causa == FocusEvent.Cause.TRAVERSAL_BACKWARD
+                        || causa == FocusEvent.Cause.TRAVERSAL_UP
+                        || causa == FocusEvent.Cause.TRAVERSAL_DOWN);
+                }
+                @Override
+                public void focusLost(FocusEvent evento) {
+                    preparacao.destacarFocoTeclado(escolhida, false);
+                }
+            });
+        }
 
         preparacao.getBotaoConfirmarPersonagens()
             .addActionListener(new ActionListener() {
@@ -155,7 +224,7 @@ public class ControllerAPI {
         fachada.avancarJogadorNaPreparacao();
 
         if (fachada.todosEscolheramConselheiro()) {
-            abrirTelaJogador();
+            abrirJanelasDaPartida();
         } else {
             preparacao.mostrarVezDeEscolher(
                 fachada.getNomePersonagemAtual()
@@ -163,28 +232,52 @@ public class ControllerAPI {
         }
     }
 
-    private void abrirTelaJogador() {
-        TelaJogador tela = new TelaJogador();
+    private void abrirJanelasDaPartida() {
+        viewPrincipal = new ViewAPI(this);
+        mouseTabuleiro = new MouseTabuleiro(viewPrincipal, fachada);
+        viewPrincipal.getTabulerioPanel().addMouseListener(mouseTabuleiro);
 
-        controladorJogador =
-            new ControladorTabuleiroJogador(tela);
+        viewPrincipal.getTelaPrincipal().getBotaoJogador().addActionListener(
+            new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent evento) {
+                    mostrarJanelaJogador();
+                }
+            }
+        );
 
-        JFrame janela =
-            new JFrame("Herdeiros de Khan - Jogador");
-
-        janela.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        janela.setContentPane(tela);
-        janela.setSize(1200, 800);
-        janela.setLocationRelativeTo(null);
-
-        janela.addWindowListener(new WindowAdapter() {
+        viewPrincipal.getTelaPrincipal().addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent evento) {
-                controladorJogador.encerrar();
+                if (controladorJogador != null) {
+                    controladorJogador.encerrar();
+                }
+                if (janelaJogador != null) {
+                    janelaJogador.dispose();
+                }
+                viewPrincipal.encerrar();
             }
         });
 
         preparacao.dispose();
-        janela.setVisible(true);
+        viewPrincipal.exibir();
+        mostrarJanelaJogador();
+    }
+
+    private void mostrarJanelaJogador() {
+        if (janelaJogador == null) {
+            TelaJogador tela = new TelaJogador();
+            controladorJogador = new ControladorTabuleiroJogador(tela);
+
+            janelaJogador = new JFrame("Herdeiros de Khan - Jogador");
+            janelaJogador.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+            janelaJogador.setContentPane(tela);
+            janelaJogador.setSize(1200, 800);
+            janelaJogador.setLocationRelativeTo(viewPrincipal.getTelaPrincipal());
+        }
+
+        janelaJogador.setVisible(true);
+        janelaJogador.setState(JFrame.NORMAL);
+        janelaJogador.toFront();
     }
 }

@@ -1,6 +1,8 @@
 package model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 
 public interface ObservadoJogo {
     void adicionarObservador(ObservadorJogo observador);
@@ -8,6 +10,7 @@ public interface ObservadoJogo {
 
     boolean existePartida();
     String getNomePersonagemAtual();
+    String getNomeConselheiroSecretoJogadorAtual();
     Cor getCorJogadorAtual();
     int getFichasAtivacaoJogadorAtual();
     boolean isColunaJogadorAtualAtivada(int coluna);
@@ -19,4 +22,13 @@ public interface ObservadoJogo {
     int getEspadasJogadorAtual();
     int getYurtsEstoqueJogadorAtual();
     int getTributosYurtJogadorAtual();
+    ArrayList<String> getConselheirosAbertos();
+    HashMap<String, Integer> getPlacarVotos();
+    int getVotosFichaNeutra();
+    HashMap<ProvinciaID, Integer> getCargasProvincias();
+    HashMap<ParadaID, ArrayList<Cor>> getYurts();
+    HashMap<ParadaID, ArrayList<Cor>> getPosicoesPeoes();
+    HashSet<ParadaID> getAlcancaveisTotais();
+    HashSet<ParadaID> getVizinhosPossiveis();
+    HashSet<ProvinciaID> getProvincias();
 }

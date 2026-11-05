@@ -10,6 +10,23 @@ import java.util.ArrayList;
 public class PartidaTest {
 
     @Test
+    public void chagataiNaoPodeMoverDuasVezesComPrimeiraColuna() {
+        ArrayList<Cor> cores = new ArrayList<>();
+        cores.add(Cor.VERMELHO);
+        cores.add(Cor.VERDE);
+        Partida partida = new Partida(cores);
+        assertTrue(partida.escolherConselheiroJogadorAtual(0));
+        partida.avancarJogador();
+        assertTrue(partida.escolherConselheiroJogadorAtual(0));
+        partida.avancarJogador();
+        assertTrue(partida.iniciarTurno(Regiao.CHINA));
+        assertEquals(1, partida.getTurnoAtual().getQuantidadeAcao(TipoAcao.MOVIMENTO));
+        assertTrue(partida.moverPeao(ParadaID.PEQUIM1));
+        assertEquals(0, partida.getTurnoAtual().getQuantidadeAcao(TipoAcao.MOVIMENTO));
+        assertFalse(partida.moverPeao(ParadaID.PEQUIM2));
+    }
+
+    @Test
     public void testeRegistrarVotosValidos() {
     	// Cria uma partida com dois jogadores
         ArrayList<Cor> cores = new ArrayList<>();

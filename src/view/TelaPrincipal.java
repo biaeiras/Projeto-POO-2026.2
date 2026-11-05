@@ -4,8 +4,18 @@ package view;
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Map;
 
-public class TelaPrincipal extends JFrame {
+import controller.ControllerAPI;
+import model.ObservadoJogo;
+import model.ObservadorJogo;
+
+public class TelaPrincipal extends JFrame implements ObservadorJogo {
 
     private JPanel areaMapa;
     private JPanel painelLateral;
@@ -14,6 +24,13 @@ public class TelaPrincipal extends JFrame {
     private PainelCartasConselheirosAberto painelCartas;
     
     private JLabel avisoRodada; 
+    private JPanel linhasPlacar;
+    private JLabel votosFichaNeutra;
+    private final ControllerAPI controlador;
+    private JButton botaoJogador;
+    private JLabel jogadorAtual;
+    private JLabel corJogador;
+    private JLabel mensagemJogo;
     
 
     private final Color vermelho = new Color(166, 45, 48);
@@ -23,6 +40,11 @@ public class TelaPrincipal extends JFrame {
     private final Color azul = new Color(48, 83, 105);
 
     public TelaPrincipal() {
+        this(new ControllerAPI());
+    }
+
+    public TelaPrincipal(ControllerAPI controlador) {
+        this.controlador = controlador;
         setTitle("Herdeiros de Khan");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1200, 800);
@@ -36,6 +58,14 @@ public class TelaPrincipal extends JFrame {
         criarMapa();
         criarPainelLateral();
         criarMensagens();
+
+        atualizar(controlador.registrarObservador(this));
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent evento) {
+                TelaPrincipal.this.controlador.removerObservador(TelaPrincipal.this);
+            }
+        });
     }
 
     private void criarCabecalho() {
@@ -100,21 +130,8 @@ public class TelaPrincipal extends JFrame {
         navegacao.setMaximumSize(new Dimension(280, 42));
 
         JButton botaoMapa = criarBotao("Mapa", azul);
-        JButton botaoJogador = criarBotao("Jogador", azul);
-        
-        
-        botaoJogador.addActionListener(e -> {
-            JFrame janelaAtual =
-                (JFrame) SwingUtilities.getWindowAncestor(painelLateral);
-
-            if (janelaAtual != null) {
-                janelaAtual.setContentPane(new TelaJogador());
-                janelaAtual.revalidate();
-                janelaAtual.repaint();
-            } else {
-                System.out.println("Não foi possível encontrar a janela.");
-            }
-        });
+        botaoMapa.setEnabled(false); // O mapa já é o conteúdo desta janela.
+        botaoJogador = criarBotao("Jogador", azul);
 
         
         navegacao.add(botaoMapa);
@@ -128,13 +145,13 @@ public class TelaPrincipal extends JFrame {
 
         JPanel vez = criarSecao("VEZ DE JOGAR");
 
-        JLabel jogadorAtual = new JLabel("●  Altani", SwingConstants.CENTER);
+        jogadorAtual = new JLabel("", SwingConstants.CENTER);
         jogadorAtual.setForeground(texto);
         jogadorAtual.setFont(new Font("SansSerif", Font.BOLD, 16));
         jogadorAtual.setAlignmentX(Component.CENTER_ALIGNMENT);
         jogadorAtual.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
 
-        JLabel corJogador = new JLabel("Cor: não definida", SwingConstants.CENTER);
+        corJogador = new JLabel("Cor: não definida", SwingConstants.CENTER);
         corJogador.setForeground(texto);
         corJogador.setAlignmentX(Component.CENTER_ALIGNMENT);
         corJogador.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
@@ -163,7 +180,6 @@ public class TelaPrincipal extends JFrame {
         JPanel conselheiros = criarSecao("CARTAS DE CONSELHEIROS ABERTO");
 
         painelCartas = new PainelCartasConselheirosAberto();
-        painelCartas.carregarCartasIniciais();
 
         conselheiros.add(painelCartas);
 
@@ -178,12 +194,15 @@ public class TelaPrincipal extends JFrame {
         placar.add(explicacao);
         
         
-        //Depois vai atualizar passando a lista de votos por jogador real 
+        linhasPlacar = new JPanel();
+        linhasPlacar.setOpaque(false);
+        linhasPlacar.setLayout(new BoxLayout(linhasPlacar, BoxLayout.Y_AXIS));
+        placar.add(linhasPlacar);
 
-        placar.add(criarLinhaPlacar("1º Jogador A", 0));
-        placar.add(criarLinhaPlacar("2º Jogador B", 0));
-        placar.add(criarLinhaPlacar("3º Jogador C", 0));
-        placar.add(criarLinhaPlacar("4º Jogador D", 0));
+        votosFichaNeutra = new JLabel("Ficha neutra: 0");
+        votosFichaNeutra.setAlignmentX(Component.LEFT_ALIGNMENT);
+        placar.add(votosFichaNeutra);
+        placar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 230));
         adicionarSecao(placar);
 
         painelLateral.add(Box.createVerticalGlue());
@@ -258,17 +277,17 @@ public class TelaPrincipal extends JFrame {
         titulo.setFont(new Font("SansSerif", Font.BOLD, 12));
         titulo.setForeground(azul);
 
-        JLabel mensagem = new JLabel(
-            "A partida aparecerá aqui quando as ações forem conectadas."
+        mensagemJogo = new JLabel(
+            "Aguardando início da partida."
         );
-        mensagem.setForeground(texto);
+        mensagemJogo.setForeground(texto);
 
         JPanel conteudo = new JPanel();
         conteudo.setOpaque(false);
         conteudo.setLayout(new BoxLayout(conteudo, BoxLayout.Y_AXIS));
         conteudo.add(titulo);
         conteudo.add(Box.createVerticalStrut(4));
-        conteudo.add(mensagem);
+        conteudo.add(mensagemJogo);
 
         painelMensagens.add(conteudo, BorderLayout.CENTER);
 
@@ -308,5 +327,71 @@ public class TelaPrincipal extends JFrame {
     	
     	return linha; 
     	
+    }
+
+    @Override
+    public void atualizar(final ObservadoJogo observado) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    atualizarCartasEPlacar(observado);
+                }
+            });
+            return;
+        }
+        atualizarCartasEPlacar(observado);
+    }
+
+    private void atualizarCartasEPlacar(ObservadoJogo observado) {
+        if (observado.existePartida()) {
+            jogadorAtual.setText("● " + observado.getNomePersonagemAtual());
+            corJogador.setText("Cor: " + observado.getCorJogadorAtual().name());
+            jogadorAtual.setForeground(ViewAPI.getColor(observado.getCorJogadorAtual()));
+
+            if (observado.isPartidaEncerrada()) {
+                mensagemJogo.setText("Partida encerrada.");
+            } else if (observado.isTurnoEmAndamento()) {
+                mensagemJogo.setText("Turno de " + observado.getNomePersonagemAtual()
+                    + ": clique no mapa para executar as ações disponíveis.");
+            } else {
+                mensagemJogo.setText("Abra Jogador para escolher a coluna do turno.");
+            }
+        } else {
+            jogadorAtual.setText("");
+            corJogador.setText("Cor: não definida");
+            mensagemJogo.setText("Aguardando início da partida.");
+        }
+        painelCartas.definirConselheiros(observado.getConselheirosAbertos());
+        ArrayList<Map.Entry<String, Integer>> classificacao =
+            new ArrayList<>(observado.getPlacarVotos().entrySet());
+
+        Collections.sort(classificacao, new Comparator<Map.Entry<String, Integer>>() {
+            @Override
+            public int compare(Map.Entry<String, Integer> primeiro,
+                    Map.Entry<String, Integer> segundo) {
+                int votos = Integer.compare(segundo.getValue(), primeiro.getValue());
+                return votos != 0 ? votos : primeiro.getKey().compareTo(segundo.getKey());
+            }
+        });
+
+        linhasPlacar.removeAll();
+        for (Map.Entry<String, Integer> jogador : classificacao) {
+            linhasPlacar.add(criarLinhaPlacar(jogador.getKey(), jogador.getValue()));
+        }
+        votosFichaNeutra.setText("Ficha neutra: " + observado.getVotosFichaNeutra());
+        linhasPlacar.revalidate();
+        linhasPlacar.repaint();
+    }
+
+    public void definirMapa(JPanel mapa) {
+        areaMapa.removeAll();
+        areaMapa.add(mapa, BorderLayout.CENTER);
+        areaMapa.revalidate();
+        areaMapa.repaint();
+    }
+
+    public JButton getBotaoJogador() {
+        return botaoJogador;
     }
 }

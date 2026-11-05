@@ -97,7 +97,6 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
         JPanel cartaConselheiroSecreto = criarSecao( "MEU CONSELHEIRO SECRETO", new Color(213, 202, 235));
 
         painelCartaConselheiroSecreto = new PainelCartaConselheiroSecreto();
-        painelCartaConselheiroSecreto.carregarCartaInicial();
 
     	JPanel centralizarCarta = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
     	centralizarCarta.setOpaque(false);
@@ -276,6 +275,7 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
 
     private void atualizarInterface(ObservadoJogo observado) {
         if (!observado.existePartida()) {
+            painelCartaConselheiroSecreto.definirCarta(null);
             painelTabuleiroJogador.definirPersonagem(null);
             painelTabuleiroJogador.definirCorFicha(null);
             painelTabuleiroJogador.atualizarMelhorias(
@@ -298,6 +298,15 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
             observado.getNomePersonagemAtual()
         );
         painelTabuleiroJogador.definirCorFicha(observado.getCorJogadorAtual());
+
+        String conselheiro = observado.getNomeConselheiroSecretoJogadorAtual();
+        if (conselheiro == null) {
+            painelCartaConselheiroSecreto.definirCarta(null);
+        } else {
+            painelCartaConselheiroSecreto.carregarCarta(
+                conselheiro.toLowerCase(java.util.Locale.ROOT) + ".jpg"
+            );
+        }
 
         painelTabuleiroJogador.atualizarMelhorias(
             criarMelhoriasVisuais(observado)

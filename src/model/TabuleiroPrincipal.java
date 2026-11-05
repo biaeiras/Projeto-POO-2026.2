@@ -665,6 +665,43 @@ class TabuleiroPrincipal {
 		return ret;
 	}
 	
+    int getQuantidadeYurts(Jogador jogador) {
+        int total = 0;
+        for (Parada parada : mapa.values()) {
+            for (Jogador dono : parada.getYurt()) {
+                if (dono == jogador) {
+                    total++;
+                }
+            }
+        }
+        return total;
+    }
+
+    int getQuantidadeYurts(Jogador jogador, Regiao regiao) {
+        int total = 0;
+        for (Parada parada : mapa.values()) {
+            Cidade cidade = parada.getCidade();
+            if (cidade != null && cidade.getRegiao() == regiao) {
+                for (Jogador dono : parada.getYurt()) {
+                    if (dono == jogador) {
+                        total++;
+                    }
+                }
+            }
+        }
+        return total;
+    }
+
+    int getQuantidadeCidadesConquistadas(Jogador jogador) {
+        int total = 0;
+        for (Cidade cidade : cidades.values()) {
+            if (cidade.getConquistador() == jogador) {
+                total++;
+            }
+        }
+        return total;
+    }
+
 	public boolean todasCidadesConquistadas() {
 	    if (!pilhaCidades.isEmpty()) {
 	        return false;
