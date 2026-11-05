@@ -1,6 +1,6 @@
 package model;
 
-enum ParadaID {
+public enum ParadaID {
 	KARAKORUM,
 	KIEV1,
 	KIEV2,
