@@ -104,26 +104,34 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
     	
 
         cartaConselheiroSecreto.add(centralizarCarta);
+     
+        // AÇÕES DISPONÍVEIS
+        JPanel acoes = new JPanel(new BorderLayout(0, 6));
 
-        JPanel acoes = criarSecao("AÇÕES DISPONÍVEIS", verde);
-        
-        acoes.setLayout(new BorderLayout(0,8)); 
-        
-        JPanel gradeAcoes = new JPanel(new GridLayout(3,2,6,6)); 
+        acoes.setBackground(verde);
+        acoes.setBorder(new CompoundBorder(
+            new LineBorder(dourado, 1),
+            new EmptyBorder(8, 8, 8, 8)
+        ));
+
+        // Título
+        JLabel tituloAcoes = new JLabel("AÇÕES DISPONÍVEIS");
+        tituloAcoes.setForeground(vermelho);
+        tituloAcoes.setFont(new Font("SansSerif", Font.BOLD, 12));
+
+        acoes.add(tituloAcoes, BorderLayout.NORTH);
+
+        // Grade dos três botões
+        JPanel gradeAcoes = new JPanel(new GridLayout(3, 1, 0, 6));
         gradeAcoes.setOpaque(false);
 
-        gradeAcoes.add(criarBotao("Pegar tributo"));
-        gradeAcoes.add(criarBotao("Construir yurt"));
-        gradeAcoes.add(criarBotao("Atacar cidade"));
+        gradeAcoes.add(criarBotao("Entregar tributo"));
         gradeAcoes.add(criarBotao("Comprar melhoria"));
-        gradeAcoes.add(criarBotao("Entregar tesouros"));
-        gradeAcoes.add(criarBotao("Cumprir conselheiros"));
-    
-        
+
         botaoTerminarTurno = criarBotao("Terminar Turno");
-        
-        acoes.add(gradeAcoes,BorderLayout.CENTER ); 
-        acoes.add(botaoTerminarTurno, BorderLayout.SOUTH);
+        gradeAcoes.add(botaoTerminarTurno);
+
+        acoes.add(gradeAcoes, BorderLayout.CENTER);
         
         
         JPanel recursos = criarSecao("RECURSOS", azul);
@@ -246,14 +254,9 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
         informacaoTabuleiro.setText(mensagem);
     }
 
-    public void atualizarEstadoColunas(
-            boolean[] usadas,
-            boolean podeEscolher,
-            boolean podeTerminar) {
+    public void atualizarEstadoColunas( boolean[] usadas, boolean podeEscolher,boolean podeTerminar) {
 
-        painelTabuleiroJogador.atualizarEstadoColunas(
-            usadas, podeEscolher
-        );
+        painelTabuleiroJogador.atualizarEstadoColunas( usadas, podeEscolher);
 
         botaoTerminarTurno.setEnabled(podeTerminar);
     }
