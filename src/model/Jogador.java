@@ -265,4 +265,10 @@ class Jogador {
         // As peças usadas continuam pertencendo ao jogador, conforme o manual.
         return pecasBonus.size();
     }
+    
+    HashMap<TipoBonus, PecaBonus> getPecasBonus(){
+    	return new HashMap<>(pecasBonus); 
+    }
+    
+    
 }

@@ -467,5 +467,54 @@ public class FachadaJogo implements ObservadoJogo {
 
         return nomes;
     }
+    
+    @Override 
+    public boolean[] getPecasBonusConquistadasJogadorAtual() {
+    	boolean[] resultado = new boolean[7]; 
+    	
+    	if(partida == null) {
+    		return resultado; 
+    		
+    	}
+    	
+    	Jogador jogador = partida.getJogadorAtual(); 
+    	
+    	HashMap<TipoBonus, PecaBonus> pecas = jogador.getPecasBonus(); 
+    	
+    	TipoBonus[] tipos = TipoBonus.values(); 
+    	
+    	for (int i = 0 ; i< tipos.length; i++) {
+    		resultado[i] = pecas.containsKey(tipos[i]); 
+    	}
+    	return resultado; 
+    	
+    }
+    
+    @Override 
+    public boolean[] getPecasBonusUsadasJogadorAtual() {
+    	boolean[] resultado = new boolean[7]; 
+    	
+    	if(partida == null) {
+    		return resultado; 
+    	}
+    	
+    	Jogador jogador = partida.getJogadorAtual(); 
+    	
+    	HashMap<TipoBonus, PecaBonus> pecas = jogador.getPecasBonus(); 
+    	
+    	TipoBonus[] tipos = TipoBonus.values(); 
+    	
+    	for (int i = 0 ; i< tipos.length; i++) {
+    		PecaBonus peca = pecas.get(tipos[i]); 
+    		
+    		resultado[i] = peca != null && peca.EhUsada();    		
+    	}
+    	return resultado; 
+    	
+    	
+    }
+    
+    
+    
 
 }

@@ -172,15 +172,11 @@ public class PainelPecasBonus extends JPanel {
             int yContador = getHeight() - alturaPeca - margem;
 
             g2.setColor(new Color(250, 245, 226));
-            g2.fillRect(
-                xContador, yContador,
-                larguraContador, alturaPeca
+            g2.fillRect( xContador, yContador,larguraContador, alturaPeca
             );
 
             g2.setColor(new Color(190, 145, 68));
-            g2.drawRect(
-                xContador, yContador,
-                larguraContador, alturaPeca
+            g2.drawRect( xContador, yContador,larguraContador, alturaPeca
             );
 
             g2.setColor(new Color(75, 51, 30));
@@ -190,12 +186,9 @@ public class PainelPecasBonus extends JPanel {
 
             FontMetrics fm = g2.getFontMetrics();
 
-            int textoX = xContador
-                + (larguraContador - fm.stringWidth(contador)) / 2;
+            int textoX = xContador+ (larguraContador - fm.stringWidth(contador)) / 2;
 
-            int textoY = yContador
-                + (alturaPeca - fm.getHeight()) / 2
-                + fm.getAscent();
+            int textoY = yContador + (alturaPeca - fm.getHeight()) / 2 + fm.getAscent();
 
             g2.drawString(contador, textoX, textoY);
 

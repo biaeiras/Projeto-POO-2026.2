@@ -29,6 +29,7 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
     private PainelTabuleiroJogador painelTabuleiroJogador;
     private JButton botaoTerminarTurno;
     private JLabel informacaoTabuleiro;
+    private PainelPecasBonus painelPecasBonus;
     
 
     public TelaJogador() {
@@ -78,22 +79,11 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
 
         JPanel bonus = criarSecao( "PEÇAS DE BÔNUS", new Color(213, 202, 235));
 
-    	PainelPecasBonus painelPecasBonus = new PainelPecasBonus();
+    	painelPecasBonus = new PainelPecasBonus();
 
     	bonus.add(painelPecasBonus);
     	
-    	//SÓ PARA TESTAR : depois vai ser alterado para o controller
     	
-    	painelPecasBonus.atualizarPecas(
-    		    new boolean[] {
-    		        true, true, false, false, false, false, false
-    		    },
-    		    new boolean[] {
-    		        false, true, false, false, false, false, false
-    		    }
-    		);
-        
-        
         JPanel cartaConselheiroSecreto = criarSecao( "MEU CONSELHEIRO SECRETO", new Color(213, 202, 235));
 
         painelCartaConselheiroSecreto = new PainelCartaConselheiroSecreto();
@@ -284,6 +274,10 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
             painelTabuleiroJogador.atualizarMelhorias(
                 new ArrayList<MelhoriaVisual>()
             );
+            
+            //Limpa peças bônus quando não existe partidas
+            
+            painelPecasBonus.atualizarPecas(new boolean[7], new boolean[7]);
 
             atualizarEstadoColunas(
                 new boolean[4], false, false
@@ -338,6 +332,9 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
         );
 
         String situacao;
+        
+        painelPecasBonus.atualizarPecas(observado.getPecasBonusConquistadasJogadorAtual(), observado.getPecasBonusUsadasJogadorAtual()); 
+        
 
         if (observado.isPartidaEncerrada()) {
             situacao = "Partida encerrada.";
