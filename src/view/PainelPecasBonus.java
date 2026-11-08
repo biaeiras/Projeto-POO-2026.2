@@ -129,7 +129,7 @@ public class PainelPecasBonus extends JPanel {
                     // Peça usada continua visível, mas esmaecida
                     if (usadas[i]) {
                         g2.setColor(
-                            new Color(80, 80, 80, 140)
+                            new Color(210, 210, 210, 190)
                         );
 
                         g2.fillRect(
