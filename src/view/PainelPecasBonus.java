@@ -45,12 +45,9 @@ public class PainelPecasBonus extends JPanel {
         repaint();
     }
 
-    public void atualizarPecas(
-            boolean[] pecasConquistadas,
-            boolean[] pecasUsadas) {
+    public void atualizarPecas(boolean[] pecasConquistadas,boolean[] pecasUsadas) {
 
-        if (pecasConquistadas == null || pecasConquistadas.length != 7
-                || pecasUsadas == null || pecasUsadas.length != 7) {
+        if (pecasConquistadas == null || pecasConquistadas.length != 7 || pecasUsadas == null || pecasUsadas.length != 7) {
             throw new IllegalArgumentException(
                 "Devem ser informadas exatamente 7 peças."
             );
