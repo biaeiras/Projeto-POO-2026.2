@@ -1,6 +1,6 @@
 package model;
 
-enum TipoTesouro {
+public enum TipoTesouro {
 	BOI,
 	FERRO,
 	PELE,

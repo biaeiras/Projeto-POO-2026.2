@@ -9,10 +9,10 @@ class TabuleiroJogador {
 
 		private final Regiao regiao;
 		private ArrayList<Melhoria> melhorias;
-		private HashMap<TipoAcao, Integer> acoesBase;
+		private HashMap<Enum<?>, Integer> acoesBase;
 	    private boolean ativada;
 
-	    Coluna(Regiao regiao, HashMap<TipoAcao, Integer> acoesBase) {
+	    Coluna(Regiao regiao, HashMap<Enum<?>, Integer> acoesBase) {
 	        this.regiao = regiao;
 	        this.melhorias = new ArrayList<>();
 	        this.acoesBase = new HashMap<>(acoesBase);
@@ -71,6 +71,10 @@ class TabuleiroJogador {
 	        return melhorias.size();
 	    }
 	    
+	    ArrayList<Melhoria> getMelhorias() {
+	        return new ArrayList<>(melhorias);
+	    }
+	    
 	}
 
     private Personagem personagem;
@@ -88,7 +92,7 @@ class TabuleiroJogador {
 
         for (Regiao regiao : Regiao.values()) {
 
-            HashMap<TipoAcao, Integer> acoesBase =
+            HashMap<Enum<?>, Integer> acoesBase =
                     personagem.getAcoesBase(regiao);
 
             colunasRegiao.put(
@@ -215,5 +219,20 @@ class TabuleiroJogador {
                 melhoriasRussia,
                 Math.min(melhoriasChina, melhoriasPersia)
         );
+    }
+    
+    ArrayList<Melhoria> getMelhorias(Regiao regiao) {
+
+        Coluna coluna = colunasRegiao.get(regiao);
+
+        if (coluna == null) {
+            return new ArrayList<>();
+        }
+
+        return coluna.getMelhorias();
+    }
+
+    ArrayList<Melhoria> getMelhoriasColunaBranca() {
+        return colunaBranca.getMelhorias();
     }
 }

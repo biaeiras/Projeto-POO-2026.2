@@ -7,6 +7,42 @@ import org.junit.Test;
 public class TabuleiroJogadorTest {
 
     @Test
+    public void testeMelhoriasNasRegioesCorretas() {
+        TabuleiroJogador tabuleiro = new TabuleiroJogador(new Altani());
+
+        for (Regiao regiao : Regiao.values()) {
+            Melhoria melhoria = new Melhoria(TipoMelhoria.MOVIMENTO_EXTRA, regiao);
+            assertTrue(tabuleiro.adicionarMelhoria(regiao, melhoria));
+            assertEquals(1, tabuleiro.getQuantidadeMelhorias(regiao));
+            assertSame(melhoria, tabuleiro.getMelhorias(regiao).get(0));
+        }
+    }
+
+    @Test
+    public void testeRejeitaMelhoriaDeOutraRegiao() {
+        TabuleiroJogador tabuleiro = new TabuleiroJogador(new Altani());
+        Melhoria melhoria = new Melhoria(TipoMelhoria.MOVIMENTO_EXTRA, Regiao.CHINA);
+
+        assertFalse(tabuleiro.adicionarMelhoria(Regiao.PERSIA, melhoria));
+        assertFalse(tabuleiro.adicionarMelhoria(Regiao.RUSSIA, melhoria));
+        for (Regiao regiao : Regiao.values()) {
+            assertTrue(tabuleiro.getMelhorias(regiao).isEmpty());
+        }
+    }
+
+    @Test
+    public void testeColunaBrancaAceitaTodasAsRegioes() {
+        TabuleiroJogador tabuleiro = new TabuleiroJogador(new Altani());
+        int indice = 0;
+        for (Regiao regiao : Regiao.values()) {
+            Melhoria melhoria = new Melhoria(TipoMelhoria.MOVIMENTO_EXTRA, regiao);
+            assertTrue(tabuleiro.adicionarMelhoriaBranca(melhoria));
+            assertSame(melhoria, tabuleiro.getMelhoriasColunaBranca().get(indice++));
+            assertTrue(tabuleiro.getMelhorias(regiao).isEmpty());
+        }
+    }
+
+    @Test
     public void testeRecuperacaoFichasColunaBranca() {
 
         // Cria o tabuleiro de Altani
