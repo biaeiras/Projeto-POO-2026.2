@@ -11,9 +11,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
-import java.awt.Desktop;
-import java.io.File; 
-import java.io.IOException; 
 
 import controller.ControllerAPI;
 import model.ObservadoJogo;
@@ -134,28 +131,20 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         painelLateral.setBackground(pergaminho);
         painelLateral.setBorder(new EmptyBorder(8, 4, 8, 8));
 
-        JPanel navegacao = new JPanel(new GridLayout(1, 2, 6, 0));
+        JPanel navegacao = new JPanel(new GridLayout(1, 1, 6, 0));
         navegacao.setOpaque(false);
         navegacao.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
 
-        JButton botaoRegras = criarBotao("Regras", azul);
         
         
         botaoJogador = criarBotao("Jogador", azul);
 
         
-        navegacao.add(botaoRegras);
         navegacao.add(botaoJogador);
 
         painelLateral.add(navegacao);
         painelLateral.add(Box.createVerticalStrut(10));
         adicionarSecao(criarLegendaRecolhivel());
-        
-        botaoRegras.addActionListener(new java.awt.event.ActionListener() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent evento) { abrirRegras(); }
-        });
-        
         
         //Seção que mostra o jogador que irá jogar
 
@@ -516,24 +505,4 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         javax.swing.JOptionPane.showMessageDialog(this,mensagem,"Fim de jogo", javax.swing.JOptionPane.INFORMATION_MESSAGE);
     }
     
-    private void abrirRegras() {
-    	try {
-    		File arquivo = new File("arquivos/regras.pdf");
-    		
-    		if(!arquivo.exists()) {
-    			JOptionPane.showMessageDialog(this, "O arquivo de regras não foi encontrado!", "Erro", JOptionPane.ERROR_MESSAGE);
-    			return; 
-    		}
-    		
-    		if(Desktop.isDesktopSupported()) {
-    			Desktop.getDesktop().open(arquivo); 
-    			
-    		}
-    		else {
-    			JOptionPane.showMessageDialog(this, "Não foi possível abrir o PDF neste computador.");
-    		}
-    	} catch (IOException e) {
-    		JOptionPane.showMessageDialog(this, "Erro ao abrir as regras" + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
-    	}
-    }
 }

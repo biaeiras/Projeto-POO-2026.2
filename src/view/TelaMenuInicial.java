@@ -4,9 +4,6 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.awt.Desktop;
 
 
 import javax.imageio.ImageIO;
@@ -54,15 +51,11 @@ public class TelaMenuInicial extends JFrame {
             new EmptyBorder(14, 28, 14, 28)
         ));
         moldura.setAlignmentX(Component.CENTER_ALIGNMENT);
-        moldura.setMaximumSize(new Dimension(330, 220));
+        moldura.setMaximumSize(new Dimension(330, 120));
 
         iniciar = criarBotao("INICIAR PARTIDA");
-        JButton comoJogar = criarBotao("COMO JOGAR");
         
         moldura.add(iniciar);
-        moldura.add(Box.createVerticalStrut(9));
-        moldura.add(comoJogar);
-        moldura.add(Box.createVerticalStrut(9));
     
         areaBotoes.add(moldura);
         areaBotoes.add(Box.createVerticalStrut(25));
@@ -76,17 +69,6 @@ public class TelaMenuInicial extends JFrame {
 //                "Aqui vamos abrir a configuração da partida."
 //            );
 //        });
-
-        comoJogar.addActionListener(
-        	    new java.awt.event.ActionListener() {
-        	        @Override
-        	        public void actionPerformed(
-        	                java.awt.event.ActionEvent evento) {
-
-        	        	 abrirRegras();
-        	        }
-        	    }
-        	);
 
         return fundo;
     }
@@ -166,24 +148,4 @@ public class TelaMenuInicial extends JFrame {
         });
     }
     
-    private void abrirRegras() {
-    	try {
-    		File arquivo = new File("arquivos/regras.pdf");
-    		
-    		if(!arquivo.exists()) {
-    			JOptionPane.showMessageDialog(this, "O arquivo de regras não foi encontrado!", "Erro", JOptionPane.ERROR_MESSAGE);
-    			return; 
-    		}
-    		
-    		if(Desktop.isDesktopSupported()) {
-    			Desktop.getDesktop().open(arquivo); 
-    			
-    		}
-    		else {
-    			JOptionPane.showMessageDialog(this, "Não foi possível abrir o PDF neste computador.");
-    		}
-    	} catch (IOException e) {
-    		JOptionPane.showMessageDialog(this, "Erro ao abrir as regras" + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
-    	}
-    }
 }
