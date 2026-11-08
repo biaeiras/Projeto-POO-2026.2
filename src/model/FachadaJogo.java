@@ -441,5 +441,31 @@ public class FachadaJogo implements ObservadoJogo {
     public int getVotosFichaNeutra() {
         return partida == null ? 0 : partida.getVotosFichaNeutra();
     }
+    
+    @Override
+    public boolean isFimDisparado() {
+        return partida != null && partida.isFimDisparado();
+    }
+    
+    @Override
+    public ArrayList<String> getNomesVencedores() {
+
+        ArrayList<String> nomes = new ArrayList<>();
+
+        if (partida == null || !partida.isEncerrada()) {
+            return nomes;
+        }
+
+        for (Jogador jogador : partida.calcularVencedores()) {
+
+            String nome = jogador.getTabuleiroJogador()
+                                 .getPersonagem()
+                                 .getNome();
+
+            nomes.add(nome);
+        }
+
+        return nomes;
+    }
 
 }

@@ -91,30 +91,22 @@ public class PainelPecasBonus extends JPanel {
             int espacamento = 4;
             int larguraContador = 42;
 
-            int larguraPeca = (
-                getWidth() - 2 * margem
-                - 3 * espacamento - larguraContador
-            ) / 4;
+            int larguraPeca = (getWidth() - 2 * margem - 3 * espacamento - larguraContador) / 4;
 
-            int alturaPeca = (
-                getHeight() - 2 * margem - espacamento
-            ) / 2;
+            int alturaPeca = (getHeight() - 2 * margem - espacamento) / 2;
 
             for (int i = 0; i < 7; i++) {
 
                 int coluna = i % 4;
                 int linha = i / 4;
 
-                int x = margem
-                    + coluna * (larguraPeca + espacamento);
+                int x = margem + coluna * (larguraPeca + espacamento);
 
-                int y = margem
-                    + linha * (alturaPeca + espacamento);
+                int y = margem + linha * (alturaPeca + espacamento);
 
                 // Na segunda linha, as peças ficam à esquerda.
                 if (i >= 4) {
-                    x = margem
-                        + (i - 4) * (larguraPeca + espacamento);
+                    x = margem+ (i - 4) * (larguraPeca + espacamento);
                 }
 
                 // Fundo do espaço

@@ -4,6 +4,11 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.awt.Desktop;
+
+
 import javax.imageio.ImageIO;
 
 public class TelaMenuInicial extends JFrame {
@@ -52,14 +57,12 @@ public class TelaMenuInicial extends JFrame {
 
         iniciar = criarBotao("INICIAR PARTIDA");
         JButton comoJogar = criarBotao("COMO JOGAR");
-        JButton sair = criarBotao("SAIR");
-
+        
         moldura.add(iniciar);
         moldura.add(Box.createVerticalStrut(9));
         moldura.add(comoJogar);
         moldura.add(Box.createVerticalStrut(9));
-        moldura.add(sair);
-
+    
         areaBotoes.add(moldura);
         areaBotoes.add(Box.createVerticalStrut(25));
 
@@ -79,21 +82,7 @@ public class TelaMenuInicial extends JFrame {
         	        public void actionPerformed(
         	                java.awt.event.ActionEvent evento) {
 
-        	            JOptionPane.showMessageDialog(
-        	                TelaMenuInicial.this,
-        	                "Aqui vamos apresentar as regras do jogo."
-        	            );
-        	        }
-        	    }
-        	);
-
-        	sair.addActionListener(
-        	    new java.awt.event.ActionListener() {
-        	        @Override
-        	        public void actionPerformed(
-        	                java.awt.event.ActionEvent evento) {
-
-        	            dispose();
+        	        	 abrirRegras();
         	        }
         	    }
         	);
@@ -174,5 +163,26 @@ public class TelaMenuInicial extends JFrame {
         	TelaMenuInicial menu = new TelaMenuInicial();
             menu.setVisible(true);
         });
+    }
+    
+    private void abrirRegras() {
+    	try {
+    		File arquivo = new File("arquivos/regras.pdf");
+    		
+    		if(!arquivo.exists()) {
+    			JOptionPane.showMessageDialog(this, "O arquivo de regras não foi encontrado!", "Erro", JOptionPane.ERROR_MESSAGE);
+    			return; 
+    		}
+    		
+    		if(Desktop.isDesktopSupported()) {
+    			Desktop.getDesktop().open(arquivo); 
+    			
+    		}
+    		else {
+    			JOptionPane.showMessageDialog(this, "Não foi possível abrir o PDF neste computador.");
+    		}
+    	} catch (IOException e) {
+    		JOptionPane.showMessageDialog(this, "Erro ao abrir as regras" + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+    	}
     }
 }

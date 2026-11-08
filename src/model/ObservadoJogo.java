@@ -31,4 +31,6 @@ public interface ObservadoJogo {
     HashSet<ParadaID> getAlcancaveisTotais();
     HashSet<ParadaID> getVizinhosPossiveis();
     HashSet<ProvinciaID> getProvincias();
+    boolean isFimDisparado();
+    ArrayList<String> getNomesVencedores();
 }

@@ -2,6 +2,7 @@
 package view;
 
 import javax.swing.*;
+
 import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -10,6 +11,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
+import java.awt.Desktop;
+import java.io.File; 
+import java.io.IOException; 
 
 import controller.ControllerAPI;
 import model.ObservadoJogo;
@@ -38,6 +42,7 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
     private final Color pergaminho = new Color(239, 225, 190);
     private final Color texto = new Color(75, 51, 30);
     private final Color azul = new Color(48, 83, 105);
+    private boolean resultadoExibido = false; 
 
     public TelaPrincipal() {
         this(new ControllerAPI());
@@ -129,16 +134,19 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         navegacao.setOpaque(false);
         navegacao.setMaximumSize(new Dimension(280, 42));
 
-        JButton botaoMapa = criarBotao("Mapa", azul);
-        botaoMapa.setEnabled(false); // O mapa já é o conteúdo desta janela.
+        JButton botaoRegras = criarBotao("Regras", azul);
+        
+        
         botaoJogador = criarBotao("Jogador", azul);
 
         
-        navegacao.add(botaoMapa);
+        navegacao.add(botaoRegras);
         navegacao.add(botaoJogador);
 
         painelLateral.add(navegacao);
         painelLateral.add(Box.createVerticalStrut(10));
+        
+        botaoRegras.addActionListener(e -> abrirRegras());
         
         
         //Seção que mostra o jogador que irá jogar
@@ -358,13 +366,22 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
                 mensagemJogo.setText("Abra Jogador para escolher a coluna do turno.");
             }
         } else {
+        	resultadoExibido = false; 
             jogadorAtual.setText("");
             corJogador.setText("Cor: não definida");
             mensagemJogo.setText("Aguardando início da partida.");
         }
+        
+        if (observado.isFimDisparado()
+                && !secaoUltimaRodada.isVisible()) {
+
+            mostrarUltimaRodada("A última rodada começou! Prepare-se para o encerramento da partida.");
+        }
+        
+        
         painelCartas.definirConselheiros(observado.getConselheirosAbertos());
-        ArrayList<Map.Entry<String, Integer>> classificacao =
-            new ArrayList<>(observado.getPlacarVotos().entrySet());
+        
+        ArrayList<Map.Entry<String, Integer>> classificacao = new ArrayList<>(observado.getPlacarVotos().entrySet());
 
         Collections.sort(classificacao, new Comparator<Map.Entry<String, Integer>>() {
             @Override
@@ -382,6 +399,11 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         votosFichaNeutra.setText("Ficha neutra: " + observado.getVotosFichaNeutra());
         linhasPlacar.revalidate();
         linhasPlacar.repaint();
+        
+        if(observado.isPartidaEncerrada() && !resultadoExibido) {
+        	resultadoExibido = true; 
+        	mostrarResultadoFinal(observado);
+        }
     }
 
     public void definirMapa(JPanel mapa) {
@@ -393,5 +415,43 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
 
     public JButton getBotaoJogador() {
         return botaoJogador;
+    }
+    
+    public void mostrarResultadoFinal(ObservadoJogo observado) {
+
+        ArrayList<String> vencedores = observado.getNomesVencedores();
+
+        String mensagem;
+
+        if (vencedores.isEmpty()) {
+            mensagem = "Não foi possível identificar o vencedor.";
+        } else if (vencedores.size() == 1) {
+            mensagem = "VENCEDOR: " + vencedores.get(0);
+        } else {
+            mensagem = "EMPATE ENTRE: " + String.join(", ", vencedores);
+        }
+
+        javax.swing.JOptionPane.showMessageDialog(this,mensagem,"Fim de jogo", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    private void abrirRegras() {
+    	try {
+    		File arquivo = new File("arquivos/regras.pdf");
+    		
+    		if(!arquivo.exists()) {
+    			JOptionPane.showMessageDialog(this, "O arquivo de regras não foi encontrado!", "Erro", JOptionPane.ERROR_MESSAGE);
+    			return; 
+    		}
+    		
+    		if(Desktop.isDesktopSupported()) {
+    			Desktop.getDesktop().open(arquivo); 
+    			
+    		}
+    		else {
+    			JOptionPane.showMessageDialog(this, "Não foi possível abrir o PDF neste computador.");
+    		}
+    	} catch (IOException e) {
+    		JOptionPane.showMessageDialog(this, "Erro ao abrir as regras" + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+    	}
     }
 }
