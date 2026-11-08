@@ -621,7 +621,7 @@ class Partida  {
 
 	    Jogador jogador = turnoAtual.getJogador();
 
-	    cidade.atacar(jogador, tesouro);
+	    tabuleiroPrincipal.atacarCidade(cidadeId, jogador, tesouro);
 	    jogador.adicionarTesouro(tesouro);
 
 	    tesourosTomadosNoTurno.put(cidade, tesourosAnteriores + 1);
@@ -755,13 +755,17 @@ class Partida  {
 		return ret;
 	}
 	
-	HashSet<KhanID> getKhans() {
+	HashSet<KhanID> getKhanSet() {
 		HashSet<KhanID> ret = new HashSet<KhanID>();
 		if(turnoAtual == null || !turnoAtual.isKhanPendente()) return ret;
 		for(KhanID id: KhanID.values()) {
 			if(id!=tabuleiroPrincipal.getKhan()) ret.add(id);
 		}
 		return ret;
+	}
+	
+	KhanID getKhan() {
+		return tabuleiroPrincipal.getKhan();
 	}
 	
 	boolean getAtivacaoKhan() {

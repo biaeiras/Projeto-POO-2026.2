@@ -31,10 +31,11 @@ public interface ObservadoJogo {
     HashSet<ParadaID> getAlcancaveisTotais();
     HashSet<ParadaID> getVizinhosPossiveis();
     HashSet<ProvinciaID> getProvincias();
-    HashSet<KhanID> getKhans();
+    HashSet<KhanID> getKhanSet();
     KhanID getKhanSelecionado();
     HashMap<CidadeID, ArrayList<TipoTesouro>> getCidades();
     HashMap<CidadeID, Integer> getCidadesAtacaveis();
     HashMap<CidadeID, Cor> getCidadesConquistadas();
     HashMap<ParadaID, TipoBonus> getBonus();
+    KhanID getKhan();
 }

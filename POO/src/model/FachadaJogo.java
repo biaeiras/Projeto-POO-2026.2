@@ -442,8 +442,8 @@ public class FachadaJogo implements ObservadoJogo {
         return partida == null ? 0 : partida.getVotosFichaNeutra();
     }
     
-    public HashSet<KhanID> getKhans() {
-    	return partida.getKhans();
+    public HashSet<KhanID> getKhanSet() {
+    	return partida.getKhanSet();
     }
     
     public boolean getAtivacaoKhan() {
@@ -475,5 +475,8 @@ public class FachadaJogo implements ObservadoJogo {
     public HashMap<CidadeID, Cor> getCidadesConquistadas(){
     	return partida.getCidadesConquistadas();
     	
+    }
+    public KhanID getKhan() {
+    	return partida.getKhan();
     }
 }

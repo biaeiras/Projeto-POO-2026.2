@@ -731,7 +731,16 @@ class TabuleiroPrincipal {
 		return ret;
 	}
 
-    
+    void atacarCidade(CidadeID id, Jogador jogador, TipoTesouro tesouro) {
+    	Cidade cidade = cidades.get(id);
+    	cidade.atacar(jogador, tesouro);
+    	if(cidade.getConquistador()!= null) {
+    		CidadeID tempID = pilhaCidades.pop();
+    		Cidade temp = cidades.get(tempID);
+    		temp.revelar(pilhaTesouros);
+    	}
+    	return;
+    }
 	public boolean todasCidadesConquistadas() {
 	    if (!pilhaCidades.isEmpty()) {
 	        return false;

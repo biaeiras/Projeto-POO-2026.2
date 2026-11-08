@@ -60,7 +60,7 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
     private HashMap<CidadeID, Cor> cidadesConquistadas = new HashMap<>();
     private HashMap<TipoTesouro, Image> imagensTesouros = new HashMap<>();
     private HashMap<TipoBonus, Image> imagensBonus = new HashMap<>();
-    
+    private KhanID khan = null;
     
     private Image loadImage(String path) {
     	java.net.URL recurso = getClass().getResource(path);
@@ -192,7 +192,10 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
 	
 	private void drawKhan(Graphics2D g, HashSet<KhanID> khans) {
 		g.setStroke(new BasicStroke((float)(ESPACAMENTO_YURT*(getWidth() + getHeight())/4)));
- 		for(KhanID id: khans) {
+		HashSet<KhanID> temp = new HashSet<>();
+		temp.addAll(khans);
+		if(khan!=null) temp.add(khan);
+ 		for(KhanID id: temp) {
  			Point2D.Double p = posicoesKhan.get(id);
  			if(id == khanSelecionado) g.setColor(Color.green);
  			else g.setColor(Color.white);
@@ -200,7 +203,8 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
 			int y = (int)((p.getY()-(RAIO_PARADA+ESPACAMENTO_YURT))*getHeight());
 			int w = (int) (2*(RAIO_PARADA+ESPACAMENTO_YURT)*getWidth());
 			int h = (int) (2*(RAIO_PARADA+ESPACAMENTO_YURT)*getHeight());
-			g.drawOval(x, y, w, h);
+			if(id==khan) g.fillOval(x, y, w, h);
+			else g.drawOval(x, y, w, h);
  		}
 	}
 	
@@ -338,11 +342,12 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         vizinhos = observado.getVizinhosPossiveis();
         alcancaveis = observado.getAlcancaveisTotais();
         provinciasDisponiveis = observado.getProvincias();
-        khans = observado.getKhans();
+        khans = observado.getKhanSet();
         khanSelecionado = observado.getKhanSelecionado();
         cidades = observado.getCidades();
         cidadesConquistadas = observado.getCidadesConquistadas();
         bonus = observado.getBonus();
+        khan = observado.getKhan();
         repaint();
     }
 
@@ -402,7 +407,6 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
     }
 
 	ParadaID getCollisionParada(int x, int y) {
-		System.out.printf(Locale.US, "%.4f,%.4f\n", (double)x/getWidth(), (double)y/getHeight());
         if (getWidth() <= 0 || getHeight() <= 0) return null;
 		for(ParadaID p: posicoesParadas.keySet()) {
 			Point2D.Double pp = posicoesParadas.get(p);
