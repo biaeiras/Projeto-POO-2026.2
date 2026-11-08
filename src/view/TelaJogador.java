@@ -116,23 +116,21 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
         acoes.add(tituloAcoes, BorderLayout.NORTH);
 
         // Grade dos três botões
-        JPanel gradeAcoes = new JPanel(new GridLayout(2, 1, 0, 6));
+        JPanel gradeAcoes = new JPanel(new GridLayout(3, 1, 0, 6));
         gradeAcoes.setOpaque(false);
 
-        gradeAcoes.add(criarBotao("Entregar tributo"));
+        acoes.add(tituloAcoes, BorderLayout.NORTH);
+
         gradeAcoes.add(criarBotao("Comprar melhoria"));
 
-        //botaoEntregarTesouros = criarBotao("Entregar tesouros");
-        //botaoEntregarTesouros.setEnabled(false);
-        //gradeAcoes.add(botaoEntregarTesouros);
-        //gradeAcoes.add(criarBotao("Cumprir conselheiros"));
-    
-        
+        botaoEntregarTesouros = criarBotao("Entregar tesouros");
+        botaoEntregarTesouros.setEnabled(false);
+        gradeAcoes.add(botaoEntregarTesouros);
+
         botaoTerminarTurno = criarBotao("Terminar Turno");
         gradeAcoes.add(botaoTerminarTurno);
 
         acoes.add(gradeAcoes, BorderLayout.CENTER);
-        
         
         JPanel recursos = criarSecao("RECURSOS", azul);
         valorMoedas =adicionarRecurso(recursos, "Moedas", "0");
