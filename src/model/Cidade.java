@@ -1,33 +1,34 @@
 package model;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Stack;
 
 class Cidade {
 	private final static int MAX_TESOUROS = 4;
-	private HashMap<TipoTesouro, Integer> tesouros = new HashMap<TipoTesouro, Integer>();
+    private ArrayList<TipoTesouro> tesouros = new ArrayList<>();
 	private Jogador conquistador = null;
 	private Regiao regiao = null;
+    private CidadeID id;
+
+    Cidade(CidadeID id){
+        this.id = id;
+    }
 	
 	protected void revelar(Stack<TipoTesouro> pilhaTesouros) {
 		for(int i = 0; i<MAX_TESOUROS; ++i) {
 			TipoTesouro tempTesouro = pilhaTesouros.pop();
-			if(tesouros.keySet().contains(tempTesouro)) tesouros.put(tempTesouro, tesouros.get(tempTesouro) + 1);
-			else tesouros.put(tempTesouro, 1);
+            tesouros.add(tempTesouro);
 		}
 		return;
 	}
 	
 	void atacar(Jogador jogador, TipoTesouro tesouro) {
-		int quantidade = tesouros.get(tesouro);
-		quantidade--;
-		tesouros.put(tesouro, quantidade);
-		if(quantidade<=0) tesouros.remove(tesouro);
-		if(tesouros.isEmpty()) conquistador = jogador;
+        if (jogador == null || !tesouros.remove(tesouro)) return;
+        if (tesouros.isEmpty()) conquistador = jogador;
 		return;
 	}
 	
-	HashMap<TipoTesouro, Integer> getTesouros() {
+    ArrayList<TipoTesouro> getTesouros() {
 		return this.tesouros;
 	}
 	
@@ -46,5 +47,10 @@ class Cidade {
 	Regiao getRegiao() {
 		return this.regiao;
 	}
+
+    CidadeID getId() {
+        return id;
+    }
+
 
 }

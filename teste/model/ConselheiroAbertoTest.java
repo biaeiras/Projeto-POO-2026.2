@@ -76,7 +76,7 @@ public class ConselheiroAbertoTest {
                 for (int i = 0; i < cidades; i++) {
                     Cidade cidade = tabuleiro.getMapa().get(paradas[i]).getCidade();
                     cidade.getTesouros().clear();
-                    cidade.getTesouros().put(TipoTesouro.FERRO, 1);
+                    cidade.getTesouros().add(TipoTesouro.FERRO);
                     cidade.atacar(jogador, TipoTesouro.FERRO);
                 }
                 break;

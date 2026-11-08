@@ -10,8 +10,10 @@ import java.util.Map;
 import javax.swing.JPanel;
 
 import controller.ControllerAPI;
+import model.CidadeID;
 import model.Cor;
 import model.FachadaJogo;
+import model.KhanID;
 import model.ParadaID;
 import model.ProvinciaID;
 
@@ -69,6 +71,13 @@ public class ViewAPI {
 
     public ProvinciaID getClickProvinciaID(int x, int y) {
         return painel.getCollisionProvincia(x, y);
+    }
+
+    public KhanID getClickKhanID(int x, int y) {
+        return painel.getCollisionKhan(x, y);
+    }
+    public int getClickTesouro(int x, int y, CidadeID id, int n) {
+        return painel.getCollisionCidade(x, y, id, n);
     }
 
     public JPanel getTabulerioPanel() {

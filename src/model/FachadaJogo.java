@@ -209,6 +209,101 @@ public class FachadaJogo implements ObservadoJogo {
         }
 	}
 	
+    public boolean entregarTesourosJogadorAtual(
+            ParadaID local, HashMap<String, Integer> tesouros) {
+        verificarPartidaIniciada();
+        if (tesouros == null) return false;
+        HashMap<TipoTesouro, Integer> entrega = new HashMap<>();
+        for (String nome : tesouros.keySet()) {
+            if (nome == null) return false;
+            try {
+                entrega.put(TipoTesouro.valueOf(nome), tesouros.get(nome));
+            } catch (IllegalArgumentException erro) {
+                return false;
+            }
+        }
+        boolean entregou = partida.entregarTesouros(local, entrega);
+        if (entregou) notificarObservadores();
+        return entregou;
+    }
+
+    @Override
+    public ArrayList<ParadaID> getLocaisEntregaDisponiveis() {
+        return partida == null ? new ArrayList<>() : partida.getLocaisEntregaDisponiveis();
+    }
+
+    @Override
+    public HashMap<String, Integer> getExigenciaEntrega(ParadaID local) {
+        HashMap<String, Integer> exigencia = new HashMap<>();
+        if (partida != null) {
+            for (java.util.Map.Entry<TipoTesouro, Integer> entrada
+                    : partida.getExigenciaEntrega(local).entrySet()) {
+                exigencia.put(entrada.getKey().name(), entrada.getValue());
+            }
+        }
+        return exigencia;
+    }
+
+    @Override
+    public int getVotosEntrega(ParadaID local) {
+        return partida == null ? 0 : partida.getVotosEntrega(local);
+    }
+
+    @Override
+    public String getBonusDisponivelEntrega(ParadaID local) {
+        TipoBonus bonus = partida == null ? null : partida.getBonusEntrega(local);
+        return bonus == null ? null : bonus.name();
+    }
+
+    @Override
+    public HashMap<String, Integer> getTesourosJogadorAtual() {
+        HashMap<String, Integer> tesouros = new HashMap<>();
+        for (TipoTesouro tipo : TipoTesouro.values()) {
+            tesouros.put(tipo.name(), partida == null ? 0
+                    : partida.getJogadorAtual().getQuantidadeTesouro(tipo));
+        }
+        return tesouros;
+    }
+
+    @Override
+    public HashMap<String, Integer> getTesourosVirtuaisJogadorAtual() {
+        HashMap<String, Integer> tesouros = new HashMap<>();
+        for (TipoTesouro tipo : TipoTesouro.values()) {
+            tesouros.put(tipo.name(), partida == null ? 0
+                    : partida.getQuantidadeTesouroVirtual(tipo));
+        }
+        return tesouros;
+    }
+
+    // Mesma ordem dos espaços de PainelPecasBonus.
+   //private static final TipoBonus[] ORDEM_PECAS_BONUS = {
+        //TipoBonus.ESCOLHER_TESOURO, TipoBonus.VOTO_EXTRA, TipoBonus.DUAS_ESPADAS,
+        //TipoBonus.DOIS_YURTS, TipoBonus.DUAS_MOEDAS,
+        //TipoBonus.PEGAR_TRIBUTOS_EXTRAS, TipoBonus.MOVIMENTOS_EXTRAS
+    //};
+
+    //@Override
+    //public boolean[] getPecasBonusConquistadasJogadorAtual() {
+        //boolean[] conquistadas = new boolean[ORDEM_PECAS_BONUS.length];
+        //if (partida != null) {
+           // for (int i = 0; i < conquistadas.length; i++) {
+                //conquistadas[i] = partida.getJogadorAtual().possuiPecaBonus(ORDEM_PECAS_BONUS[i]);
+            //}
+        //}
+        //return conquistadas;
+    //}
+
+    //@Override
+    //public boolean[] getPecasBonusUsadasJogadorAtual() {
+       // boolean[] usadas = new boolean[ORDEM_PECAS_BONUS.length];
+        //if (partida != null) {
+           // for (int i = 0; i < usadas.length; i++) {
+              // usadas[i] = partida.getJogadorAtual().isPecaBonusUsada(ORDEM_PECAS_BONUS[i]);
+            //}
+       // }
+        //return usadas;
+    //}
+
 	public void avancarTurno() {
 		terminarTurnoJogadorAtual();
 	}
@@ -520,4 +615,59 @@ public class FachadaJogo implements ObservadoJogo {
         return resultado;
     }
     
+    @Override
+    public HashSet<KhanID> getKhans() {
+        return partida == null ? new HashSet<>() : partida.getKhans();
+    }
+
+    @Override
+    public KhanID getKhanSelecionado() {
+        return partida == null ? null : partida.getKhanSelecionado();
+    }
+
+    public boolean getAtivacaoKhan() {
+        return partida != null && partida.getAtivacaoKhan();
+    }
+
+    public boolean selecionarKhan(KhanID id) {
+        verificarPartidaIniciada();
+        boolean selecionou = partida.selecionarKhan(id);
+        if (selecionou) notificarObservadores();
+        return selecionou;
+    }
+
+    public boolean selecionarTributo(ProvinciaID id) {
+        verificarPartidaIniciada();
+        boolean selecionou = partida.selecionarTributo(id);
+        if (selecionou) notificarObservadores();
+        return selecionou;
+    }
+
+    public boolean atacarCidade(CidadeID id, int indiceTesouro) {
+        verificarPartidaIniciada();
+        boolean atacou = partida.atacarCidade(id, indiceTesouro);
+        if (atacou) notificarObservadores();
+        return atacou;
+    }
+
+    @Override
+    public HashMap<CidadeID, ArrayList<TipoTesouro>> getCidades() {
+        return partida == null ? new HashMap<>() : partida.getCidades();
+    }
+
+    @Override
+    public HashMap<CidadeID, Integer> getCidadesAtacaveis() {
+        return partida == null ? new HashMap<>() : partida.getCidadesAtacaveis();
+    }
+
+    @Override
+    public HashMap<CidadeID, Cor> getCidadesConquistadas() {
+        return partida == null ? new HashMap<>() : partida.getCidadesConquistadas();
+    }
+
+    @Override
+    public HashMap<ParadaID, TipoBonus> getBonus() {
+        return partida == null ? new HashMap<>() : partida.getBonus();
+    }
+
 }

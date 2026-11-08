@@ -89,6 +89,27 @@ public class PainelTabuleiroTest {
         assertEquals(ParadaID.PEQUIM1, painel.getCollisionParada(369, 151));
     }
 
+    @Test
+    public void cliquesDosTesourosEKhanCorrespondemAoDesenhoEmDuasEscalas() {
+        PainelTabuleiro painel = new PainelTabuleiro();
+        assertEquals(-1, painel.getCollisionCidade(0, 0, model.CidadeID.PEQUIM, 4));
+        assertNull(painel.getCollisionKhan(0, 0));
+        for (int largura : new int[] {1000, 500}) {
+            int altura = largura * 7 / 10;
+            painel.setSize(largura, altura);
+            for (int i = 0; i < 4; i++) {
+                int x = (int) ((0.7176 - 0.015 + 0.035 * (i % 2)) * largura);
+                int y = (int) ((0.5051 - 0.015 + 0.035 * (i / 2)) * altura);
+                assertEquals(i, painel.getCollisionCidade(x, y, model.CidadeID.PEQUIM, 4));
+                assertEquals(-1, painel.getCollisionCidade(x, y, model.CidadeID.PEQUIM, i));
+            }
+            assertEquals(model.KhanID.TL,
+                    painel.getCollisionKhan((int) (0.2170 * largura), (int) (0.2154 * altura)));
+        }
+        painel.setSize(1000, 700);
+        desenhar(painel); // Também deve desenhar sem notificação inicial.
+    }
+
     private static BufferedImage desenhar(PainelTabuleiro painel) {
         BufferedImage imagem = new BufferedImage(1000, 700, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = imagem.createGraphics();
