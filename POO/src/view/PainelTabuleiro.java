@@ -25,6 +25,7 @@ import model.ObservadoJogo;
 import model.ObservadorJogo;
 import model.ParadaID;
 import model.ProvinciaID;
+import model.TipoBonus;
 import model.TipoTesouro;
 
 class PainelTabuleiro extends JPanel implements ObservadorJogo {
@@ -36,6 +37,8 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
 	private static final double RAIO_TESOURO = 0.015;
 	private static final double ESPACAMENTO_PEAO = 0.010;
 	private static final double ESPACAMENTO_YURT = 0.005;
+	private static final double BONUS_WIDTH = 0.5332-0.4677;
+	private static final double BONUS_HEIGHT = 0.5112-0.4483;
 	
 	
 	private Image imagemTabuleiro;
@@ -43,6 +46,7 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
 	private HashMap<ProvinciaID, Point2D.Double> posicoesProvincias = new HashMap<ProvinciaID, Point2D.Double>();
 	private HashMap<KhanID, Point2D.Double> posicoesKhan = new HashMap<KhanID, Point2D.Double>();
 	private HashMap<CidadeID, Point2D.Double> posicoesCidades = new HashMap<CidadeID, Point2D.Double>();
+	private HashMap<ParadaID, Point2D.Double> posicoesBonus = new HashMap<ParadaID, Point2D.Double>();
     private HashMap<ProvinciaID, Integer> cargas = new HashMap<>();
     private HashMap<ParadaID, ArrayList<Cor>> yurts = new HashMap<>();
     private HashMap<ParadaID, ArrayList<Cor>> peoes = new HashMap<>();
@@ -50,10 +54,13 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
     private HashSet<ParadaID> alcancaveis = new HashSet<>();
     private HashSet<ProvinciaID> provinciasDisponiveis = new HashSet<>();
     private HashSet<KhanID> khans = null;
+    private HashMap<ParadaID, TipoBonus> bonus = new HashMap<>();
     private KhanID khanSelecionado = null;
     private HashMap<CidadeID, ArrayList<TipoTesouro>> cidades = new HashMap<>();
     private HashMap<CidadeID, Cor> cidadesConquistadas = new HashMap<>();
     private HashMap<TipoTesouro, Image> imagensTesouros = new HashMap<>();
+    private HashMap<TipoBonus, Image> imagensBonus = new HashMap<>();
+    
     
     private Image loadImage(String path) {
     	java.net.URL recurso = getClass().getResource(path);
@@ -80,6 +87,14 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         imagensTesouros.put(TipoTesouro.FERRO, loadImage("/fichas/cartoes7-3.jpg"));
         imagensTesouros.put(TipoTesouro.PELE, loadImage("/fichas/cartoes7-4.jpg"));
         imagensTesouros.put(TipoTesouro.ALIMENTO, loadImage("/fichas/cartoes7-5.jpg"));
+        
+        imagensBonus.put(TipoBonus.VOTO_EXTRA, loadImage("/1VotoExtraTrilha.jpg"));
+        imagensBonus.put(TipoBonus.PEGAR_TRIBUTOS_EXTRAS, loadImage("/2ExtrasPegarTributos.jpg"));
+        imagensBonus.put(TipoBonus.DUAS_ESPADAS, loadImage("/2PecasTributoEspada.jpg"));
+        imagensBonus.put(TipoBonus.DOIS_YURTS, loadImage("/2PecasTributoYurt.jpg"));
+        imagensBonus.put(TipoBonus.DUAS_MOEDAS, loadImage("/2TributoMoeda.jpg"));
+        imagensBonus.put(TipoBonus.MOVIMENTOS_EXTRAS, loadImage("/3MovimentosE1AcaoExtras.jpg"));
+        imagensBonus.put(TipoBonus.ESCOLHER_TESOURO, loadImage("/TesourosAleatorios.jpg"));
     }
 
 	private void initParadas() {
@@ -154,6 +169,25 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
 		posicoesKhan.put(KhanID.BL, new Point2D.Double(0.2777,0.6026));
 		posicoesKhan.put(KhanID.BR, new Point2D.Double(0.7339,0.7154));
 		posicoesKhan.put(KhanID.M, new Point2D.Double(0.0361,0.9680));
+	}
+	
+	private void initBonus() {
+		posicoesBonus.put(ParadaID.KARAKORUM, new Point2D.Double(0.4677,0.4483));
+		posicoesBonus.put(ParadaID.BAGDA_CABUL, new Point2D.Double(0.2151,0.6849));
+		posicoesBonus.put(ParadaID.KAESONG_CANTAO, new Point2D.Double(0.9162,0.5459));
+		posicoesBonus.put(ParadaID.KIEV_MOSCOU, new Point2D.Double(0.4449,0.0248));
+		posicoesBonus.put(ParadaID.KIEV_MOSCOU_SAMARCANDA_BAGDA, new Point2D.Double(0.0493,0.3234));
+		posicoesBonus.put(ParadaID.PEQUIM_CABUL_CANTAO, new Point2D.Double(0.5520,0.7891));
+		posicoesBonus.put(ParadaID.SARAI_KAESONG_KARAKORUM, new Point2D.Double(0.8006,0.0670));
+	}
+	
+	private void drawBonus(Graphics2D g, HashMap<ParadaID, TipoBonus> bonus) {
+		for(Map.Entry<ParadaID, TipoBonus> entry: bonus.entrySet()) {
+			Point2D.Double p = posicoesBonus.get(entry.getKey());
+			int x = (int)((p.getX())*getWidth());
+			int y = (int)((p.getY())*getHeight());
+			g.drawImage(imagensBonus.get(entry.getValue()), x, y, (int)(BONUS_WIDTH*getWidth()), (int)(BONUS_HEIGHT*getHeight()), this);
+		}
 	}
 	
 	private void drawKhan(Graphics2D g, HashSet<KhanID> khans) {
@@ -274,6 +308,7 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         initProvincias(); 
         initKhan();
         initCidades();
+        initBonus();
     }
 
     // Compatibilidade com a janela antiga, que recebe a fachada como observado.
@@ -307,6 +342,7 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         khanSelecionado = observado.getKhanSelecionado();
         cidades = observado.getCidades();
         cidadesConquistadas = observado.getCidadesConquistadas();
+        bonus = observado.getBonus();
         repaint();
     }
 
@@ -359,12 +395,14 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
             drawPeoes(g2d, peoes);
             drawKhan(g2d, khans);
             drawCidades(g2d, cidades, cidadesConquistadas);
+            drawBonus(g2d, bonus);
         } finally {
             g2d.dispose();
         }
     }
 
 	ParadaID getCollisionParada(int x, int y) {
+		System.out.printf(Locale.US, "%.4f,%.4f\n", (double)x/getWidth(), (double)y/getHeight());
         if (getWidth() <= 0 || getHeight() <= 0) return null;
 		for(ParadaID p: posicoesParadas.keySet()) {
 			Point2D.Double pp = posicoesParadas.get(p);

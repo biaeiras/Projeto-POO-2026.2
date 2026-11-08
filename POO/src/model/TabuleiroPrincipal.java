@@ -724,6 +724,14 @@ class TabuleiroPrincipal {
     	return p.getProvincias();
     }
     
+    HashMap<ParadaID, TipoBonus> getBonus(){
+		HashMap<ParadaID, TipoBonus> ret = new HashMap<>();
+		for(Map.Entry<ParadaID, Parada> entry: mapa.entrySet())
+			if(entry.getValue().getBonus()!=null) ret.put(entry.getKey(), entry.getValue().getBonus());
+		return ret;
+	}
+
+    
 	public boolean todasCidadesConquistadas() {
 	    if (!pilhaCidades.isEmpty()) {
 	        return false;

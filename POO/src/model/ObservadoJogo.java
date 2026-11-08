@@ -36,4 +36,5 @@ public interface ObservadoJogo {
     HashMap<CidadeID, ArrayList<TipoTesouro>> getCidades();
     HashMap<CidadeID, Integer> getCidadesAtacaveis();
     HashMap<CidadeID, Cor> getCidadesConquistadas();
+    HashMap<ParadaID, TipoBonus> getBonus();
 }

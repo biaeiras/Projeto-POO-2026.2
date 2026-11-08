@@ -1,6 +1,6 @@
 package model;
 
-enum TipoBonus {
+public enum TipoBonus {
     VOTO_EXTRA,
     DUAS_ESPADAS,
     DUAS_MOEDAS,

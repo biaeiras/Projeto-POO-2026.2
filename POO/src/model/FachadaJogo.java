@@ -450,6 +450,10 @@ public class FachadaJogo implements ObservadoJogo {
     	return partida.getAtivacaoKhan();
     }
     
+    public HashMap<ParadaID, TipoBonus> getBonus(){
+    	return partida.getBonus();
+    }
+    
     public void selecionarKhan(KhanID id) {
     	partida.selecionarKhan(id);
     	notificarObservadores();

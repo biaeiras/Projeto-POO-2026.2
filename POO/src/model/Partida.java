@@ -794,6 +794,10 @@ class Partida  {
 		return ret;
 	}
 	
+	HashMap<ParadaID, TipoBonus> getBonus(){
+		return tabuleiroPrincipal.getBonus();
+	}
+	
 	HashMap<CidadeID, Cor> getCidadesConquistadas(){
 		HashMap<CidadeID, Cor> ret = new HashMap<>();
 		if(paradasPercorridas.get(peaoAtivo) == null) return ret;
