@@ -4,6 +4,11 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.awt.Desktop;
+
+
 import javax.imageio.ImageIO;
 
 public class TelaMenuInicial extends JFrame {
@@ -11,6 +16,8 @@ public class TelaMenuInicial extends JFrame {
     private final Color dourado = new Color(190, 145, 68);
     private final Color pergaminho = new Color(245, 224, 177);
     private final Color texto = new Color(75, 43, 25);
+    
+    private JButton iniciar;
 
     public TelaMenuInicial() {
         setTitle("Herdeiros do Khan");
@@ -48,39 +55,43 @@ public class TelaMenuInicial extends JFrame {
         moldura.setAlignmentX(Component.CENTER_ALIGNMENT);
         moldura.setMaximumSize(new Dimension(330, 220));
 
-        JButton iniciar = criarBotao("INICIAR PARTIDA");
+        iniciar = criarBotao("INICIAR PARTIDA");
         JButton comoJogar = criarBotao("COMO JOGAR");
-        JButton sair = criarBotao("SAIR");
-
+        
         moldura.add(iniciar);
         moldura.add(Box.createVerticalStrut(9));
         moldura.add(comoJogar);
         moldura.add(Box.createVerticalStrut(9));
-        moldura.add(sair);
-
+    
         areaBotoes.add(moldura);
         areaBotoes.add(Box.createVerticalStrut(25));
 
         fundo.add(areaBotoes, BorderLayout.CENTER);
 
-        // Ações provisórias dos botões
-        iniciar.addActionListener(e -> {
-            JOptionPane.showMessageDialog(
-                this,
-                "Aqui vamos abrir a configuração da partida."
-            );
-        });
+//        // Ações provisórias dos botões
+//        iniciar.addActionListener(e -> {
+//            JOptionPane.showMessageDialog(
+//                this,
+//                "Aqui vamos abrir a configuração da partida."
+//            );
+//        });
 
-        comoJogar.addActionListener(e -> {
-            JOptionPane.showMessageDialog(
-                this,
-                "Aqui vamos apresentar as regras do jogo."
-            );
-        });
+        comoJogar.addActionListener(
+        	    new java.awt.event.ActionListener() {
+        	        @Override
+        	        public void actionPerformed(
+        	                java.awt.event.ActionEvent evento) {
 
-        sair.addActionListener(e -> dispose());
+        	        	 abrirRegras();
+        	        }
+        	    }
+        	);
 
         return fundo;
+    }
+    
+    public JButton getBotaoIniciar() {
+        return iniciar;
     }
 
     private JButton criarBotao(String titulo) {
@@ -152,5 +163,26 @@ public class TelaMenuInicial extends JFrame {
         	TelaMenuInicial menu = new TelaMenuInicial();
             menu.setVisible(true);
         });
+    }
+    
+    private void abrirRegras() {
+    	try {
+    		File arquivo = new File("arquivos/regras.pdf");
+    		
+    		if(!arquivo.exists()) {
+    			JOptionPane.showMessageDialog(this, "O arquivo de regras não foi encontrado!", "Erro", JOptionPane.ERROR_MESSAGE);
+    			return; 
+    		}
+    		
+    		if(Desktop.isDesktopSupported()) {
+    			Desktop.getDesktop().open(arquivo); 
+    			
+    		}
+    		else {
+    			JOptionPane.showMessageDialog(this, "Não foi possível abrir o PDF neste computador.");
+    		}
+    	} catch (IOException e) {
+    		JOptionPane.showMessageDialog(this, "Erro ao abrir as regras" + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+    	}
     }
 }

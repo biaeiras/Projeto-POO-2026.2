@@ -5,11 +5,52 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 
 public class PainelCartasConselheirosAberto extends JPanel {
 
     private BufferedImage[] imagens = new BufferedImage[4];
+    private final HashMap<String, BufferedImage> cache = new HashMap<>();
+    private static final HashMap<String, String> ARQUIVOS = criarArquivos();
+
+    private static HashMap<String, String> criarArquivos() {
+        HashMap<String, String> arquivos = new HashMap<>();
+        arquivos.put("QUATRO_ESPADAS", "4espadas.jpg");
+        arquivos.put("SEIS_YURTS", "6yurts.jpg");
+        arquivos.put("DEZ_YURTS", "10yurts.jpg");
+        arquivos.put("QUATRO_TESOUROS", "4Tesouros.jpg");
+        arquivos.put("CINCO_TESOUROS_DIFERENTES", "Primeiro5TesourosDiferentes.jpg");
+        arquivos.put("UM_YURT_POR_REGIAO", "1YurtEmCadaRegiao.jpg");
+        arquivos.put("DOIS_YURTS_POR_REGIAO", "2YurtsEmCadaRegiao.jpg");
+        arquivos.put("DUAS_PECAS_BONUS", "PrimeroConquistar2PecasBonus.jpg");
+        arquivos.put("TRES_PECAS_BONUS", "PrimeroConquistar3PecasBonus.jpg");
+        arquivos.put("CONQUISTAR_DUAS_CIDADES", "Primeiro2Cidades.jpg");
+        arquivos.put("CONQUISTAR_TRES_CIDADES", "Primeiro3Cidades.jpg");
+        arquivos.put("LINHA_DE_MELHORIAS", "PrimeiroCompletarLinhaMelhoria.jpg");
+        arquivos.put("DUAS_COLUNAS_COM_DUAS_MELHORIAS", "Primero2colunasCom2Melhorias.jpg");
+        arquivos.put("QUATRO_MELHORIAS_NA_COLUNA", "Primeiro4MelhoriasEm1Coluna.jpg");
+        return arquivos;
+    }
+
+    public void definirConselheiros(ArrayList<String> nomes) {
+        if (nomes == null || nomes.size() != 4) {
+            throw new IllegalArgumentException("Devem ser informadas as quatro posições das cartas.");
+        }
+        BufferedImage[] cartas = new BufferedImage[4];
+        for (int i = 0; i < nomes.size(); i++) {
+            String nome = nomes.get(i);
+            if (nome != null) {
+                String arquivo = ARQUIVOS.get(nome);
+                if (arquivo == null) {
+                    throw new IllegalArgumentException("Conselheiro desconhecido: " + nome);
+                }
+                cartas[i] = carregarImagem(arquivo);
+            }
+        }
+        definirCartas(cartas);
+    }
 
     public PainelCartasConselheirosAberto() {
         setOpaque(false);
@@ -72,27 +113,22 @@ public class PainelCartasConselheirosAberto extends JPanel {
     }
     
     private BufferedImage carregarImagem(String nomeArquivo) {
-        try {
-            return ImageIO.read(
-                getClass().getResource("/" + nomeArquivo)
-            );
-        } catch (Exception e) {
-            System.err.println(
-                "Não foi possível carregar: " + nomeArquivo
-            );
-            return null;
+        if (cache.containsKey(nomeArquivo)) {
+            return cache.get(nomeArquivo);
         }
-    }
-    
-    //Visualizar somente enquanto não tem Controller
-    public void carregarCartasIniciais() {
-        BufferedImage[] cartas = {
-            carregarImagem("4espadas.jpg"),
-            carregarImagem("6yurts.jpg"),
-            carregarImagem("10yurts.jpg"),
-            carregarImagem("4Tesouros.jpg")
-        };
-
-        definirCartas(cartas);
+        java.net.URL recurso = getClass().getResource("/" + nomeArquivo);
+        if (recurso == null) {
+            throw new IllegalArgumentException("Imagem não encontrada: " + nomeArquivo);
+        }
+        try {
+            BufferedImage imagem = ImageIO.read(recurso);
+            if (imagem == null) {
+                throw new IllegalStateException("Imagem inválida: " + nomeArquivo);
+            }
+            cache.put(nomeArquivo, imagem);
+            return imagem;
+        } catch (IOException e) {
+            throw new IllegalStateException("Erro ao carregar carta: " + nomeArquivo, e);
+        }
     }
 }

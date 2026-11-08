@@ -12,6 +12,7 @@ class Parada {
 	private Cidade cidade = null;
 	private HashSet<Peao> peoes = new HashSet<Peao>();
 	private TipoBonus bonus = null;
+    private HashMap<TipoTesouro, Integer> exigenciaConselheiro;
 	private ParadaID id;
 	
 	Parada(ParadaID id){
@@ -73,6 +74,43 @@ class Parada {
 	TipoBonus getBonus() {
 		return this.bonus;
 	}
+    // Sem tipos específicos, o conselheiro aceita três tesouros quaisquer.
+    void configurarConselheiro(TipoTesouro... tesouros) {
+        exigenciaConselheiro = new HashMap<>();
+        for (TipoTesouro tipo : tesouros) {
+            exigenciaConselheiro.put(tipo,
+                    exigenciaConselheiro.getOrDefault(tipo, 0) + 1);
+        }
+    }
+
+    boolean ehConselheiro() {
+        return exigenciaConselheiro != null;
+    }
+
+    HashMap<TipoTesouro, Integer> getExigenciaConselheiro() {
+        return ehConselheiro() ? new HashMap<>(exigenciaConselheiro) : new HashMap<>();
+    }
+
+    int getVotosEntrega() {
+        return !ehConselheiro() ? 0 : (id == ParadaID.KARAKORUM ? 2 : 1);
+    }
+
+    boolean aceitaEntrega(HashMap<TipoTesouro, Integer> entrega) {
+        if (!ehConselheiro() || entrega == null || entrega.isEmpty()) {
+            return false;
+        }
+        long total = 0;
+        for (TipoTesouro tipo : entrega.keySet()) {
+            Integer quantidade = entrega.get(tipo);
+            if (tipo == null || quantidade == null || quantidade <= 0) {
+                return false;
+            }
+            total += quantidade;
+        }
+        return exigenciaConselheiro.isEmpty()
+                ? total == 3 : exigenciaConselheiro.equals(entrega);
+    }
+
 	boolean podeReceberYurt() {
 	    return id!=ParadaID.KARAKORUM&&yurt.size()<multiplicidade;
 	}

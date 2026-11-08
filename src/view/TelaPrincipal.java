@@ -2,10 +2,24 @@
 package view;
 
 import javax.swing.*;
+
 import javax.swing.border.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Map;
+import java.awt.Desktop;
+import java.io.File; 
+import java.io.IOException; 
 
-public class TelaPrincipal extends JFrame {
+import controller.ControllerAPI;
+import model.ObservadoJogo;
+import model.ObservadorJogo;
+
+public class TelaPrincipal extends JFrame implements ObservadorJogo {
 
     private JPanel areaMapa;
     private JPanel painelLateral;
@@ -14,6 +28,13 @@ public class TelaPrincipal extends JFrame {
     private PainelCartasConselheirosAberto painelCartas;
     
     private JLabel avisoRodada; 
+    private JPanel linhasPlacar;
+    private JLabel votosFichaNeutra;
+    private final ControllerAPI controlador;
+    private JButton botaoJogador;
+    private JLabel jogadorAtual;
+    private JLabel corJogador;
+    private JLabel mensagemJogo;
     
 
     private final Color vermelho = new Color(166, 45, 48);
@@ -21,8 +42,14 @@ public class TelaPrincipal extends JFrame {
     private final Color pergaminho = new Color(239, 225, 190);
     private final Color texto = new Color(75, 51, 30);
     private final Color azul = new Color(48, 83, 105);
+    private boolean resultadoExibido = false; 
 
     public TelaPrincipal() {
+        this(new ControllerAPI());
+    }
+
+    public TelaPrincipal(ControllerAPI controlador) {
+        this.controlador = controlador;
         setTitle("Herdeiros de Khan");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1200, 800);
@@ -36,6 +63,14 @@ public class TelaPrincipal extends JFrame {
         criarMapa();
         criarPainelLateral();
         criarMensagens();
+
+        atualizar(controlador.registrarObservador(this));
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent evento) {
+                TelaPrincipal.this.controlador.removerObservador(TelaPrincipal.this);
+            }
+        });
     }
 
     private void criarCabecalho() {
@@ -99,42 +134,32 @@ public class TelaPrincipal extends JFrame {
         navegacao.setOpaque(false);
         navegacao.setMaximumSize(new Dimension(280, 42));
 
-        JButton botaoMapa = criarBotao("Mapa", azul);
-        JButton botaoJogador = criarBotao("Jogador", azul);
+        JButton botaoRegras = criarBotao("Regras", azul);
         
         
-        botaoJogador.addActionListener(e -> {
-            JFrame janelaAtual =
-                (JFrame) SwingUtilities.getWindowAncestor(painelLateral);
-
-            if (janelaAtual != null) {
-                janelaAtual.setContentPane(new TelaJogador());
-                janelaAtual.revalidate();
-                janelaAtual.repaint();
-            } else {
-                System.out.println("Não foi possível encontrar a janela.");
-            }
-        });
+        botaoJogador = criarBotao("Jogador", azul);
 
         
-        navegacao.add(botaoMapa);
+        navegacao.add(botaoRegras);
         navegacao.add(botaoJogador);
 
         painelLateral.add(navegacao);
         painelLateral.add(Box.createVerticalStrut(10));
+        
+        botaoRegras.addActionListener(e -> abrirRegras());
         
         
         //Seção que mostra o jogador que irá jogar
 
         JPanel vez = criarSecao("VEZ DE JOGAR");
 
-        JLabel jogadorAtual = new JLabel("●  Altani", SwingConstants.CENTER);
+        jogadorAtual = new JLabel("", SwingConstants.CENTER);
         jogadorAtual.setForeground(texto);
         jogadorAtual.setFont(new Font("SansSerif", Font.BOLD, 16));
         jogadorAtual.setAlignmentX(Component.CENTER_ALIGNMENT);
         jogadorAtual.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
 
-        JLabel corJogador = new JLabel("Cor: não definida", SwingConstants.CENTER);
+        corJogador = new JLabel("Cor: não definida", SwingConstants.CENTER);
         corJogador.setForeground(texto);
         corJogador.setAlignmentX(Component.CENTER_ALIGNMENT);
         corJogador.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
@@ -163,7 +188,6 @@ public class TelaPrincipal extends JFrame {
         JPanel conselheiros = criarSecao("CARTAS DE CONSELHEIROS ABERTO");
 
         painelCartas = new PainelCartasConselheirosAberto();
-        painelCartas.carregarCartasIniciais();
 
         conselheiros.add(painelCartas);
 
@@ -178,12 +202,15 @@ public class TelaPrincipal extends JFrame {
         placar.add(explicacao);
         
         
-        //Depois vai atualizar passando a lista de votos por jogador real 
+        linhasPlacar = new JPanel();
+        linhasPlacar.setOpaque(false);
+        linhasPlacar.setLayout(new BoxLayout(linhasPlacar, BoxLayout.Y_AXIS));
+        placar.add(linhasPlacar);
 
-        placar.add(criarLinhaPlacar("1º Jogador A", 0));
-        placar.add(criarLinhaPlacar("2º Jogador B", 0));
-        placar.add(criarLinhaPlacar("3º Jogador C", 0));
-        placar.add(criarLinhaPlacar("4º Jogador D", 0));
+        votosFichaNeutra = new JLabel("Ficha neutra: 0");
+        votosFichaNeutra.setAlignmentX(Component.LEFT_ALIGNMENT);
+        placar.add(votosFichaNeutra);
+        placar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 230));
         adicionarSecao(placar);
 
         painelLateral.add(Box.createVerticalGlue());
@@ -258,17 +285,17 @@ public class TelaPrincipal extends JFrame {
         titulo.setFont(new Font("SansSerif", Font.BOLD, 12));
         titulo.setForeground(azul);
 
-        JLabel mensagem = new JLabel(
-            "A partida aparecerá aqui quando as ações forem conectadas."
+        mensagemJogo = new JLabel(
+            "Aguardando início da partida."
         );
-        mensagem.setForeground(texto);
+        mensagemJogo.setForeground(texto);
 
         JPanel conteudo = new JPanel();
         conteudo.setOpaque(false);
         conteudo.setLayout(new BoxLayout(conteudo, BoxLayout.Y_AXIS));
         conteudo.add(titulo);
         conteudo.add(Box.createVerticalStrut(4));
-        conteudo.add(mensagem);
+        conteudo.add(mensagemJogo);
 
         painelMensagens.add(conteudo, BorderLayout.CENTER);
 
@@ -308,5 +335,123 @@ public class TelaPrincipal extends JFrame {
     	
     	return linha; 
     	
+    }
+
+    @Override
+    public void atualizar(final ObservadoJogo observado) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    atualizarCartasEPlacar(observado);
+                }
+            });
+            return;
+        }
+        atualizarCartasEPlacar(observado);
+    }
+
+    private void atualizarCartasEPlacar(ObservadoJogo observado) {
+        if (observado.existePartida()) {
+            jogadorAtual.setText("● " + observado.getNomePersonagemAtual());
+            corJogador.setText("Cor: " + observado.getCorJogadorAtual().name());
+            jogadorAtual.setForeground(ViewAPI.getColor(observado.getCorJogadorAtual()));
+
+            if (observado.isPartidaEncerrada()) {
+                mensagemJogo.setText("Partida encerrada.");
+            } else if (observado.isTurnoEmAndamento()) {
+                mensagemJogo.setText("Turno de " + observado.getNomePersonagemAtual()
+                    + ": clique no mapa para executar as ações disponíveis.");
+            } else {
+                mensagemJogo.setText("Abra Jogador para escolher a coluna do turno.");
+            }
+        } else {
+        	resultadoExibido = false; 
+            jogadorAtual.setText("");
+            corJogador.setText("Cor: não definida");
+            mensagemJogo.setText("Aguardando início da partida.");
+        }
+        
+        if (observado.isFimDisparado()
+                && !secaoUltimaRodada.isVisible()) {
+
+            mostrarUltimaRodada("A última rodada começou! Prepare-se para o encerramento da partida.");
+        }
+        
+        
+        painelCartas.definirConselheiros(observado.getConselheirosAbertos());
+        
+        ArrayList<Map.Entry<String, Integer>> classificacao = new ArrayList<>(observado.getPlacarVotos().entrySet());
+
+        Collections.sort(classificacao, new Comparator<Map.Entry<String, Integer>>() {
+            @Override
+            public int compare(Map.Entry<String, Integer> primeiro,
+                    Map.Entry<String, Integer> segundo) {
+                int votos = Integer.compare(segundo.getValue(), primeiro.getValue());
+                return votos != 0 ? votos : primeiro.getKey().compareTo(segundo.getKey());
+            }
+        });
+
+        linhasPlacar.removeAll();
+        for (Map.Entry<String, Integer> jogador : classificacao) {
+            linhasPlacar.add(criarLinhaPlacar(jogador.getKey(), jogador.getValue()));
+        }
+        votosFichaNeutra.setText("Ficha neutra: " + observado.getVotosFichaNeutra());
+        linhasPlacar.revalidate();
+        linhasPlacar.repaint();
+        
+        if(observado.isPartidaEncerrada() && !resultadoExibido) {
+        	resultadoExibido = true; 
+        	mostrarResultadoFinal(observado);
+        }
+    }
+
+    public void definirMapa(JPanel mapa) {
+        areaMapa.removeAll();
+        areaMapa.add(mapa, BorderLayout.CENTER);
+        areaMapa.revalidate();
+        areaMapa.repaint();
+    }
+
+    public JButton getBotaoJogador() {
+        return botaoJogador;
+    }
+    
+    public void mostrarResultadoFinal(ObservadoJogo observado) {
+
+        ArrayList<String> vencedores = observado.getNomesVencedores();
+
+        String mensagem;
+
+        if (vencedores.isEmpty()) {
+            mensagem = "Não foi possível identificar o vencedor.";
+        } else if (vencedores.size() == 1) {
+            mensagem = "VENCEDOR: " + vencedores.get(0);
+        } else {
+            mensagem = "EMPATE ENTRE: " + String.join(", ", vencedores);
+        }
+
+        javax.swing.JOptionPane.showMessageDialog(this,mensagem,"Fim de jogo", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    private void abrirRegras() {
+    	try {
+    		File arquivo = new File("arquivos/regras.pdf");
+    		
+    		if(!arquivo.exists()) {
+    			JOptionPane.showMessageDialog(this, "O arquivo de regras não foi encontrado!", "Erro", JOptionPane.ERROR_MESSAGE);
+    			return; 
+    		}
+    		
+    		if(Desktop.isDesktopSupported()) {
+    			Desktop.getDesktop().open(arquivo); 
+    			
+    		}
+    		else {
+    			JOptionPane.showMessageDialog(this, "Não foi possível abrir o PDF neste computador.");
+    		}
+    	} catch (IOException e) {
+    		JOptionPane.showMessageDialog(this, "Erro ao abrir as regras" + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+    	}
     }
 }

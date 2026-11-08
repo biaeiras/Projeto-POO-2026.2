@@ -3,8 +3,15 @@ package view;
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import model.ParadaID;
 
-public class TelaJogador extends JPanel {
+import model.ObservadoJogo;
+import model.ObservadorJogo;
+import view.PainelTabuleiroJogador.MelhoriaVisual;
+
+public class TelaJogador extends JPanel implements ObservadorJogo {
 
     private final Color vermelho = new Color(166, 45, 48);
     private final Color dourado = new Color(190, 145, 68);
@@ -21,7 +28,13 @@ public class TelaJogador extends JPanel {
     private JLabel valorYurtsEstoque; 
     private JLabel valorTributosYurt; 
     
-    
+    private PainelTabuleiroJogador painelTabuleiroJogador;
+    private JButton botaoTerminarTurno;
+    private JButton botaoEntregarTesouros;
+    private PainelPecasBonus painelPecasBonus;
+    private ObservadoJogo observado;
+    private JLabel informacaoTabuleiro;
+ 
     
 
     public TelaJogador() {
@@ -71,26 +84,13 @@ public class TelaJogador extends JPanel {
 
         JPanel bonus = criarSecao( "PEÇAS DE BÔNUS", new Color(213, 202, 235));
 
-    	PainelPecasBonus painelPecasBonus = new PainelPecasBonus();
 
-    	bonus.add(painelPecasBonus);
-    	
-    	//SÓ PARA TESTAR : depois vai ser alterado para o controller
-    	
-    	painelPecasBonus.atualizarPecas(
-    		    new boolean[] {
-    		        true, true, false, false, false, false, false
-    		    },
-    		    new boolean[] {
-    		        false, true, false, false, false, false, false
-    		    }
-    		);
-        
-        
+        painelPecasBonus = new PainelPecasBonus();
+        bonus.add(painelPecasBonus);
+
         JPanel cartaConselheiroSecreto = criarSecao( "MEU CONSELHEIRO SECRETO", new Color(213, 202, 235));
 
         painelCartaConselheiroSecreto = new PainelCartaConselheiroSecreto();
-        painelCartaConselheiroSecreto.carregarCartaInicial();
 
     	JPanel centralizarCarta = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
     	centralizarCarta.setOpaque(false);
@@ -98,27 +98,39 @@ public class TelaJogador extends JPanel {
     	
 
         cartaConselheiroSecreto.add(centralizarCarta);
+     
+        // AÇÕES DISPONÍVEIS
+        JPanel acoes = new JPanel(new BorderLayout(0, 6));
 
-        JPanel acoes = criarSecao("AÇÕES DISPONÍVEIS", verde);
-        
-        acoes.setLayout(new BorderLayout(0,8)); 
-        
-        JPanel gradeAcoes = new JPanel(new GridLayout(3,2,6,6)); 
+        acoes.setBackground(verde);
+        acoes.setBorder(new CompoundBorder(
+            new LineBorder(dourado, 1),
+            new EmptyBorder(8, 8, 8, 8)
+        ));
+
+        // Título
+        JLabel tituloAcoes = new JLabel("AÇÕES DISPONÍVEIS");
+        tituloAcoes.setForeground(vermelho);
+        tituloAcoes.setFont(new Font("SansSerif", Font.BOLD, 12));
+
+        acoes.add(tituloAcoes, BorderLayout.NORTH);
+
+        // Grade dos três botões
+        JPanel gradeAcoes = new JPanel(new GridLayout(3, 1, 0, 6));
         gradeAcoes.setOpaque(false);
 
-        gradeAcoes.add(criarBotao("Pegar tributo"));
-        gradeAcoes.add(criarBotao("Construir yurt"));
-        gradeAcoes.add(criarBotao("Atacar cidade"));
+        acoes.add(tituloAcoes, BorderLayout.NORTH);
+
         gradeAcoes.add(criarBotao("Comprar melhoria"));
-        gradeAcoes.add(criarBotao("Entregar tesouros"));
-        gradeAcoes.add(criarBotao("Cumprir conselheiros"));
-    
-        
-        JButton terminarTurno = criarBotao("Terminar Turno"); 
-        
-        acoes.add(gradeAcoes,BorderLayout.CENTER ); 
-        acoes.add(terminarTurno, BorderLayout.SOUTH);
-        
+
+        botaoEntregarTesouros = criarBotao("Entregar tesouros");
+        botaoEntregarTesouros.setEnabled(false);
+        gradeAcoes.add(botaoEntregarTesouros);
+
+        botaoTerminarTurno = criarBotao("Terminar Turno");
+        gradeAcoes.add(botaoTerminarTurno);
+
+        acoes.add(gradeAcoes, BorderLayout.CENTER);
         
         JPanel recursos = criarSecao("RECURSOS", azul);
         valorMoedas =adicionarRecurso(recursos, "Moedas", "0");
@@ -138,30 +150,30 @@ public class TelaJogador extends JPanel {
     }
 
 
-	private JPanel criarGradeTabuleiro() {
-	    JPanel cartela = new JPanel(new BorderLayout());
-	
-	    cartela.setBackground(new Color(214, 190, 145));
-	    cartela.setBorder(new CompoundBorder(
-	        new LineBorder(dourado, 2),
-	        new EmptyBorder(5, 5, 5, 5)
-	    ));
-	
-	    JLabel legenda = new JLabel(
-	        "Área reservada para a cartela do jogador",
-	        SwingConstants.CENTER
-	    );
-	
-	    legenda.setForeground(this.texto);
-	    legenda.setFont(new Font("Serif", Font.PLAIN, 16));
-	
-	    cartela.add(legenda, BorderLayout.CENTER);
-	    cartela.setPreferredSize(new Dimension(500, 300));
-	
-	    return cartela;
-	}
+    private JPanel criarGradeTabuleiro() {
+        JPanel cartela = new JPanel(new BorderLayout(5, 5));
 
+        cartela.setBackground(new Color(214, 190, 145));
+        cartela.setBorder(new CompoundBorder(
+            new LineBorder(dourado, 2),
+            new EmptyBorder(5, 5, 5, 5)
+        ));
 
+        painelTabuleiroJogador =
+            new PainelTabuleiroJogador(null);
+
+        cartela.add(painelTabuleiroJogador, BorderLayout.CENTER);
+
+        informacaoTabuleiro = new JLabel(
+            "Aguardando início da partida.",
+            SwingConstants.CENTER
+        );
+
+        cartela.add(informacaoTabuleiro, BorderLayout.SOUTH);
+
+        return cartela;
+    }
+    
     private JPanel criarSecao(String titulo, Color fundo) {
         JPanel secao = new JPanel();
         secao.setLayout(new BoxLayout(secao, BoxLayout.Y_AXIS));
@@ -227,4 +239,234 @@ public class TelaJogador extends JPanel {
         
         return botao;
     }
+    
+    public PainelTabuleiroJogador getPainelTabuleiroJogador() {
+        return painelTabuleiroJogador;
+    }
+
+    public JButton getBotaoTerminarTurno() {
+        return botaoTerminarTurno;
+    }
+
+    public JButton getBotaoEntregarTesouros() {
+        return botaoEntregarTesouros;
+    }
+
+    public ParadaID escolherLocalEntrega() {
+        if (observado == null) return null;
+        ArrayList<ParadaID> locais = observado.getLocaisEntregaDisponiveis();
+        if (locais.isEmpty()) {
+            mostrarInformacaoTabuleiro("Visite uma parada de conselheiro neste turno para entregar tesouros.");
+            return null;
+        }
+        String[] nomes = new String[locais.size()];
+        for (int i = 0; i < nomes.length; i++) {
+            nomes[i] = locais.get(i).name().replace('_', ' ');
+        }
+        JComboBox<String> selecao = new JComboBox<>(nomes);
+        JPanel conteudo = new JPanel(new BorderLayout(8, 8));
+        conteudo.setBackground(pergaminho);
+        conteudo.setBorder(new EmptyBorder(12, 12, 12, 12));
+        conteudo.add(new JLabel("Escolha um conselheiro visitado neste turno:"), BorderLayout.NORTH);
+        conteudo.add(selecao, BorderLayout.CENTER);
+        int resposta = JOptionPane.showConfirmDialog(this, conteudo,
+                "Entregar tesouros", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        return resposta == JOptionPane.OK_OPTION ? locais.get(selecao.getSelectedIndex()) : null;
+    }
+
+    public HashMap<String, Integer> escolherTesourosEntrega(ParadaID local) {
+        if (observado == null) return null;
+        HashMap<String, Integer> exigencia = observado.getExigenciaEntrega(local);
+        HashMap<String, Integer> reais = observado.getTesourosJogadorAtual();
+        HashMap<String, Integer> virtuais = observado.getTesourosVirtuaisJogadorAtual();
+        // A View apresenta as exigências fornecidas pelo Model.
+        boolean escolhaLivre = exigencia.isEmpty();
+        String[] tipos = {"BOI", "FERRO", "PELE", "TECIDO", "ALIMENTO"};
+        JSpinner[] quantidades = new JSpinner[tipos.length];
+        JPanel conteudo = new JPanel(new BorderLayout(8, 8));
+        conteudo.setBackground(pergaminho);
+        conteudo.setBorder(new EmptyBorder(12, 12, 12, 12));
+        String bonus = observado.getBonusDisponivelEntrega(local);
+        JLabel instrucoes = new JLabel("<html><b>"
+                + local.name().replace('_', ' ') + "</b><br>"
+                + (escolhaLivre ? "Escolha 3 tesouros de qualquer tipo."
+                        : "Entregue o conjunto indicado abaixo.")
+                + "<br>Recompensa: " + observado.getVotosEntrega(local) + " voto(s).<br>"
+                + (bonus == null ? "A peça de bônus deste local já foi recolhida."
+                        : "Peça de bônus disponível: " + bonus.toLowerCase(java.util.Locale.ROOT).replace('_', ' '))
+                + "<br>Os tesouros virtuais disponíveis são utilizados primeiro.</html>");
+        instrucoes.setForeground(texto);
+        conteudo.add(instrucoes, BorderLayout.NORTH);
+        JPanel grade = new JPanel(new GridLayout(0, 3, 10, 6));
+        grade.setOpaque(false);
+        grade.add(new JLabel("Tesouro"));
+        grade.add(new JLabel("Estoque + virtuais"));
+        grade.add(new JLabel("Entregar"));
+        for (int i = 0; i < tipos.length; i++) {
+            String tipo = tipos[i];
+            int quantidade = escolhaLivre ? 0 : exigencia.getOrDefault(tipo, 0);
+            quantidades[i] = new JSpinner(new SpinnerNumberModel(quantidade, 0, 3, 1));
+            quantidades[i].setEnabled(escolhaLivre);
+            // Impede digitação parcial: o seletor continua utilizável pelas setas.
+            ((JSpinner.DefaultEditor) quantidades[i].getEditor()).getTextField().setEditable(false);
+            grade.add(new JLabel(tipo));
+            grade.add(new JLabel(reais.getOrDefault(tipo, 0) + " + " + virtuais.getOrDefault(tipo, 0)));
+            grade.add(quantidades[i]);
+        }
+        conteudo.add(grade, BorderLayout.CENTER);
+        int resposta = JOptionPane.showConfirmDialog(this, conteudo,
+                "Confirmar entrega", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (resposta != JOptionPane.OK_OPTION) return null;
+        HashMap<String, Integer> entrega = new HashMap<>();
+        for (int i = 0; i < tipos.length; i++) {
+            int quantidade = (Integer) quantidades[i].getValue();
+            if (quantidade > 0) entrega.put(tipos[i], quantidade);
+        }
+        return entrega;
+    }
+
+    public void mostrarInformacaoTabuleiro(String mensagem) {
+        informacaoTabuleiro.setText(mensagem);
+    }
+
+    public void atualizarEstadoColunas( boolean[] usadas, boolean podeEscolher,boolean podeTerminar) {
+
+        painelTabuleiroJogador.atualizarEstadoColunas( usadas, podeEscolher);
+
+        botaoTerminarTurno.setEnabled(podeTerminar);
+    }
+
+    @Override
+    public void atualizar(final ObservadoJogo observado) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    atualizarInterface(observado);
+                }
+            });
+            return;
+        }
+
+        atualizarInterface(observado);
+    }
+
+    private void atualizarInterface(ObservadoJogo observado) {
+        this.observado = observado;
+       
+        botaoEntregarTesouros.setEnabled(observado.isTurnoEmAndamento()
+                && !observado.isPartidaEncerrada());
+        if (!observado.existePartida()) {
+            painelCartaConselheiroSecreto.definirCarta(null);
+            painelTabuleiroJogador.definirPersonagem(null);
+            painelTabuleiroJogador.definirCorFicha(null);
+            painelTabuleiroJogador.atualizarMelhorias(
+                new ArrayList<MelhoriaVisual>()
+            );
+            
+            //Limpa peças bônus quando não existe partidas
+            
+            painelPecasBonus.atualizarPecas(
+            	    new int[] {-1, -1, -1, -1, -1, -1, -1},
+            	    new boolean[7]
+            	);
+
+            atualizarEstadoColunas(
+                new boolean[4], false, false
+            );
+
+            atualizarRecursos(0, 0, 0, 0);
+            mostrarInformacaoTabuleiro(
+                "Aguardando início da partida."
+            );
+
+            return;
+        }
+
+        painelTabuleiroJogador.definirPersonagem(
+            observado.getNomePersonagemAtual()
+        );
+        painelTabuleiroJogador.definirCorFicha(observado.getCorJogadorAtual());
+
+        String conselheiro = observado.getNomeConselheiroSecretoJogadorAtual();
+        if (conselheiro == null) {
+            painelCartaConselheiroSecreto.definirCarta(null);
+        } else {
+            painelCartaConselheiroSecreto.carregarCarta(
+                conselheiro.toLowerCase(java.util.Locale.ROOT) + ".jpg"
+            );
+        }
+
+        painelTabuleiroJogador.atualizarMelhorias(
+            criarMelhoriasVisuais(observado)
+        );
+
+        boolean[] usadas = new boolean[4];
+
+        for (int coluna = 0; coluna < usadas.length; coluna++) {
+            usadas[coluna] =
+                observado.isColunaJogadorAtualAtivada(coluna);
+        }
+
+        boolean turnoAberto = observado.isTurnoEmAndamento();
+
+        atualizarEstadoColunas(
+            usadas,
+            observado.podeEscolherColuna(),
+            turnoAberto && !observado.isPartidaEncerrada()
+        );
+
+        atualizarRecursos(
+            observado.getMoedasJogadorAtual(),
+            observado.getEspadasJogadorAtual(),
+            observado.getYurtsEstoqueJogadorAtual(),
+            observado.getTributosYurtJogadorAtual()
+        );
+
+        String situacao;
+        
+        painelPecasBonus.atualizarPecas(observado.getOrdemPecasBonusJogadorAtual(), observado.getPecasBonusUsadasJogadorAtual());
+
+        if (observado.isPartidaEncerrada()) {
+            situacao = "Partida encerrada.";
+        } else if (turnoAberto) {
+            situacao = "Turno em andamento.";
+        } else if (observado.podeEscolherColuna()) {
+            situacao = "Clique no retângulo inferior de uma coluna.";
+        } else {
+            situacao = "Conclua a escolha dos conselheiros.";
+        }
+
+        mostrarInformacaoTabuleiro(
+            observado.getNomePersonagemAtual()
+            + " | Fichas: "
+            + observado.getFichasAtivacaoJogadorAtual()
+            + " | "
+            + situacao
+        );
+    }
+
+    public static ArrayList<MelhoriaVisual> criarMelhoriasVisuais(
+            ObservadoJogo observado) {
+        ArrayList<MelhoriaVisual> melhorias =
+            new ArrayList<>();
+
+        if (!observado.existePartida()) {
+            return melhorias;
+        }
+
+        for (int coluna = 0; coluna < 4; coluna++) {
+            ArrayList<String> lista =
+                observado.getMelhoriasTabuleiroJogador(coluna);
+
+            for (int linha = 0; linha < lista.size(); linha++) {
+                melhorias.add(new MelhoriaVisual(
+                    lista.get(linha), coluna, linha
+                ));
+            }
+        }
+
+        return melhorias;
+    }
+
 }

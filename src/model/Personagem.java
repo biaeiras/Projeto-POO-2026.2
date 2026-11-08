@@ -20,13 +20,18 @@ abstract class Personagem {
         return cor;
     }
     
-    HashMap<TipoAcao, Integer> getAcoesBase(Regiao regiao) {
-        HashMap<TipoAcao, Integer> acoes = new HashMap<>();
+    // Região nula representa a coluna branca.
+    abstract HashMap<Enum<?>, Integer> getAcoesBase(Regiao regiao);
 
-        acoes.put(TipoAcao.MOVIMENTO,2);
-        acoes.put(TipoAcao.PEGAR_TRIBUTO, 1);
-        acoes.put(TipoAcao.USAR_KHAN, 0);
-
+    protected final HashMap<Enum<?>, Integer> criarAcoesBase(
+            int movimentos, int tributos, boolean khan, boolean moedaVirtual) {
+        HashMap<Enum<?>, Integer> acoes = new HashMap<>();
+        acoes.put(TipoAcao.MOVIMENTO, movimentos);
+        acoes.put(TipoAcao.PEGAR_TRIBUTO, tributos);
+        acoes.put(TipoAcao.USAR_KHAN, khan ? 1 : 0);
+        if (moedaVirtual) {
+            acoes.put(TipoMelhoria.MOEDA_VIRTUAL, 1);
+        }
         return acoes;
     }
     
