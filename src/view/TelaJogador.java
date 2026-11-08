@@ -240,26 +240,10 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
         return botaoEntregarTesouros;
     }
 
-    public ParadaID escolherLocalEntrega() {
+    public ParadaID getLocalEntregaAtual() {
         if (observado == null) return null;
         ArrayList<ParadaID> locais = observado.getLocaisEntregaDisponiveis();
-        if (locais.isEmpty()) {
-            mostrarInformacaoTabuleiro("Visite uma parada de conselheiro neste turno para entregar tesouros.");
-            return null;
-        }
-        String[] nomes = new String[locais.size()];
-        for (int i = 0; i < nomes.length; i++) {
-            nomes[i] = locais.get(i).name().replace('_', ' ');
-        }
-        JComboBox<String> selecao = new JComboBox<>(nomes);
-        JPanel conteudo = new JPanel(new BorderLayout(8, 8));
-        conteudo.setBackground(pergaminho);
-        conteudo.setBorder(new EmptyBorder(12, 12, 12, 12));
-        conteudo.add(new JLabel("Escolha um conselheiro visitado neste turno:"), BorderLayout.NORTH);
-        conteudo.add(selecao, BorderLayout.CENTER);
-        int resposta = JOptionPane.showConfirmDialog(this, conteudo,
-                "Entregar tesouros", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        return resposta == JOptionPane.OK_OPTION ? locais.get(selecao.getSelectedIndex()) : null;
+        return locais.isEmpty() ? null : locais.get(0);
     }
 
     public HashMap<String, Integer> escolherTesourosEntrega(ParadaID local) {
@@ -350,7 +334,8 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
                 observado.getPecasBonusConquistadasJogadorAtual(),
                 observado.getPecasBonusUsadasJogadorAtual());
         botaoEntregarTesouros.setEnabled(observado.isTurnoEmAndamento()
-                && !observado.isPartidaEncerrada());
+                && !observado.isPartidaEncerrada()
+                && !observado.getLocaisEntregaDisponiveis().isEmpty());
         if (!observado.existePartida()) {
             painelCartaConselheiroSecreto.definirCarta(null);
             painelTabuleiroJogador.definirPersonagem(null);

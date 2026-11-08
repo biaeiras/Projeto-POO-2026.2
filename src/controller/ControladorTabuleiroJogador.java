@@ -107,7 +107,7 @@ public class ControladorTabuleiroJogador {
         tela.getBotaoEntregarTesouros().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evento) {
-                ParadaID local = ControladorTabuleiroJogador.this.tela.escolherLocalEntrega();
+                ParadaID local = ControladorTabuleiroJogador.this.tela.getLocalEntregaAtual();
                 if (local == null) return;
                 HashMap<String, Integer> entrega =
                         ControladorTabuleiroJogador.this.tela.escolherTesourosEntrega(local);
@@ -115,7 +115,7 @@ public class ControladorTabuleiroJogador {
                 boolean entregou = fachada.entregarTesourosJogadorAtual(local, entrega);
                 ControladorTabuleiroJogador.this.tela.mostrarInformacaoTabuleiro(entregou
                         ? "Entrega realizada! Votos e peças de bônus atualizados."
-                        : "Não foi possível entregar. Confira o conjunto exigido, os tesouros disponíveis e o local visitado.");
+                        : "Não foi possível entregar. Confira o conjunto exigido, os tesouros disponíveis e a posição atual do peão.");
             }
         });
 

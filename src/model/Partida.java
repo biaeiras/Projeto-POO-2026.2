@@ -577,14 +577,10 @@ class Partida  {
                 || !peaoPodeAgir(peaoAtivo)) {
             return locais;
         }
-        HashSet<Parada> percorridas = paradasPercorridas.get(peaoAtivo);
-        if (percorridas != null) {
-            for (ParadaID id : ParadaID.values()) {
-                Parada parada = tabuleiroPrincipal.getMapa().get(id);
-                if (parada.ehConselheiro() && percorridas.contains(parada)) {
-                    locais.add(id);
-                }
-            }
+        Parada atual = peaoAtivo.getPosicao();
+        // Passar por um conselheiro não permite entregar depois de sair dele.
+        if (!hasToMove && atual != null && atual.ehConselheiro()) {
+            locais.add(atual.getId());
         }
         return locais;
     }

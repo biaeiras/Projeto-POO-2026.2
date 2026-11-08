@@ -111,6 +111,71 @@ public class EntregaTesourosTest {
     }
 
     @Test
+    public void sairDoConselheiroImpedeEntregaSemConsumirTesourosOuBonus() {
+        Partida partida = criarPartida();
+        Jogador jogador = partida.getJogadorAtual();
+        Parada local = mapa(partida).get(ParadaID.SARAI_KAESONG_KARAKORUM);
+        TipoBonus bonus = local.getBonus();
+        darTesouros(jogador, TipoTesouro.FERRO, TipoTesouro.FERRO);
+        assertTrue(partida.iniciarTurno(Regiao.PERSIA));
+        assertTrue(partida.moverPeao(local.getId()));
+        assertEquals(Arrays.asList(local.getId()), partida.getLocaisEntregaDisponiveis());
+        assertTrue(partida.moverPeao(ParadaID.SARAI2));
+        assertTrue(partida.getLocaisEntregaDisponiveis().isEmpty());
+        assertFalse(partida.entregarTesouros(local.getId(), conjunto(TipoTesouro.FERRO, TipoTesouro.FERRO)));
+        assertEquals(2, jogador.getQuantidadeTesouro(TipoTesouro.FERRO));
+        assertEquals(0, jogador.getVotos());
+        assertEquals(bonus, local.getBonus());
+    }
+
+    @Test
+    public void passagemPorConselheiroLotadoNaoPermiteEntrega() {
+        Partida partida = criarPartida();
+        Jogador jogador = partida.getJogadorAtual();
+        Parada local = mapa(partida).get(ParadaID.SARAI_KAESONG_KARAKORUM);
+        Peao outro = jogador.getPeao(1);
+        outro.getPosicao().removePeao(outro);
+        outro.setPosicao(local);
+        local.insertPeao(outro);
+        posicionar(partida.getJogadores().get(1), local);
+        darTesouros(jogador, TipoTesouro.FERRO, TipoTesouro.FERRO);
+        assertTrue(partida.iniciarTurno(Regiao.PERSIA));
+        assertTrue(partida.moverPeao(local.getId()));
+        assertTrue(partida.getLocaisEntregaDisponiveis().isEmpty());
+        assertFalse(partida.entregarTesouros(local.getId(), conjunto(TipoTesouro.FERRO, TipoTesouro.FERRO)));
+        assertEquals(2, jogador.getQuantidadeTesouro(TipoTesouro.FERRO));
+    }
+
+    @Test
+    public void telaIdentificaLocalAutomaticamenteEAtualizaBotaoAoMover() throws Exception {
+        SwingUtilities.invokeAndWait(new Runnable() {
+            @Override
+            public void run() {
+                Partida partida = criarPartida();
+                FachadaJogo fachada = FachadaJogo.getInstancia();
+                fachada.definirPartida(partida);
+                TelaJogador tela = new TelaJogador();
+                ControladorTabuleiroJogador controlador = new ControladorTabuleiroJogador(tela);
+                try {
+                    assertNull(tela.getLocalEntregaAtual());
+                    assertFalse(tela.getBotaoEntregarTesouros().isEnabled());
+                    assertTrue(fachada.ativarColunaJogadorAtual(1));
+                    assertEquals(ParadaID.KARAKORUM, tela.getLocalEntregaAtual());
+                    assertTrue(tela.getBotaoEntregarTesouros().isEnabled());
+                    fachada.moverPeao(ParadaID.SARAI_KAESONG_KARAKORUM);
+                    assertEquals(ParadaID.SARAI_KAESONG_KARAKORUM, tela.getLocalEntregaAtual());
+                    assertTrue(tela.getBotaoEntregarTesouros().isEnabled());
+                    fachada.moverPeao(ParadaID.SARAI2);
+                    assertNull(tela.getLocalEntregaAtual());
+                    assertFalse(tela.getBotaoEntregarTesouros().isEnabled());
+                } finally {
+                    controlador.encerrar();
+                }
+            }
+        });
+    }
+
+    @Test
     public void outroJogadorPodeEntregarDepoisQueBonusFoiRecolhido() {
         Partida partida = criarPartida();
         Jogador primeiro = partida.getJogadorAtual();

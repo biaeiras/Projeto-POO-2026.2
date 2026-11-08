@@ -119,7 +119,7 @@ public class IntegracaoMapaTest {
     }
 
     @Test
-    public void tesourosDoAtaquePodemSerEntreguesNoMesmoTurno() {
+    public void tesourosDoAtaqueNaoPodemSerEntreguesEmKarakorumDepoisDeSair() {
         Partida partida = criarPartida();
         Jogador jogador = partida.getJogadorAtual();
         // Dois votos de Karakorum, sem peça extra neste cenário.
@@ -132,9 +132,10 @@ public class IntegracaoMapaTest {
         assertEquals(3, jogador.getTotalTesouros());
         HashMap<TipoTesouro, Integer> entrega = partida.getExigenciaEntrega(ParadaID.KARAKORUM);
         int votosAntes = jogador.getVotos(); // A carta de quatro espadas já pode ter pontuado.
-        assertTrue(partida.entregarTesouros(ParadaID.KARAKORUM, entrega));
-        assertEquals(0, jogador.getTotalTesouros());
-        assertEquals(votosAntes + 2, jogador.getVotos());
+        assertFalse(partida.entregarTesouros(ParadaID.KARAKORUM, entrega));
+        assertTrue(partida.getLocaisEntregaDisponiveis().isEmpty());
+        assertEquals(3, jogador.getTotalTesouros());
+        assertEquals(votosAntes, jogador.getVotos());
     }
 
     @Test
