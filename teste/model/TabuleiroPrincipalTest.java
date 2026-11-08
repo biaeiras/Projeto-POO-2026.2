@@ -14,6 +14,11 @@ public class TabuleiroPrincipalTest {
 
 	@Test
 	public void testTabuleiroPrincipal() {
+		/*
+		 * Testa o construtor do tabuleiro principal. Responsavel por inicializar o tabuleiro da forma correta.
+		 * Neste teste, e verificado que cada parada esta na lista de vizinhos de cada uma das paradas da sua propria lista de vizinhos.
+		 * Dessa forma, e testado as conexoes do grafo que representa o mapa do tabuleiro
+		 */
 		HashMap<Peao, Jogador> peoes = new HashMap<Peao, Jogador>();
 		Jogador jogador = criarJogadorTeste();
 		peoes.put(new Peao(jogador), jogador);
@@ -26,6 +31,19 @@ public class TabuleiroPrincipalTest {
 
 	@Test
 	public void testMoverPeao() {
+		/*
+		 * Testa a funcao moverPeao, verificando se os objetos associados (Peao e parada) são atualizados corretamente e o valor de retorno.
+		 * Nesse teste, inicializa-se um peao e o tabuleiro. O peao e entao movido para a parada Pequim1 e depois Pequim_Cabul_Cantao.
+		 * A cada movimento, os objetos são verificados para que suas atualizaçoes sejam feitas de forma correta.
+		 * Ainda, o valor de retorno da funcao moverPeao, que representa o conjunto das provincias vizinhas à cidade alvo do movimento, é acrescentado num conjunto
+		 * que armazena todas as provincias retornadas durante o teste.
+		 * Por fim, o conjunto de provincias resultante e comparado com um conjunto de provincias criado e construido manualmente como referencia.
+		 * O teste verifica se o conjunto resultante e equivalente ao de referencia.
+		 * 
+		 */
+		
+		
+		
 		HashMap<Peao, Jogador> peoes = new HashMap<Peao, Jogador>();
 		Jogador jogador = criarJogadorTeste();
 		Peao peao = new Peao(jogador);
@@ -64,6 +82,13 @@ public class TabuleiroPrincipalTest {
 
 	@Test
 	public void testGetMovimentosPossiveis() {
+		/*
+		 * Teste da funcao getMovimentosPossiveis, que retorna um hashMap que associa as paradas alcancaveis por um peao e o numero de movimentos necessarios para alcanca-la.
+		 * O numero maximo de movimentos e passado como argumento.
+		 * Neste teste, sao inicializados dois jogadores. Um deles e estatico e usado como obstaculo. Ainda, uma das paradas adjacentes ao jogador que se movimenta tem um yurt do proprio
+		 * A funcao e chamada duas vezes, uma com o maximo de 1 movimento e uma com o maximo de 2 movimentos.
+		 * O retorno e comparado com dois HashMaps construidos manualmente.
+		 */
 		HashMap<Peao, Jogador> peoes = new HashMap<Peao, Jogador>();
 		Jogador jogador1 = criarJogadorTeste();
 		Jogador jogador2 = criarJogadorTeste();
@@ -75,7 +100,7 @@ public class TabuleiroPrincipalTest {
 		HashMap<ParadaID, Parada> mapa = tabuleiro.getMapa();
 		tabuleiro.moverPeao(peao1, ParadaID.CANTAO2);
 		tabuleiro.moverPeao(peao2, ParadaID.CANTAO3);
-		mapa.get(ParadaID.CANTAO1).setYurt(jogador1);
+		mapa.get(ParadaID.CANTAO1).adicionarYurt(jogador1);
 		HashMap<Parada, Integer> possiveis1 = new HashMap<Parada,Integer>();
 		possiveis1.put(mapa.get(ParadaID.CANTAO1), 1);
 		possiveis1.put(mapa.get(ParadaID.PEQUIM2), 1);
@@ -99,11 +124,10 @@ public class TabuleiroPrincipalTest {
 
 	    ArrayList<ConselheiroSecreto> conselheiros = new ArrayList<>();
 
-	    conselheiros.add(new ConselheiroSecreto());
-	    conselheiros.add(new ConselheiroSecreto());
+	    conselheiros.add(new ConselheiroSecreto(TipoConselheiroSecreto.values()[0]));
+	    conselheiros.add(new ConselheiroSecreto(TipoConselheiroSecreto.values()[1]));
 
 	    return new Jogador(conselheiros, tabuleiro);
 	}
 
 }
-

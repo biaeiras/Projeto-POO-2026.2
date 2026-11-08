@@ -1,6 +1,6 @@
 package model;
 
-enum CidadeID {
+public enum CidadeID {
 	KIEV,
 	MOSCOU, 
 	SARAI,

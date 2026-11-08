@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Stack;
 
@@ -19,8 +20,19 @@ class TabuleiroPrincipal {
 	private final static int MELHORIAS_MOVIMENTO = 9;
 	private final static int MULTIPLICIDADE_TESOURO = 8;
 	protected final static TipoMelhoria[] MELHORIAS_EXTRAS= {null, TipoMelhoria.MOEDA_VIRTUAL, null, TipoMelhoria.ESPADA_VIRTUAL, null};
+    final static Map<KhanID, ProvinciaKhanID> KHAN_MAP = initKhanMap();
 	
-	private class ProvinciaKhan{
+    private static Map<KhanID, ProvinciaKhanID> initKhanMap() {
+        Map<KhanID, ProvinciaKhanID> id = new HashMap<KhanID, ProvinciaKhanID>();
+        id.put(KhanID.BL, ProvinciaKhanID.BL);
+        id.put(KhanID.BR, ProvinciaKhanID.BR);
+        id.put(KhanID.TL, ProvinciaKhanID.TL);
+        id.put(KhanID.TR, ProvinciaKhanID.TR);
+        id.put(KhanID.M, null);
+        return Collections.unmodifiableMap(id);
+    }
+
+    private class ProvinciaKhan{
 
 		private Provincia espada = new Provincia(TipoTributo.ESPADA),
 				moeda = new Provincia(TipoTributo.MOEDA),
@@ -35,7 +47,13 @@ class TabuleiroPrincipal {
 			moeda.carregar();
 			yurt.carregar();
 		}
-		
+        HashSet<ProvinciaID> getProvincias(){
+            HashSet<ProvinciaID> ret = new HashSet<ProvinciaID>();
+            ret.add(espada.getId());
+            ret.add(moeda.getId());
+            ret.add(yurt.getId());
+            return ret;
+        }
 		Provincia getEspada() {
 			return this.espada;
 		}
@@ -44,11 +62,6 @@ class TabuleiroPrincipal {
 		}
 		Provincia getYurt() {
 			return this.yurt;
-		}
-		void activate(TipoTributo tributo1, TipoTributo tributo2) {
-			provincias.get(tributo1).carregar();
-			provincias.get(tributo2).carregar();
-			
 		}
 	}
 	private class SlotMelhoria{
@@ -77,16 +90,17 @@ class TabuleiroPrincipal {
 	private HashMap<Peao, Jogador> peoes;
 	private HashMap<ParadaID, Parada> mapa = new HashMap<ParadaID, Parada>();
 	private HashMap<CidadeID, Cidade> cidades = new HashMap<CidadeID, Cidade>();
-	private HashMap<ProvinciaKhanID, ProvinciaKhan> provinciasKhan = new HashMap<ProvinciaKhanID, ProvinciaKhan>();
+	private HashMap<ProvinciaKhanID, ProvinciaKhan> provinciasKhan = new HashMap<ProvinciaKhanID, ProvinciaKhan>(); 
+	private HashMap<ParadaID, ArrayList<Cor>> yurts = new HashMap<ParadaID, ArrayList<Cor>>();
 	private Stack<CidadeID> pilhaCidades = new Stack<CidadeID>();
 	private Stack<TipoTesouro> pilhaTesouros = new Stack<TipoTesouro>();
 	private Stack<Melhoria> pilhaMelhorias;
 	private ArrayList<SlotMelhoria> melhorias = new ArrayList<SlotMelhoria>();
-	private ProvinciaKhanID khan = null;
+    private KhanID khan = null;
 	
 	private void initCidades() {
-		for(CidadeID id : CidadeID.values()) cidades.put(id, new Cidade());
-		for(CidadeID id : CidadeID.values()) pilhaCidades.push(id);
+        for(CidadeID id : CidadeID.values()) cidades.put(id, new Cidade(id));
+        for(CidadeID id : CidadeID.values()) if(id!=CidadeID.KARAKORUM) pilhaCidades.push(id);
 		Collections.shuffle(pilhaCidades);
 		for(int i = 0; i < CIDADES_INICIAIS; i++) {
 			CidadeID id = pilhaCidades.pop();
@@ -116,6 +130,9 @@ class TabuleiroPrincipal {
 		provincias.put(ProvinciaID.BR_ESPADA, provinciasKhan.get(ProvinciaKhanID.BR).getEspada());
 		provincias.put(ProvinciaID.BR_MOEDA, provinciasKhan.get(ProvinciaKhanID.BR).getMoeda());
 		provincias.put(ProvinciaID.BR_YURT, provinciasKhan.get(ProvinciaKhanID.BR).getYurt());
+		
+		for(Map.Entry<ProvinciaID, Provincia> entry: provincias.entrySet()) entry.getValue().setId(entry.getKey());
+		
 		return;
 	}
 	private void initParadas() {
@@ -125,7 +142,7 @@ class TabuleiroPrincipal {
 		
 		//Gerando paradas
 		
-		for(ParadaID id : ParadaID.values()) mapa.put(id, new Parada());
+		for(ParadaID id : ParadaID.values()) mapa.put(id, new Parada(id));
 			
 		//Caracterizando paradas
 			//Karakorum
@@ -143,7 +160,7 @@ class TabuleiroPrincipal {
 		paradaTemp.insertProvincia(ProvinciaID.TR_YURT, provinciasKhan.get(ProvinciaKhanID.TR).getYurt());
 		paradaTemp.insertProvincia(ProvinciaID.TR_MOEDA, provinciasKhan.get(ProvinciaKhanID.TR).getMoeda());
 		paradaTemp.insertProvincia(ProvinciaID.TR_ESPADA, provinciasKhan.get(ProvinciaKhanID.TR).getEspada());
-		paradaTemp.insertProvincia(ProvinciaID.TR_YURT, provinciasKhan.get(ProvinciaKhanID.BL).getYurt());
+		paradaTemp.insertProvincia(ProvinciaID.BL_YURT, provinciasKhan.get(ProvinciaKhanID.BL).getYurt());
 		
 			//Kiev1
 		paradaTemp = mapa.get(ParadaID.KIEV1);
@@ -528,6 +545,23 @@ class TabuleiroPrincipal {
 		
 		
 	}
+    private void initConselheiros() {
+        mapa.get(ParadaID.KIEV_MOSCOU).configurarConselheiro(
+                TipoTesouro.TECIDO, TipoTesouro.TECIDO);
+        mapa.get(ParadaID.KIEV_MOSCOU_SAMARCANDA_BAGDA).configurarConselheiro(
+                TipoTesouro.PELE, TipoTesouro.PELE);
+        mapa.get(ParadaID.SARAI_KAESONG_KARAKORUM).configurarConselheiro(
+                TipoTesouro.FERRO, TipoTesouro.FERRO);
+        mapa.get(ParadaID.KAESONG_CANTAO).configurarConselheiro(
+                TipoTesouro.BOI, TipoTesouro.BOI);
+        mapa.get(ParadaID.BAGDA_CABUL).configurarConselheiro(
+                TipoTesouro.ALIMENTO, TipoTesouro.ALIMENTO);
+        mapa.get(ParadaID.PEQUIM_CABUL_CANTAO).configurarConselheiro();
+        // Exigência impressa no tabuleiro. A peça alternativa é opcional.
+        mapa.get(ParadaID.KARAKORUM).configurarConselheiro(
+                TipoTesouro.FERRO, TipoTesouro.PELE, TipoTesouro.BOI);
+    }
+
 	private void initPeoes() {
 		Parada karakorum = mapa.get(ParadaID.KARAKORUM);
 		for(Peao p: peoes.keySet()) {
@@ -543,10 +577,18 @@ class TabuleiroPrincipal {
 		initCidades();
 		initProvincias();
 		initParadas();
+        initConselheiros();
 		initMelhorias();
 		initPeoes();
 	}
 	
+	TabuleiroPrincipal(HashMap<Peao, Jogador> peoes) {
+	    this(peoes, new Stack<Melhoria>());
+	}
+	
+    Cidade getCidade(CidadeID id) {
+        return cidades.get(id);
+    }
 	HashSet<Provincia> moverPeao(Peao peao, Parada parada){
 		HashSet<Provincia> provincias = new HashSet<Provincia>();
 		peao.getPosicao().removePeao(peao);
@@ -572,7 +614,36 @@ class TabuleiroPrincipal {
 		while (!fila.isEmpty()) {
 			Parada atual = fila.poll();
 			int i = ret.get(atual);
-			int custo = (peao.getJogador() == atual.getYurt())? 0:1;
+			int custo = (atual.getYurt().contains(peao.getJogador()))? 0:1;
+			if(i+custo>movimentos) continue;
+			for(Parada p: atual.getVizinhos().values()) {
+				int novoPasso = i + custo;
+				
+				if(!ret.containsKey(p)||novoPasso<ret.get(p)) {
+					ret.put(p, novoPasso);
+					fila.add(p);
+				}
+			}
+			
+		}
+		HashSet<Parada> ocupados = new HashSet<Parada>();
+		
+		for(Parada p: ret.keySet()) {
+			if(p.isMoveble()) continue;
+			ocupados.add(p);
+		}
+		ret.keySet().removeAll(ocupados);
+		return ret;
+	}
+	HashMap<Parada, Integer> getMovimentosPossiveis(Peao peao, Parada parada, int movimentos){
+		HashMap<Parada, Integer> ret = new HashMap<Parada, Integer>();
+		Queue<Parada> fila = new LinkedList<Parada>();
+		ret.put(parada, 0);
+		fila.add(parada);
+		while (!fila.isEmpty()) {
+			Parada atual = fila.poll();
+			int i = ret.get(atual);
+			int custo = (atual.getYurt().contains(peao.getJogador()))? 0:1;
 			if(i+custo>movimentos) continue;
 			for(Parada p: atual.getVizinhos().values()) {
 				int novoPasso = i + custo;
@@ -599,16 +670,102 @@ class TabuleiroPrincipal {
 	HashMap<ProvinciaID, Provincia> getProvincias(){
 		return this.provincias;
 	}
-	ProvinciaKhanID getKhan() {
+    KhanID getKhan() {
 		return this.khan;
 	}
-	void ativarProvinciaKhan(ProvinciaKhanID id, TipoTributo tributo1, TipoTributo tributo2) {
-		provinciasKhan.get(id).activate(tributo1, tributo2);
-		this.khan = id;
+    boolean ativarKhan(KhanID id, HashSet<ProvinciaID> tributos) {
+        if (id == null || id == khan || tributos == null) return false;
+        if (id != KhanID.M && (tributos.size() != 2
+                || !getProvinicasKhan(id).containsAll(tributos))) return false;
+        if (id == KhanID.M && !tributos.isEmpty()) return false;
+        this.khan = id;
+        if (id == KhanID.M) {
+            for (SlotMelhoria slot : melhorias) {
+                if (slot.getMelhoria() == null && !pilhaMelhorias.isEmpty()) {
+                    slot.setMelhoria(pilhaMelhorias.pop());
+                }
+            }
+        } else {
+            for (ProvinciaID pid : tributos) provincias.get(pid).carregar();
+        }
+        return true;
+    }
+	void adicionarYurt(Jogador jogador, Parada parada) {
+		if(!parada.adicionarYurt(jogador)) return;
+		if(!yurts.containsKey(parada.getId()))
+			yurts.put(parada.getId(), new ArrayList<Cor>());
+		yurts.get(parada.getId()).add(jogador.getTabuleiroJogador().getPersonagem().getCor());
 	}
-	void ativarMelhoriasKhan() {
-		for(SlotMelhoria slot: melhorias) if(slot.getMelhoria() == null) slot.setMelhoria(pilhaMelhorias.pop());
-		this.khan = null;
-		
+	HashMap<ParadaID, ArrayList<Cor>> getYurts(){
+		return yurts;
+	}
+	
+	HashMap<ProvinciaID, Integer> getCargasProvincias(){
+		HashMap<ProvinciaID, Integer> ret = new HashMap<ProvinciaID, Integer>();
+		for(Map.Entry<ProvinciaID, Provincia> entry: provincias.entrySet()) ret.put(entry.getKey(), entry.getValue().getCargas());
+		return ret;
+	}
+	
+    int getQuantidadeYurts(Jogador jogador) {
+        int total = 0;
+        for (Parada parada : mapa.values()) {
+            for (Jogador dono : parada.getYurt()) {
+                if (dono == jogador) {
+                    total++;
+                }
+            }
+        }
+        return total;
+    }
+
+    int getQuantidadeYurts(Jogador jogador, Regiao regiao) {
+        int total = 0;
+        for (Parada parada : mapa.values()) {
+            Cidade cidade = parada.getCidade();
+            if (cidade != null && cidade.getRegiao() == regiao) {
+                for (Jogador dono : parada.getYurt()) {
+                    if (dono == jogador) {
+                        total++;
+                    }
+                }
+            }
+        }
+        return total;
+    }
+    int getQuantidadeCidadesConquistadas(Jogador jogador) {
+        int total = 0;
+        for (Cidade cidade : cidades.values()) {
+            if (cidade.getConquistador() == jogador) {
+                total++;
+            }
+        }
+        return total;
+    }
+
+    HashSet<ProvinciaID> getProvinicasKhan(KhanID id) {
+        ProvinciaKhan provincia = provinciasKhan.get(KHAN_MAP.get(id));
+        return provincia == null ? new HashSet<>() : provincia.getProvincias();
+    }
+
+    HashMap<ParadaID, TipoBonus> getBonus(){
+        HashMap<ParadaID, TipoBonus> ret = new HashMap<>();
+        for(Map.Entry<ParadaID, Parada> entry: mapa.entrySet())
+            if(entry.getValue().getBonus()!=null) ret.put(entry.getKey(), entry.getValue().getBonus());
+        return ret;
+    }
+
+
+	public boolean todasCidadesConquistadas() {
+	    if (!pilhaCidades.isEmpty()) {
+	        return false;
+	    }
+
+	    for (Cidade cidade : cidades.values()) {
+	        if (cidade.getConquistador() == null) {
+	            return false;
+	        }
+	    }
+
+	    return true;
 	}
 }

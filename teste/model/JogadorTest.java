@@ -74,8 +74,8 @@ public class JogadorTest {
         // Cria as duas opções de conselheiro secreto
         ArrayList<ConselheiroSecreto> conselheiros = new ArrayList<>();
 
-        conselheiros.add(new ConselheiroSecreto());
-        conselheiros.add(new ConselheiroSecreto());
+        conselheiros.add(new ConselheiroSecreto(TipoConselheiroSecreto.values()[0]));
+        conselheiros.add(new ConselheiroSecreto(TipoConselheiroSecreto.values()[1]));
 
         // Cria o jogador (os peões são criados automaticamente)
         return new Jogador(conselheiros, tabuleiro);
