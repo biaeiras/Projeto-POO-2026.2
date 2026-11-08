@@ -33,7 +33,7 @@ public interface ObservadoJogo {
     HashSet<ProvinciaID> getProvincias();
     boolean isFimDisparado();
     ArrayList<String> getNomesVencedores();
-    boolean[] getPecasBonusConquistadasJogadorAtual(); 
-    boolean[] getPecasBonusUsadasJogadorAtual(); 
+    int[] getOrdemPecasBonusJogadorAtual();
+    boolean[] getPecasBonusUsadasJogadorAtual();
     
 }

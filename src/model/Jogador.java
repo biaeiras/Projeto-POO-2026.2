@@ -14,6 +14,7 @@ class Jogador {
     private ConselheiroSecreto conselheiroSecreto;
     private final TabuleiroJogador tabuleiroJogador;
     private final HashMap<TipoBonus, PecaBonus> pecasBonus = new HashMap<>();
+    private final ArrayList<TipoBonus> ordemPecasBonus = new ArrayList<>();
 
     Jogador(
             ArrayList<ConselheiroSecreto> opcoesConselheiro,
@@ -258,7 +259,12 @@ class Jogador {
             return false;
         }
         pecasBonus.put(peca.getTipo(), peca);
+        ordemPecasBonus.add(peca.getTipo());
         return true;
+    }
+    
+    ArrayList<TipoBonus> getOrdemPecasBonus() {
+        return new ArrayList<>(ordemPecasBonus);
     }
 
     int getQuantidadePecasBonus() {

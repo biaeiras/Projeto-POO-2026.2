@@ -277,7 +277,10 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
             
             //Limpa peças bônus quando não existe partidas
             
-            painelPecasBonus.atualizarPecas(new boolean[7], new boolean[7]);
+            painelPecasBonus.atualizarPecas(
+            	    new int[] {-1, -1, -1, -1, -1, -1, -1},
+            	    new boolean[7]
+            	);
 
             atualizarEstadoColunas(
                 new boolean[4], false, false
@@ -333,8 +336,7 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
 
         String situacao;
         
-        painelPecasBonus.atualizarPecas(observado.getPecasBonusConquistadasJogadorAtual(), observado.getPecasBonusUsadasJogadorAtual()); 
-        
+        painelPecasBonus.atualizarPecas(observado.getOrdemPecasBonusJogadorAtual(), observado.getPecasBonusUsadasJogadorAtual());
 
         if (observado.isPartidaEncerrada()) {
             situacao = "Partida encerrada.";

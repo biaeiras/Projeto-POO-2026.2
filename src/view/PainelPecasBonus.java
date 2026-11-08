@@ -7,9 +7,9 @@ import javax.imageio.ImageIO;
 
 public class PainelPecasBonus extends JPanel {
 
-    private final BufferedImage[] imagens = new BufferedImage[7];
-    private final boolean[] conquistadas = new boolean[7];
-    private final boolean[] usadas = new boolean[7];
+	private final BufferedImage[] imagens = new BufferedImage[7];
+	private final int[] indicesImagens = new int[7];
+	private final boolean[] usadas = new boolean[7];
 
     private int quantidadeConquistada = 0;
 
@@ -18,6 +18,8 @@ public class PainelPecasBonus extends JPanel {
         setPreferredSize(new Dimension(250, 115));
 
         carregarImagensPecas();
+        
+        java.util.Arrays.fill(indicesImagens, -1);
     }
 
     private BufferedImage carregarImagem(String nomeArquivo) {
@@ -32,6 +34,8 @@ public class PainelPecasBonus extends JPanel {
             return null;
         }
     }
+    
+   
 
     public void carregarImagensPecas() {
         imagens[0] = carregarImagem("TesourosAleatorios.jpg");
@@ -45,26 +49,21 @@ public class PainelPecasBonus extends JPanel {
         repaint();
     }
 
-    public void atualizarPecas(boolean[] pecasConquistadas,boolean[] pecasUsadas) {
-
-        if (pecasConquistadas == null || pecasConquistadas.length != 7 || pecasUsadas == null || pecasUsadas.length != 7) {
+    
+    public void atualizarPecas(int[] indices, boolean[] pecasUsadas) {
+        if (indices == null || indices.length != 7
+                || pecasUsadas == null || pecasUsadas.length != 7) {
             throw new IllegalArgumentException(
-                "Devem ser informadas exatamente 7 peças."
+                "Devem ser informadas exatamente 7 posições."
             );
         }
 
-        System.arraycopy(
-            pecasConquistadas, 0, conquistadas, 0, 7
-        );
-
-        System.arraycopy(
-            pecasUsadas, 0, usadas, 0, 7
-        );
+        System.arraycopy(indices, 0, indicesImagens, 0, 7);
+        System.arraycopy(pecasUsadas, 0, usadas, 0, 7);
 
         quantidadeConquistada = 0;
-
-        for (boolean conquistada : conquistadas) {
-            if (conquistada) {
+        for (int indice : indicesImagens) {
+            if (indice >= 0) {
                 quantidadeConquistada++;
             }
         }
@@ -115,10 +114,12 @@ public class PainelPecasBonus extends JPanel {
                 g2.drawRect(x, y, larguraPeca, alturaPeca);
 
                 // Mostrar somente peças conquistadas
-                if (conquistadas[i] && imagens[i] != null) {
+                int indiceImagem = indicesImagens[i];
+
+                if (indiceImagem >= 0 && indiceImagem < imagens.length && imagens[indiceImagem] != null) {
 
                     g2.drawImage(
-                        imagens[i],
+                    	imagens[indiceImagem],
                         x + 1,
                         y + 1,
                         larguraPeca - 2,
