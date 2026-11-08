@@ -28,6 +28,8 @@ public class FachadaJogo implements ObservadoJogo {
     // Inicia uma partida com as cores escolhidas
     public void iniciarPartida(ArrayList<Cor> coresEscolhidas) {
         definirPartida(new Partida(coresEscolhidas));
+       
+        
     }
     
     public boolean escolherConselheiroJogadorAtual(int indice) {
@@ -274,33 +276,33 @@ public class FachadaJogo implements ObservadoJogo {
     }
 
     // Mesma ordem dos espaços de PainelPecasBonus.
-    private static final TipoBonus[] ORDEM_PECAS_BONUS = {
-        TipoBonus.ESCOLHER_TESOURO, TipoBonus.VOTO_EXTRA, TipoBonus.DUAS_ESPADAS,
-        TipoBonus.DOIS_YURTS, TipoBonus.DUAS_MOEDAS,
-        TipoBonus.PEGAR_TRIBUTOS_EXTRAS, TipoBonus.MOVIMENTOS_EXTRAS
-    };
+   //private static final TipoBonus[] ORDEM_PECAS_BONUS = {
+        //TipoBonus.ESCOLHER_TESOURO, TipoBonus.VOTO_EXTRA, TipoBonus.DUAS_ESPADAS,
+        //TipoBonus.DOIS_YURTS, TipoBonus.DUAS_MOEDAS,
+        //TipoBonus.PEGAR_TRIBUTOS_EXTRAS, TipoBonus.MOVIMENTOS_EXTRAS
+    //};
 
-    @Override
-    public boolean[] getPecasBonusConquistadasJogadorAtual() {
-        boolean[] conquistadas = new boolean[ORDEM_PECAS_BONUS.length];
-        if (partida != null) {
-            for (int i = 0; i < conquistadas.length; i++) {
-                conquistadas[i] = partida.getJogadorAtual().possuiPecaBonus(ORDEM_PECAS_BONUS[i]);
-            }
-        }
-        return conquistadas;
-    }
+    //@Override
+    //public boolean[] getPecasBonusConquistadasJogadorAtual() {
+        //boolean[] conquistadas = new boolean[ORDEM_PECAS_BONUS.length];
+        //if (partida != null) {
+           // for (int i = 0; i < conquistadas.length; i++) {
+                //conquistadas[i] = partida.getJogadorAtual().possuiPecaBonus(ORDEM_PECAS_BONUS[i]);
+            //}
+        //}
+        //return conquistadas;
+    //}
 
-    @Override
-    public boolean[] getPecasBonusUsadasJogadorAtual() {
-        boolean[] usadas = new boolean[ORDEM_PECAS_BONUS.length];
-        if (partida != null) {
-            for (int i = 0; i < usadas.length; i++) {
-                usadas[i] = partida.getJogadorAtual().isPecaBonusUsada(ORDEM_PECAS_BONUS[i]);
-            }
-        }
-        return usadas;
-    }
+    //@Override
+    //public boolean[] getPecasBonusUsadasJogadorAtual() {
+       // boolean[] usadas = new boolean[ORDEM_PECAS_BONUS.length];
+        //if (partida != null) {
+           // for (int i = 0; i < usadas.length; i++) {
+              // usadas[i] = partida.getJogadorAtual().isPecaBonusUsada(ORDEM_PECAS_BONUS[i]);
+            //}
+       // }
+        //return usadas;
+    //}
 
 	public void avancarTurno() {
 		terminarTurnoJogadorAtual();
@@ -536,7 +538,83 @@ public class FachadaJogo implements ObservadoJogo {
     public int getVotosFichaNeutra() {
         return partida == null ? 0 : partida.getVotosFichaNeutra();
     }
+    
+    @Override
+    public boolean isFimDisparado() {
+        return partida != null && partida.isFimDisparado();
+    }
+    
+    @Override
+    public ArrayList<String> getNomesVencedores() {
 
+        ArrayList<String> nomes = new ArrayList<>();
+
+        if (partida == null || !partida.isEncerrada()) {
+            return nomes;
+        }
+
+        for (Jogador jogador : partida.calcularVencedores()) {
+
+            String nome = jogador.getTabuleiroJogador()
+                                 .getPersonagem()
+                                 .getNome();
+
+            nomes.add(nome);
+        }
+
+        return nomes;
+    }
+    
+    @Override
+    public int[] getOrdemPecasBonusJogadorAtual() {
+
+        int[] resultado = new int[7];
+
+        java.util.Arrays.fill(resultado, -1);
+
+        if (partida == null) {
+            return resultado;
+        }
+
+        Jogador jogador = partida.getJogadorAtual();
+
+        ArrayList<TipoBonus> ordem =
+            jogador.getOrdemPecasBonus();
+
+        for (int i = 0; i < ordem.size(); i++) {
+            resultado[i] = ordem.get(i).ordinal();
+        }
+
+        return resultado;
+    }
+    
+    @Override
+    public boolean[] getPecasBonusUsadasJogadorAtual() {
+
+        boolean[] resultado = new boolean[7];
+
+        if (partida == null) {
+            return resultado;
+        }
+
+        Jogador jogador = partida.getJogadorAtual();
+
+        ArrayList<TipoBonus> ordem =
+            jogador.getOrdemPecasBonus();
+
+        HashMap<TipoBonus, PecaBonus> pecas =
+            jogador.getPecasBonus();
+
+        for (int i = 0; i < ordem.size(); i++) {
+
+            PecaBonus peca = pecas.get(ordem.get(i));
+
+            resultado[i] = peca != null && peca.EhUsada();
+        }
+
+        return resultado;
+    }
+    
     @Override
     public HashSet<KhanID> getKhans() {
         return partida == null ? new HashSet<>() : partida.getKhans();
@@ -591,4 +669,5 @@ public class FachadaJogo implements ObservadoJogo {
     public HashMap<ParadaID, TipoBonus> getBonus() {
         return partida == null ? new HashMap<>() : partida.getBonus();
     }
+
 }

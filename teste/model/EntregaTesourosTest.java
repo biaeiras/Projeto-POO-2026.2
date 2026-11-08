@@ -328,7 +328,7 @@ public class EntregaTesourosTest {
                 try {
                     conferirPainelBonus(tela, new boolean[7], new boolean[7]);
                     assertFalse(tela.getBotaoEntregarTesouros().isEnabled());
-                    assertArrayEquals(new boolean[7], fachada.getPecasBonusConquistadasJogadorAtual());
+                    assertArrayEquals(new int[] {-1, -1, -1, -1, -1, -1, -1}, fachada.getOrdemPecasBonusJogadorAtual());
                     assertTrue(fachada.ativarColunaJogadorAtual(1));
                     assertTrue(tela.getBotaoEntregarTesouros().isEnabled());
                     HashMap<String, Integer> entrega = new HashMap<>();
@@ -337,7 +337,7 @@ public class EntregaTesourosTest {
                     assertTrue(fachada.entregarTesourosJogadorAtual(ParadaID.KARAKORUM, entrega));
                     assertEquals(antes + 1, notificacoes[0]);
                     assertEquals(Integer.valueOf(3), fachada.getPlacarVotos().get("Altani"));
-                    assertTrue(fachada.getPecasBonusConquistadasJogadorAtual()[1]);
+                    assertEquals(TipoBonus.VOTO_EXTRA.ordinal(),fachada.getOrdemPecasBonusJogadorAtual()[0]);
                     assertTrue(fachada.getPecasBonusUsadasJogadorAtual()[1]);
                     conferirPainelBonus(tela,
                             new boolean[] {false, true, false, false, false, false, false},
@@ -351,7 +351,7 @@ public class EntregaTesourosTest {
                     assertEquals(3, fachada.getExigenciaEntrega(ParadaID.KARAKORUM).size());
                     assertTrue(fachada.terminarTurnoJogadorAtual());
                     assertFalse(tela.getBotaoEntregarTesouros().isEnabled());
-                    assertArrayEquals(new boolean[7], fachada.getPecasBonusConquistadasJogadorAtual());
+                    assertArrayEquals(new int[] {-1, -1, -1, -1, -1, -1, -1},fachada.getOrdemPecasBonusJogadorAtual());
                     conferirPainelBonus(tela, new boolean[7], new boolean[7]);
                 } finally {
                     fachada.removerObservador(contador);
@@ -365,7 +365,15 @@ public class EntregaTesourosTest {
         PainelPecasBonus real = encontrarPainelBonus(tela);
         assertNotNull(real);
         PainelPecasBonus esperado = new PainelPecasBonus();
-        esperado.atualizarPecas(conquistadas, usadas);
+        int[] ordemEsperada = {-1, -1, -1, -1, -1, -1, -1};
+
+        for (int i = 0; i < conquistadas.length; i++) {
+            if (conquistadas[i]) {
+                ordemEsperada[i] = i;
+            }
+        }
+
+        esperado.atualizarPecas(ordemEsperada, usadas);
         java.awt.image.BufferedImage[] imagens = new java.awt.image.BufferedImage[2];
         PainelPecasBonus[] paineis = {real, esperado};
         for (int i = 0; i < paineis.length; i++) {

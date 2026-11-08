@@ -29,8 +29,6 @@ public interface ObservadoJogo {
     String getBonusDisponivelEntrega(ParadaID local);
     HashMap<String, Integer> getTesourosJogadorAtual();
     HashMap<String, Integer> getTesourosVirtuaisJogadorAtual();
-    boolean[] getPecasBonusConquistadasJogadorAtual();
-    boolean[] getPecasBonusUsadasJogadorAtual();
     HashMap<String, Integer> getPlacarVotos();
     int getVotosFichaNeutra();
     HashMap<ProvinciaID, Integer> getCargasProvincias();
@@ -39,10 +37,15 @@ public interface ObservadoJogo {
     HashSet<ParadaID> getAlcancaveisTotais();
     HashSet<ParadaID> getVizinhosPossiveis();
     HashSet<ProvinciaID> getProvincias();
+    boolean isFimDisparado();
+    ArrayList<String> getNomesVencedores();
+    int[] getOrdemPecasBonusJogadorAtual();
+    boolean[] getPecasBonusUsadasJogadorAtual();
     HashSet<KhanID> getKhans();
     KhanID getKhanSelecionado();
     HashMap<CidadeID, ArrayList<TipoTesouro>> getCidades();
     HashMap<CidadeID, Integer> getCidadesAtacaveis();
     HashMap<CidadeID, Cor> getCidadesConquistadas();
     HashMap<ParadaID, TipoBonus> getBonus();
+
 }
