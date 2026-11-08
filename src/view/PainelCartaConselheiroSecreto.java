@@ -12,8 +12,8 @@ public class PainelCartaConselheiroSecreto extends JPanel {
     public PainelCartaConselheiroSecreto() {
         setOpaque(false);
         setPreferredSize(new Dimension(110, 150));
-        setMinimumSize(new Dimension(110, 150));
-        setMaximumSize(new Dimension(110, 150));
+        setMinimumSize(new Dimension(70, 100));
+        setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
     }
 
     // Chamado quando o Controller informar qual carta mostrar

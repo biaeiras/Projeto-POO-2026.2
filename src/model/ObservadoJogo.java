@@ -22,6 +22,7 @@ public interface ObservadoJogo {
     int getEspadasJogadorAtual();
     int getYurtsEstoqueJogadorAtual();
     int getTributosYurtJogadorAtual();
+    HashMap<String, Integer> getTributosVirtuaisJogadorAtual();
     ArrayList<String> getConselheirosAbertos();
     ArrayList<ParadaID> getLocaisEntregaDisponiveis();
     HashMap<String, Integer> getExigenciaEntrega(ParadaID local);
@@ -42,6 +43,7 @@ public interface ObservadoJogo {
     int[] getOrdemPecasBonusJogadorAtual();
     boolean[] getPecasBonusUsadasJogadorAtual();
     HashSet<KhanID> getKhans();
+    KhanID getKhan();
     KhanID getKhanSelecionado();
     HashMap<CidadeID, ArrayList<TipoTesouro>> getCidades();
     HashMap<CidadeID, Integer> getCidadesAtacaveis();

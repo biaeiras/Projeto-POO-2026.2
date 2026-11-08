@@ -12,6 +12,8 @@ import javax.swing.SwingUtilities;
 import org.junit.Test;
 
 import controller.ControladorTabuleiroJogador;
+import controller.ControllerAPI;
+import view.PainelAcoesPartida;
 import view.PainelPecasBonus;
 import view.TelaJogador;
 
@@ -108,6 +110,74 @@ public class EntregaTesourosTest {
         assertEquals(2, partida.getVotosFichaNeutra());
         assertEquals(0, jogador.getQuantidadeTesouro(TipoTesouro.FERRO));
         assertEquals(1, jogador.getQuantidadePecasBonus());
+    }
+
+    @Test
+    public void sairDoConselheiroImpedeEntregaSemConsumirRecursos() {
+        Partida partida = criarPartida();
+        Jogador jogador = partida.getJogadorAtual();
+        Parada local = mapa(partida).get(ParadaID.SARAI_KAESONG_KARAKORUM);
+        TipoBonus bonus = local.getBonus();
+        darTesouros(jogador, TipoTesouro.FERRO, TipoTesouro.FERRO);
+        assertTrue(partida.iniciarTurno(Regiao.PERSIA));
+        assertTrue(partida.moverPeao(local.getId()));
+        assertEquals(Arrays.asList(local.getId()), partida.getLocaisEntregaDisponiveis());
+        assertTrue(partida.moverPeao(ParadaID.SARAI2));
+        assertTrue(partida.getLocaisEntregaDisponiveis().isEmpty());
+        assertFalse(partida.entregarTesouros(local.getId(), conjunto(TipoTesouro.FERRO, TipoTesouro.FERRO)));
+        assertEquals(2, jogador.getQuantidadeTesouro(TipoTesouro.FERRO));
+        assertEquals(0, jogador.getVotos());
+        assertEquals(bonus, local.getBonus());
+    }
+
+    @Test
+    public void passagemPorConselheiroLotadoNaoPermiteEntrega() {
+        Partida partida = criarPartida();
+        Jogador jogador = partida.getJogadorAtual();
+        Parada local = mapa(partida).get(ParadaID.SARAI_KAESONG_KARAKORUM);
+        Peao outro = jogador.getPeao(1);
+        outro.getPosicao().removePeao(outro);
+        outro.setPosicao(local);
+        local.insertPeao(outro);
+        posicionar(partida.getJogadores().get(1), local);
+        darTesouros(jogador, TipoTesouro.FERRO, TipoTesouro.FERRO);
+        assertTrue(partida.iniciarTurno(Regiao.PERSIA));
+        assertTrue(partida.moverPeao(local.getId()));
+        assertTrue(partida.getLocaisEntregaDisponiveis().isEmpty());
+        assertFalse(partida.entregarTesouros(local.getId(), conjunto(TipoTesouro.FERRO, TipoTesouro.FERRO)));
+        assertEquals(2, jogador.getQuantidadeTesouro(TipoTesouro.FERRO));
+    }
+
+    @Test
+    public void telaUsaLocalAtualSemAbrirSelecaoDeConselheiro() throws Exception {
+        SwingUtilities.invokeAndWait(new Runnable() {
+            @Override
+            public void run() {
+                Partida partida = criarPartida();
+                FachadaJogo fachada = FachadaJogo.getInstancia();
+                fachada.definirPartida(partida);
+                TelaJogador tela = new TelaJogador();
+                ControladorTabuleiroJogador controlador = new ControladorTabuleiroJogador(tela);
+                PainelAcoesPartida acoes = new PainelAcoesPartida();
+                ControllerAPI controladorAcoes = new ControllerAPI();
+                controladorAcoes.configurarAcoes(acoes);
+                try {
+                    assertNull(acoes.getLocalEntregaAtual());
+                    assertFalse(acoes.getBotaoEntregarTesouros().isEnabled());
+                    assertTrue(fachada.ativarColunaJogadorAtual(1));
+                    assertEquals(ParadaID.KARAKORUM, acoes.getLocalEntregaAtual());
+                    fachada.moverPeao(ParadaID.SARAI_KAESONG_KARAKORUM);
+                    assertEquals(ParadaID.SARAI_KAESONG_KARAKORUM, acoes.getLocalEntregaAtual());
+                    assertTrue(acoes.getBotaoEntregarTesouros().isEnabled());
+                    fachada.moverPeao(ParadaID.SARAI2);
+                    assertNull(acoes.getLocalEntregaAtual());
+                    assertFalse(acoes.getBotaoEntregarTesouros().isEnabled());
+                } finally {
+                    controlador.encerrar();
+                    controladorAcoes.removerObservador(acoes);
+                }
+            }
+        });
     }
 
     @Test
@@ -319,6 +389,9 @@ public class EntregaTesourosTest {
                 fachada.definirPartida(partida);
                 TelaJogador tela = new TelaJogador();
                 ControladorTabuleiroJogador controlador = new ControladorTabuleiroJogador(tela);
+                PainelAcoesPartida acoes = new PainelAcoesPartida();
+                ControllerAPI controladorAcoes = new ControllerAPI();
+                controladorAcoes.configurarAcoes(acoes);
                 final int[] notificacoes = {0};
                 ObservadorJogo contador = new ObservadorJogo() {
                     @Override
@@ -326,11 +399,11 @@ public class EntregaTesourosTest {
                 };
                 fachada.adicionarObservador(contador);
                 try {
-                    conferirPainelBonus(tela, new boolean[7], new boolean[7]);
-                    assertFalse(tela.getBotaoEntregarTesouros().isEnabled());
+                    conferirPainelBonus(tela, new int[] {-1, -1, -1, -1, -1, -1, -1}, new boolean[7]);
+                    assertFalse(acoes.getBotaoEntregarTesouros().isEnabled());
                     assertArrayEquals(new int[] {-1, -1, -1, -1, -1, -1, -1}, fachada.getOrdemPecasBonusJogadorAtual());
                     assertTrue(fachada.ativarColunaJogadorAtual(1));
-                    assertTrue(tela.getBotaoEntregarTesouros().isEnabled());
+                    assertTrue(acoes.getBotaoEntregarTesouros().isEnabled());
                     HashMap<String, Integer> entrega = new HashMap<>();
                     entrega.put("FERRO", 1); entrega.put("PELE", 1); entrega.put("BOI", 1);
                     int antes = notificacoes[0];
@@ -338,10 +411,10 @@ public class EntregaTesourosTest {
                     assertEquals(antes + 1, notificacoes[0]);
                     assertEquals(Integer.valueOf(3), fachada.getPlacarVotos().get("Altani"));
                     assertEquals(TipoBonus.VOTO_EXTRA.ordinal(),fachada.getOrdemPecasBonusJogadorAtual()[0]);
-                    assertTrue(fachada.getPecasBonusUsadasJogadorAtual()[1]);
+                    assertTrue(fachada.getPecasBonusUsadasJogadorAtual()[0]);
                     conferirPainelBonus(tela,
-                            new boolean[] {false, true, false, false, false, false, false},
-                            new boolean[] {false, true, false, false, false, false, false});
+                            new int[] {TipoBonus.VOTO_EXTRA.ordinal(), -1, -1, -1, -1, -1, -1},
+                            new boolean[] {true, false, false, false, false, false, false});
                     assertFalse(fachada.entregarTesourosJogadorAtual(ParadaID.KARAKORUM, entrega));
                     entrega.put("INVALIDO", 1);
                     assertFalse(fachada.entregarTesourosJogadorAtual(ParadaID.KARAKORUM, entrega));
@@ -350,29 +423,22 @@ public class EntregaTesourosTest {
                     exigencia.clear();
                     assertEquals(3, fachada.getExigenciaEntrega(ParadaID.KARAKORUM).size());
                     assertTrue(fachada.terminarTurnoJogadorAtual());
-                    assertFalse(tela.getBotaoEntregarTesouros().isEnabled());
+                    assertFalse(acoes.getBotaoEntregarTesouros().isEnabled());
                     assertArrayEquals(new int[] {-1, -1, -1, -1, -1, -1, -1},fachada.getOrdemPecasBonusJogadorAtual());
-                    conferirPainelBonus(tela, new boolean[7], new boolean[7]);
+                    conferirPainelBonus(tela, new int[] {-1, -1, -1, -1, -1, -1, -1}, new boolean[7]);
                 } finally {
                     fachada.removerObservador(contador);
                     controlador.encerrar();
+                    controladorAcoes.removerObservador(acoes);
                 }
             }
         });
     }
 
-    private void conferirPainelBonus(TelaJogador tela, boolean[] conquistadas, boolean[] usadas) {
+    private void conferirPainelBonus(TelaJogador tela, int[] ordemEsperada, boolean[] usadas) {
         PainelPecasBonus real = encontrarPainelBonus(tela);
         assertNotNull(real);
         PainelPecasBonus esperado = new PainelPecasBonus();
-        int[] ordemEsperada = {-1, -1, -1, -1, -1, -1, -1};
-
-        for (int i = 0; i < conquistadas.length; i++) {
-            if (conquistadas[i]) {
-                ordemEsperada[i] = i;
-            }
-        }
-
         esperado.atualizarPecas(ordemEsperada, usadas);
         java.awt.image.BufferedImage[] imagens = new java.awt.image.BufferedImage[2];
         PainelPecasBonus[] paineis = {real, esperado};

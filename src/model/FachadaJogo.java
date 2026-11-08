@@ -266,6 +266,15 @@ public class FachadaJogo implements ObservadoJogo {
     }
 
     @Override
+    public HashMap<String, Integer> getTributosVirtuaisJogadorAtual() {
+        HashMap<String, Integer> recursos = new HashMap<>();
+        for (TipoTributo tipo : new TipoTributo[] {TipoTributo.MOEDA, TipoTributo.ESPADA, TipoTributo.YURT}) {
+            recursos.put(tipo.name(), partida == null ? 0 : partida.getQuantidadeTributoVirtual(tipo));
+        }
+        return recursos;
+    }
+
+    @Override
     public HashMap<String, Integer> getTesourosVirtuaisJogadorAtual() {
         HashMap<String, Integer> tesouros = new HashMap<>();
         for (TipoTesouro tipo : TipoTesouro.values()) {
@@ -618,6 +627,11 @@ public class FachadaJogo implements ObservadoJogo {
     @Override
     public HashSet<KhanID> getKhans() {
         return partida == null ? new HashSet<>() : partida.getKhans();
+    }
+
+    @Override
+    public KhanID getKhan() {
+        return partida == null ? null : partida.getKhan();
     }
 
     @Override

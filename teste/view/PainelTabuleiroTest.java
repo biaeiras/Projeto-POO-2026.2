@@ -110,6 +110,43 @@ public class PainelTabuleiroTest {
         desenhar(painel); // Também deve desenhar sem notificação inicial.
     }
 
+    @Test
+    public void marcadorDoKhanPermaneceVisivelDepoisDoTurnoEMudaDeDestino() throws Exception {
+        SwingUtilities.invokeAndWait(new Runnable() {
+            @Override
+            public void run() {
+                FachadaJogo fachada = FachadaJogo.getInstancia();
+                fachada.iniciarPartida(new ArrayList<>(Arrays.asList(Cor.VERDE, Cor.VERMELHO)));
+                for (int i = 0; i < 2; i++) {
+                    assertTrue(fachada.escolherConselheiroJogadorAtual(0));
+                    fachada.avancarJogadorNaPreparacao();
+                }
+                PainelTabuleiro painel = new PainelTabuleiro();
+                painel.setSize(1000, 700);
+                ControllerAPI controlador = new ControllerAPI();
+                painel.atualizar(controlador.registrarObservador(painel));
+                try {
+                    int corOriginal = desenhar(painel).getRGB(217, 151);
+                    assertTrue(fachada.ativarColunaJogadorAtual(0));
+                    assertTrue(fachada.selecionarKhan(model.KhanID.TL));
+                    assertTrue(fachada.selecionarTributo(model.ProvinciaID.TL_ESPADA));
+                    assertTrue(fachada.selecionarTributo(model.ProvinciaID.TL_MOEDA));
+                    assertEquals(Color.WHITE.getRGB(), desenhar(painel).getRGB(217, 151));
+                    assertTrue(fachada.terminarTurnoJogadorAtual());
+                    assertEquals(Color.WHITE.getRGB(), desenhar(painel).getRGB(217, 151));
+                    assertTrue(fachada.ativarColunaJogadorAtual(0));
+                    assertTrue(fachada.selecionarKhan(model.KhanID.M));
+                    assertTrue(fachada.terminarTurnoJogadorAtual());
+                    BufferedImage imagem = desenhar(painel);
+                    assertEquals(corOriginal, imagem.getRGB(217, 151));
+                    assertEquals(Color.WHITE.getRGB(), imagem.getRGB(36, 678));
+                } finally {
+                    controlador.removerObservador(painel);
+                }
+            }
+        });
+    }
+
     private static BufferedImage desenhar(PainelTabuleiro painel) {
         BufferedImage imagem = new BufferedImage(1000, 700, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = imagem.createGraphics();

@@ -559,9 +559,9 @@ class Partida  {
 	    //System.out.println(i++);
 	    Jogador jogador = turnoAtual.getJogador();
 
-	    if (!jogador.usarYurt()) {
-	        return false;
-	    }
+        boolean usarVirtual = turnoAtual.getQuantidadeRecursoVirtual(TipoMelhoria.YURT_VIRTUAL) > 0;
+        if (!jogador.usarYurt(usarVirtual)) return false;
+        if (usarVirtual) turnoAtual.usarRecursoVirtual(TipoMelhoria.YURT_VIRTUAL);
 
 	    //System.out.println(i++);
 	    tabuleiroPrincipal.adicionarYurt(jogador, parada);
@@ -577,14 +577,9 @@ class Partida  {
                 || !peaoPodeAgir(peaoAtivo)) {
             return locais;
         }
-        HashSet<Parada> percorridas = paradasPercorridas.get(peaoAtivo);
-        if (percorridas != null) {
-            for (ParadaID id : ParadaID.values()) {
-                Parada parada = tabuleiroPrincipal.getMapa().get(id);
-                if (parada.ehConselheiro() && percorridas.contains(parada)) {
-                    locais.add(id);
-                }
-            }
+        Parada atual = peaoAtivo.getPosicao();
+        if (!hasToMove && atual != null && atual.ehConselheiro()) {
+            locais.add(atual.getId());
         }
         return locais;
     }
@@ -606,6 +601,11 @@ class Partida  {
 
     private TipoMelhoria tipoTesouroVirtual(TipoTesouro tipo) {
         return TipoMelhoria.valueOf(tipo.name() + "_VIRTUAL");
+    }
+
+    int getQuantidadeTributoVirtual(TipoTributo tipo) {
+        if (encerrada || turnoAtual == null || tipo == null || tipo == TipoTributo.VAZIO) return 0;
+        return turnoAtual.getQuantidadeRecursoVirtual(TipoMelhoria.valueOf(tipo.name() + "_VIRTUAL"));
     }
 
     int getQuantidadeTesouroVirtual(TipoTesouro tipo) {
@@ -726,7 +726,9 @@ class Partida  {
 
 	    Jogador jogador = turnoAtual.getJogador();
 
-	    cidade.atacar(jogador, tesouro);
+        if (!tabuleiroPrincipal.atacarCidade(cidade.getId(), jogador, tesouro)) {
+            return false;
+        }
 	    jogador.adicionarTesouro(tesouro);
 
 	    tesourosTomadosNoTurno.put(cidade, tesourosAnteriores + 1);
@@ -801,6 +803,8 @@ class Partida  {
         }
         return destinos;
     }
+
+    KhanID getKhan() { return tabuleiroPrincipal.getKhan(); }
 
     boolean getAtivacaoKhan() { return ativandoKhan != null; }
     KhanID getKhanSelecionado() { return ativandoKhan; }

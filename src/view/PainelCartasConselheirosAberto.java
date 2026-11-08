@@ -54,7 +54,39 @@ public class PainelCartasConselheirosAberto extends JPanel {
 
     public PainelCartasConselheirosAberto() {
         setOpaque(false);
-        setPreferredSize(new Dimension(250, 85));
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            private int ultimaLargura;
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent evento) {
+                if (getWidth() != ultimaLargura) {
+                    ultimaLargura = getWidth();
+                    revalidate();
+                    if (getParent() != null) getParent().revalidate();
+                }
+            }
+        });
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        int largura = getWidth() > 0 ? getWidth() : 250;
+        int larguraCarta = Math.max(1, (largura - 23) / 4);
+        double proporcao = 1.57;
+        for (BufferedImage imagem : imagens) {
+            if (imagem != null) proporcao = Math.max(proporcao,
+                    (double) imagem.getHeight() / imagem.getWidth());
+        }
+        return new Dimension(250, (int) Math.ceil(larguraCarta * proporcao) + 8);
+    }
+
+    @Override
+    public Dimension getMinimumSize() {
+        return new Dimension(140, getPreferredSize().height);
+    }
+
+    @Override
+    public Dimension getMaximumSize() {
+        return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
     }
 
     public void definirCartas(BufferedImage[] cartas) {
@@ -65,6 +97,7 @@ public class PainelCartasConselheirosAberto extends JPanel {
         }
 
         imagens = cartas.clone();
+        revalidate();
         repaint();
     }
 
@@ -82,9 +115,9 @@ public class PainelCartasConselheirosAberto extends JPanel {
 
             int margem = 4;
             int espacamento = 5;
-            int larguraCarta =
-                (getWidth() - 2 * margem - 3 * espacamento) / 4;
-            int alturaCarta = getHeight() - 2 * margem;
+            int larguraCarta = Math.max(0,
+                (getWidth() - 2 * margem - 3 * espacamento) / 4);
+            int alturaCarta = Math.max(0, getHeight() - 2 * margem);
 
             for (int i = 0; i < 4; i++) {
                 int x = margem + i * (larguraCarta + espacamento);
@@ -97,14 +130,13 @@ public class PainelCartasConselheirosAberto extends JPanel {
                 g2.drawRect(x, y, larguraCarta, alturaCarta);
 
                 if (imagens[i] != null) {
-                    g2.drawImage(
-                        imagens[i],
-                        x + 2,
-                        y + 2,
-                        larguraCarta - 4,
-                        alturaCarta - 4,
-                        this
-                    );
+                    double escala = Math.min(
+                            (double) Math.max(0, larguraCarta - 4) / imagens[i].getWidth(),
+                            (double) Math.max(0, alturaCarta - 4) / imagens[i].getHeight());
+                    int largura = (int) (imagens[i].getWidth() * escala);
+                    int altura = (int) (imagens[i].getHeight() * escala);
+                    g2.drawImage(imagens[i], x + (larguraCarta - largura) / 2,
+                            y + (alturaCarta - altura) / 2, largura, altura, this);
                 }
             }
         } finally {

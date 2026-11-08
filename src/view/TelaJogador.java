@@ -5,7 +5,6 @@ import javax.swing.border.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
-import model.ParadaID;
 
 import model.ObservadoJogo;
 import model.ObservadorJogo;
@@ -29,11 +28,9 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
     private JLabel valorTributosYurt; 
     
     private PainelTabuleiroJogador painelTabuleiroJogador;
-    private JButton botaoTerminarTurno;
-    private JButton botaoEntregarTesouros;
     private PainelPecasBonus painelPecasBonus;
-    private ObservadoJogo observado;
     private JLabel informacaoTabuleiro;
+    private final HashMap<String, JLabel[]> contadoresTesouros = new HashMap<>();
  
     
 
@@ -77,7 +74,7 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
         tabuleiro.add(criarCabecalho(), BorderLayout.NORTH);
         tabuleiro.add(criarGradeTabuleiro(), BorderLayout.CENTER);
         
-        JPanel inferior = new JPanel(new GridLayout(1, 2, 6, 0));
+        JPanel inferior = new JPanel(new GridBagLayout());
         inferior.setOpaque(false);
         
      // Peças bônus
@@ -86,62 +83,58 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
 
 
         painelPecasBonus = new PainelPecasBonus();
+        bonus.setName("painelBonus");
+        painelPecasBonus.setAlignmentX(Component.LEFT_ALIGNMENT);
         bonus.add(painelPecasBonus);
 
-        JPanel cartaConselheiroSecreto = criarSecao( "MEU CONSELHEIRO SECRETO", new Color(213, 202, 235));
+        JPanel cartaConselheiroSecreto = criarSecao( "<html>CONSELHEIRO<br>SECRETO</html>", new Color(213, 202, 235));
 
+        cartaConselheiroSecreto.setName("painelConselheiro");
         painelCartaConselheiroSecreto = new PainelCartaConselheiroSecreto();
 
-    	JPanel centralizarCarta = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
-    	centralizarCarta.setOpaque(false);
-    	centralizarCarta.add(painelCartaConselheiroSecreto);
-    	
-
+        JPanel centralizarCarta = new JPanel(new BorderLayout());
+        centralizarCarta.setOpaque(false);
+        centralizarCarta.setAlignmentX(Component.LEFT_ALIGNMENT);
+        centralizarCarta.add(painelCartaConselheiroSecreto, BorderLayout.CENTER);
         cartaConselheiroSecreto.add(centralizarCarta);
-     
-        // AÇÕES DISPONÍVEIS
-        JPanel acoes = new JPanel(new BorderLayout(0, 6));
 
-        acoes.setBackground(verde);
-        acoes.setBorder(new CompoundBorder(
-            new LineBorder(dourado, 1),
-            new EmptyBorder(8, 8, 8, 8)
-        ));
-
-        // Título
-        JLabel tituloAcoes = new JLabel("AÇÕES DISPONÍVEIS");
-        tituloAcoes.setForeground(vermelho);
-        tituloAcoes.setFont(new Font("SansSerif", Font.BOLD, 12));
-
-        acoes.add(tituloAcoes, BorderLayout.NORTH);
-
-        // Grade dos três botões
-        JPanel gradeAcoes = new JPanel(new GridLayout(3, 1, 0, 6));
-        gradeAcoes.setOpaque(false);
-
-        acoes.add(tituloAcoes, BorderLayout.NORTH);
-
-        gradeAcoes.add(criarBotao("Comprar melhoria"));
-
-        botaoEntregarTesouros = criarBotao("Entregar tesouros");
-        botaoEntregarTesouros.setEnabled(false);
-        gradeAcoes.add(botaoEntregarTesouros);
-
-        botaoTerminarTurno = criarBotao("Terminar Turno");
-        gradeAcoes.add(botaoTerminarTurno);
-
-        acoes.add(gradeAcoes, BorderLayout.CENTER);
-        
         JPanel recursos = criarSecao("RECURSOS", azul);
         valorMoedas =adicionarRecurso(recursos, "Moedas", "0");
+        valorMoedas.setName("recurso.MOEDA");
         valorEspadas = adicionarRecurso(recursos, "Espadas", "0");
-        valorYurtsEstoque = adicionarRecurso(recursos, "Yurts (estoque)", "12");
-        valorTributosYurt = adicionarRecurso(recursos, " Tributos de Yurts", "0");
+        valorEspadas.setName("recurso.ESPADA");
+        valorYurtsEstoque = adicionarRecurso(recursos, "<html>Yurts<br>(estoque)</html>", "12");
+        valorYurtsEstoque.setName("estoque.YURTS");
+        valorTributosYurt = adicionarRecurso(recursos, "<html>Tributos<br>de Yurts</html>", "0");
+        valorTributosYurt.setName("recurso.YURT");
+        JLabel aviso = new JLabel("<html>Virtuais: somente neste turno.<br>Usados antes dos recursos reais.</html>");
+        aviso.setName("avisoRecursosVirtuais");
+        aviso.setAlignmentX(Component.LEFT_ALIGNMENT);
+        aviso.setFont(new Font("SansSerif", Font.PLAIN, 11));
+        aviso.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        recursos.add(aviso);
 
-        inferior.add(bonus);
-        inferior.add(acoes);
-        inferior.add(recursos);
-        inferior.add(cartaConselheiroSecreto); 
+        JPanel tesouros = criarSecao("TESOUROS", azul);
+        tesouros.setName("painelTesouros");
+        tesouros.add(criarPainelTesouros());
+        recursos.setName("painelRecursos");
+        bonus.setMinimumSize(new Dimension(145, 210));
+        recursos.setMinimumSize(new Dimension(225, 210));
+        tesouros.setMinimumSize(new Dimension(260, 210));
+        cartaConselheiroSecreto.setMinimumSize(new Dimension(150, 210));
+        inferior.setName("informacoesJogador");
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill = GridBagConstraints.BOTH;
+        c.weighty = 1;
+        c.insets = new Insets(0, 3, 0, 3);
+        c.gridx = 0; c.weightx = 1;
+        inferior.add(bonus, c);
+        c.gridx = 1; c.weightx = 1.15;
+        inferior.add(recursos, c);
+        c.gridx = 2; c.weightx = 1.3;
+        inferior.add(tesouros, c);
+        c.gridx = 3; c.weightx = 0.7;
+        inferior.add(cartaConselheiroSecreto, c);
 
         conteudo.add(tabuleiro, BorderLayout.CENTER);
         conteudo.add(inferior, BorderLayout.SOUTH);
@@ -162,7 +155,7 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
         painelTabuleiroJogador =
             new PainelTabuleiroJogador(null);
 
-        cartela.add(painelTabuleiroJogador, BorderLayout.CENTER);
+        cartela.add(criarMolduraTabuleiro(painelTabuleiroJogador), BorderLayout.CENTER);
 
         informacaoTabuleiro = new JLabel(
             "Aguardando início da partida.",
@@ -174,6 +167,26 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
         return cartela;
     }
     
+    static JPanel criarMolduraTabuleiro(final PainelTabuleiroJogador painel) {
+        JPanel moldura = new JPanel(null) {
+            @Override
+            public Dimension getPreferredSize() { return painel.getPreferredSize(); }
+            @Override
+            public void doLayout() {
+                Dimension proporcao = painel.getPreferredSize();
+                double escala = Math.min((double) getWidth() / proporcao.width,
+                        (double) getHeight() / proporcao.height);
+                int largura = Math.max(0, (int) (proporcao.width * escala));
+                int altura = Math.max(0, (int) (proporcao.height * escala));
+                painel.setBounds((getWidth() - largura) / 2, (getHeight() - altura) / 2, largura, altura);
+            }
+        };
+        moldura.setOpaque(false);
+        moldura.setMinimumSize(new Dimension(180, 100));
+        moldura.add(painel);
+        return moldura;
+    }
+
     private JPanel criarSecao(String titulo, Color fundo) {
         JPanel secao = new JPanel();
         secao.setLayout(new BoxLayout(secao, BoxLayout.Y_AXIS));
@@ -198,7 +211,8 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
 
         JPanel linha = new JPanel(new BorderLayout(5, 0));
         linha.setOpaque(false);
-        linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+        linha.setAlignmentX(Component.LEFT_ALIGNMENT);
+        linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
 
         JLabel rotulo = new JLabel(nome);
         rotulo.setForeground(texto);
@@ -207,7 +221,9 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
         valor.setOpaque(true);
         valor.setBackground(Color.WHITE);
         valor.setBorder(new LineBorder(dourado));
-        valor.setPreferredSize(new Dimension(35, 24));
+        valor.setPreferredSize(new Dimension(140, 28));
+        valor.setMinimumSize(new Dimension(112, 28));
+        valor.setFont(new Font("SansSerif", Font.BOLD, 11));
 
         linha.add(rotulo, BorderLayout.CENTER);
         linha.add(valor, BorderLayout.EAST);
@@ -218,111 +234,94 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
     }
     
     public void atualizarRecursos(int moedas, int espadas, int yurtsEstoque, int tributosYurt) {
-    	valorMoedas.setText(String.valueOf(moedas)); 
-    	valorEspadas.setText(String.valueOf(espadas)); 
-    	valorYurtsEstoque.setText(String.valueOf(yurtsEstoque));
-        valorTributosYurt.setText(String.valueOf(tributosYurt));
+        atualizarRecursos(moedas, espadas, yurtsEstoque, tributosYurt, new HashMap<String, Integer>());
     }
 
-    private JButton criarBotao(String titulo) {
-        JButton botao = new JButton(titulo);
-        
-        botao.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        botao.setBackground(new Color(250, 245, 226));
-        botao.setForeground(texto);
-        botao.setFocusPainted(false);
-        botao.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
-        botao.setPreferredSize(new Dimension(150, 32));
-        botao.setMaximumSize(new Dimension(180, 32)); 
-        botao.setMinimumSize(new Dimension(130,32));
-        
-        return botao;
-    }
-    
-    public PainelTabuleiroJogador getPainelTabuleiroJogador() {
-        return painelTabuleiroJogador;
+    private void atualizarRecursos(int moedas, int espadas, int yurtsEstoque, int tributosYurt,
+            HashMap<String, Integer> virtuais) {
+        atualizarRecurso(valorMoedas, moedas, virtuais.getOrDefault("MOEDA", 0));
+        atualizarRecurso(valorEspadas, espadas, virtuais.getOrDefault("ESPADA", 0));
+        atualizarRecurso(valorTributosYurt, tributosYurt, virtuais.getOrDefault("YURT", 0));
+        valorYurtsEstoque.setText(String.valueOf(yurtsEstoque));
     }
 
-    public JButton getBotaoTerminarTurno() {
-        return botaoTerminarTurno;
+    private void atualizarRecurso(JLabel rotulo, int real, int virtual) {
+        rotulo.setText(virtual == 0 ? String.valueOf(real)
+                : (real + virtual) + " (" + real + " + " + virtual + " virtual)");
+        rotulo.setToolTipText(real + " real(is) + " + virtual + " virtual(is) neste turno");
     }
 
-    public JButton getBotaoEntregarTesouros() {
-        return botaoEntregarTesouros;
-    }
-
-    public ParadaID escolherLocalEntrega() {
-        if (observado == null) return null;
-        ArrayList<ParadaID> locais = observado.getLocaisEntregaDisponiveis();
-        if (locais.isEmpty()) {
-            mostrarInformacaoTabuleiro("Visite uma parada de conselheiro neste turno para entregar tesouros.");
-            return null;
+    private JPanel criarPainelTesouros() {
+        JPanel painel = new JPanel(new BorderLayout(6, 6));
+        painel.setBackground(azul);
+        painel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        painel.setBorder(new EmptyBorder(0, 0, 0, 0));
+        JPanel tabela = new JPanel(new GridBagLayout());
+        tabela.setOpaque(false);
+        GridBagConstraints celula = new GridBagConstraints();
+        celula.fill = GridBagConstraints.BOTH;
+        celula.weighty = 1;
+        celula.insets = new Insets(2, 2, 2, 2);
+        celula.gridy = 0;
+        int coluna = 0;
+        for (String titulo : new String[] {"Tesouro", "Estoque", "Virtuais", "Total"}) {
+            JLabel cabecalho = new JLabel(titulo, SwingConstants.CENTER);
+            cabecalho.setForeground(texto);
+            cabecalho.setFont(new Font("SansSerif", Font.BOLD, 11));
+            celula.gridx = coluna++;
+            celula.weightx = celula.gridx == 0 ? 1.5 : 1;
+            tabela.add(cabecalho, celula);
         }
-        String[] nomes = new String[locais.size()];
-        for (int i = 0; i < nomes.length; i++) {
-            nomes[i] = locais.get(i).name().replace('_', ' ');
+        String[] tipos = {"BOI", "FERRO", "PELE", "TECIDO", "ALIMENTO"};
+        String[] nomes = {"Boi", "Ferro", "Pele", "Tecido", "Alimento"};
+        int[] imagens = {1, 3, 4, 2, 5};
+        for (int i = 0; i < tipos.length; i++) {
+            java.net.URL caminho = getClass().getResource("/fichas/cartoes7-" + imagens[i] + ".jpg");
+            ImageIcon icone = new ImageIcon(new ImageIcon(caminho).getImage()
+                    .getScaledInstance(26, 26, Image.SCALE_SMOOTH));
+            JLabel nome = new JLabel(nomes[i], icone, SwingConstants.LEFT);
+            nome.setForeground(texto);
+            nome.setFont(new Font("SansSerif", Font.PLAIN, 11));
+            celula.gridy = i + 1;
+            celula.gridx = 0; celula.weightx = 1.5;
+            tabela.add(nome, celula);
+            JLabel[] campos = new JLabel[3];
+            String[] colunas = {"real", "virtual", "total"};
+            for (int j = 0; j < campos.length; j++) {
+                campos[j] = new JLabel("0", SwingConstants.CENTER);
+                campos[j].setName("tesouro." + tipos[i] + "." + colunas[j]);
+                campos[j].setForeground(texto);
+                campos[j].setOpaque(true);
+                campos[j].setBackground(new Color(250, 245, 226));
+                campos[j].setBorder(new LineBorder(dourado));
+                celula.gridx = j + 1; celula.weightx = 1;
+                tabela.add(campos[j], celula);
+            }
+            contadoresTesouros.put(tipos[i], campos);
         }
-        JComboBox<String> selecao = new JComboBox<>(nomes);
-        JPanel conteudo = new JPanel(new BorderLayout(8, 8));
-        conteudo.setBackground(pergaminho);
-        conteudo.setBorder(new EmptyBorder(12, 12, 12, 12));
-        conteudo.add(new JLabel("Escolha um conselheiro visitado neste turno:"), BorderLayout.NORTH);
-        conteudo.add(selecao, BorderLayout.CENTER);
-        int resposta = JOptionPane.showConfirmDialog(this, conteudo,
-                "Entregar tesouros", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        return resposta == JOptionPane.OK_OPTION ? locais.get(selecao.getSelectedIndex()) : null;
+        painel.add(tabela, BorderLayout.CENTER);
+        JLabel aviso = new JLabel("<html>Virtuais desaparecem<br>ao terminar o turno.</html>");
+        aviso.setFont(new Font("SansSerif", Font.PLAIN, 11));
+        aviso.setForeground(texto);
+        painel.add(aviso, BorderLayout.SOUTH);
+        return painel;
     }
 
-    public HashMap<String, Integer> escolherTesourosEntrega(ParadaID local) {
-        if (observado == null) return null;
-        HashMap<String, Integer> exigencia = observado.getExigenciaEntrega(local);
+    private void atualizarTesouros(ObservadoJogo observado) {
         HashMap<String, Integer> reais = observado.getTesourosJogadorAtual();
         HashMap<String, Integer> virtuais = observado.getTesourosVirtuaisJogadorAtual();
-        // A View apresenta as exigências fornecidas pelo Model.
-        boolean escolhaLivre = exigencia.isEmpty();
-        String[] tipos = {"BOI", "FERRO", "PELE", "TECIDO", "ALIMENTO"};
-        JSpinner[] quantidades = new JSpinner[tipos.length];
-        JPanel conteudo = new JPanel(new BorderLayout(8, 8));
-        conteudo.setBackground(pergaminho);
-        conteudo.setBorder(new EmptyBorder(12, 12, 12, 12));
-        String bonus = observado.getBonusDisponivelEntrega(local);
-        JLabel instrucoes = new JLabel("<html><b>"
-                + local.name().replace('_', ' ') + "</b><br>"
-                + (escolhaLivre ? "Escolha 3 tesouros de qualquer tipo."
-                        : "Entregue o conjunto indicado abaixo.")
-                + "<br>Recompensa: " + observado.getVotosEntrega(local) + " voto(s).<br>"
-                + (bonus == null ? "A peça de bônus deste local já foi recolhida."
-                        : "Peça de bônus disponível: " + bonus.toLowerCase(java.util.Locale.ROOT).replace('_', ' '))
-                + "<br>Os tesouros virtuais disponíveis são utilizados primeiro.</html>");
-        instrucoes.setForeground(texto);
-        conteudo.add(instrucoes, BorderLayout.NORTH);
-        JPanel grade = new JPanel(new GridLayout(0, 3, 10, 6));
-        grade.setOpaque(false);
-        grade.add(new JLabel("Tesouro"));
-        grade.add(new JLabel("Estoque + virtuais"));
-        grade.add(new JLabel("Entregar"));
-        for (int i = 0; i < tipos.length; i++) {
-            String tipo = tipos[i];
-            int quantidade = escolhaLivre ? 0 : exigencia.getOrDefault(tipo, 0);
-            quantidades[i] = new JSpinner(new SpinnerNumberModel(quantidade, 0, 3, 1));
-            quantidades[i].setEnabled(escolhaLivre);
-            // Impede digitação parcial: o seletor continua utilizável pelas setas.
-            ((JSpinner.DefaultEditor) quantidades[i].getEditor()).getTextField().setEditable(false);
-            grade.add(new JLabel(tipo));
-            grade.add(new JLabel(reais.getOrDefault(tipo, 0) + " + " + virtuais.getOrDefault(tipo, 0)));
-            grade.add(quantidades[i]);
+        for (String tipo : contadoresTesouros.keySet()) {
+            int real = reais.getOrDefault(tipo, 0);
+            int virtual = virtuais.getOrDefault(tipo, 0);
+            JLabel[] campos = contadoresTesouros.get(tipo);
+            campos[0].setText(String.valueOf(real));
+            campos[1].setText(String.valueOf(virtual));
+            campos[2].setText(String.valueOf(real + virtual));
         }
-        conteudo.add(grade, BorderLayout.CENTER);
-        int resposta = JOptionPane.showConfirmDialog(this, conteudo,
-                "Confirmar entrega", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (resposta != JOptionPane.OK_OPTION) return null;
-        HashMap<String, Integer> entrega = new HashMap<>();
-        for (int i = 0; i < tipos.length; i++) {
-            int quantidade = (Integer) quantidades[i].getValue();
-            if (quantidade > 0) entrega.put(tipos[i], quantidade);
-        }
-        return entrega;
+    }
+
+    public PainelTabuleiroJogador getPainelTabuleiroJogador() {
+        return painelTabuleiroJogador;
     }
 
     public void mostrarInformacaoTabuleiro(String mensagem) {
@@ -333,7 +332,6 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
 
         painelTabuleiroJogador.atualizarEstadoColunas( usadas, podeEscolher);
 
-        botaoTerminarTurno.setEnabled(podeTerminar);
     }
 
     @Override
@@ -352,10 +350,8 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
     }
 
     private void atualizarInterface(ObservadoJogo observado) {
-        this.observado = observado;
+        atualizarTesouros(observado);
        
-        botaoEntregarTesouros.setEnabled(observado.isTurnoEmAndamento()
-                && !observado.isPartidaEncerrada());
         if (!observado.existePartida()) {
             painelCartaConselheiroSecreto.definirCarta(null);
             painelTabuleiroJogador.definirPersonagem(null);
@@ -420,7 +416,8 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
             observado.getMoedasJogadorAtual(),
             observado.getEspadasJogadorAtual(),
             observado.getYurtsEstoqueJogadorAtual(),
-            observado.getTributosYurtJogadorAtual()
+            observado.getTributosYurtJogadorAtual(),
+            observado.getTributosVirtuaisJogadorAtual()
         );
 
         String situacao;
