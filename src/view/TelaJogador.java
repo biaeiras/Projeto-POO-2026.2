@@ -277,14 +277,43 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
         int[] imagens = {1, 3, 4, 2, 5};
         for (int i = 0; i < tipos.length; i++) {
             java.net.URL caminho = getClass().getResource("/fichas/cartoes7-" + imagens[i] + ".jpg");
-            ImageIcon icone = new ImageIcon(new ImageIcon(caminho).getImage()
-                    .getScaledInstance(26, 26, Image.SCALE_SMOOTH));
-            JLabel nome = new JLabel(nomes[i], icone, SwingConstants.LEFT);
+            final Image imagem;
+            try {
+                if (caminho == null) throw new java.io.IOException("Recurso não encontrado");
+                imagem = javax.imageio.ImageIO.read(caminho);
+                if (imagem == null) throw new java.io.IOException("Imagem inválida");
+            } catch (java.io.IOException erro) {
+                throw new IllegalStateException("Não foi possível carregar o tesouro " + tipos[i], erro);
+            }
+            JPanel figura = new JPanel() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    Graphics2D desenho = (Graphics2D) g.create();
+                    try {
+                        desenho.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                                RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                        int lado = Math.min(getWidth(), getHeight());
+                        desenho.drawImage(imagem, (getWidth() - lado) / 2,
+                                (getHeight() - lado) / 2, lado, lado, this);
+                    } finally {
+                        desenho.dispose();
+                    }
+                }
+            };
+            figura.setOpaque(false);
+            figura.setName("imagemTesouro." + tipos[i]);
+            figura.setPreferredSize(new Dimension(26, 26));
+            JLabel nome = new JLabel(nomes[i]);
             nome.setForeground(texto);
             nome.setFont(new Font("SansSerif", Font.PLAIN, 11));
             celula.gridy = i + 1;
             celula.gridx = 0; celula.weightx = 1.5;
-            tabela.add(nome, celula);
+            JPanel identificacao = new JPanel(new BorderLayout(4, 0));
+            identificacao.setOpaque(false);
+            identificacao.add(figura, BorderLayout.WEST);
+            identificacao.add(nome, BorderLayout.CENTER);
+            tabela.add(identificacao, celula);
             JLabel[] campos = new JLabel[3];
             String[] colunas = {"real", "virtual", "total"};
             for (int j = 0; j < campos.length; j++) {

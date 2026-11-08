@@ -8,6 +8,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.JPanel;
+import javax.swing.JFrame;
+import java.awt.Dimension;
+import java.awt.Rectangle;
+import java.awt.Insets;
+import java.awt.Toolkit;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.WindowStateListener;
 
 import controller.ControllerAPI;
 import model.CidadeID;
@@ -36,6 +44,45 @@ public class ViewAPI {
 
     public static Color getColor(Cor cor) {
         return colorMap.get(cor);
+    }
+
+    static Dimension limitarDimensoes(Dimension tamanho) {
+        return new Dimension(Math.min(1400, tamanho.width), Math.min(1050, tamanho.height));
+    }
+
+    public static void configurarLimitesJanela(final JFrame janela) {
+        janela.setMaximumSize(new Dimension(1400, 1050));
+        // Evita que a tela cheia nativa do macOS ultrapasse o limite da disciplina.
+        janela.getRootPane().putClientProperty("apple.awt.fullscreenable", Boolean.FALSE);
+        Rectangle tela = new Rectangle(janela.getGraphicsConfiguration().getBounds());
+        Insets margens = Toolkit.getDefaultToolkit().getScreenInsets(janela.getGraphicsConfiguration());
+        tela.x += margens.left;
+        tela.y += margens.top;
+        tela.width -= margens.left + margens.right;
+        tela.height -= margens.top + margens.bottom;
+        tela.setSize(limitarDimensoes(tela.getSize()));
+        janela.setMaximizedBounds(tela);
+        janela.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent evento) {
+                Dimension limite = limitarDimensoes(janela.getSize());
+                if (!limite.equals(janela.getSize())) {
+                    janela.setExtendedState(JFrame.NORMAL);
+                    janela.setSize(limite);
+                }
+            }
+        });
+        janela.addWindowStateListener(new WindowStateListener() {
+            @Override
+            public void windowStateChanged(WindowEvent evento) {
+                Dimension limite = limitarDimensoes(janela.getSize());
+                if (!limite.equals(janela.getSize())) {
+                    janela.setExtendedState(JFrame.NORMAL);
+                    janela.setSize(limite);
+                }
+            }
+        });
+        janela.setSize(limitarDimensoes(janela.getSize()));
     }
 
     public ViewAPI(FachadaJogo fachada) {

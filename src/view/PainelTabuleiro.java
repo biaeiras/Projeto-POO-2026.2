@@ -5,6 +5,9 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.awt.geom.Path2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 import java.io.IOException;
@@ -70,6 +73,7 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
     private HashMap<CidadeID, Cor> cidadesConquistadas = new HashMap<>();
     private HashMap<TipoTesouro, Image> imagensTesouros = new HashMap<>();
     private HashMap<TipoBonus, Image> imagensBonus = new HashMap<>();
+    private final HashMap<Cor, BufferedImage> imagensPeoes = new HashMap<>();
 
 
     private Image loadImage(String path) {
@@ -92,6 +96,7 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
 
     private void initImages() {
         imagemTabuleiro = loadImage("/tabuleiro.jpg");
+        for (Cor cor : Cor.values()) imagensPeoes.put(cor, criarImagemPeao(ViewAPI.getColor(cor)));
         imagensTesouros.put(TipoTesouro.BOI, loadImage("/fichas/cartoes7-1.jpg"));
         imagensTesouros.put(TipoTesouro.TECIDO, loadImage("/fichas/cartoes7-2.jpg"));
         imagensTesouros.put(TipoTesouro.FERRO, loadImage("/fichas/cartoes7-3.jpg"));
@@ -401,10 +406,37 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
 		int y = (int) (py*getHeight());
 		int w = (int) (2*RAIO_PEAO*getWidth());
 		int h = (int) (2*RAIO_PEAO*getHeight());
-		g.setColor(ViewAPI.getColor(cor));
-		g.fillOval(x, y, w, h);
+		g.drawImage(imagensPeoes.get(cor), x, y, w, h, this);
 		return;
 	}
+
+    // Sprite transparente criado uma vez por cor e exibido no mapa por drawImage.
+    // Não há imagens de peões nos recursos fornecidos com este projeto.
+    static BufferedImage criarImagemPeao(Color cor) {
+        BufferedImage imagem = new BufferedImage(64, 80, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = imagem.createGraphics();
+        try {
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            Path2D corpo = new Path2D.Double();
+            corpo.moveTo(22, 28);
+            corpo.curveTo(23, 44, 18, 53, 9, 65);
+            corpo.lineTo(7, 74);
+            corpo.quadTo(32, 80, 57, 74);
+            corpo.lineTo(55, 65);
+            corpo.curveTo(46, 53, 41, 44, 42, 28);
+            corpo.closePath();
+            g.setColor(cor);
+            g.fill(corpo);
+            g.fill(new Ellipse2D.Double(18, 3, 28, 28));
+            g.setColor(new Color(50, 35, 25));
+            g.setStroke(new BasicStroke(2));
+            g.draw(corpo);
+            g.draw(new Ellipse2D.Double(18, 3, 28, 28));
+        } finally {
+            g.dispose();
+        }
+        return imagem;
+    }
 	
 	private void drawYurt(Graphics2D g, ParadaID id, Cor cor, int i) {
 		double px = posicoesParadas.get(id).getX() - RAIO_YURT - ESPACAMENTO_YURT*i;

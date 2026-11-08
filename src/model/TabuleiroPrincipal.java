@@ -721,8 +721,7 @@ class TabuleiroPrincipal {
     int getQuantidadeYurts(Jogador jogador, Regiao regiao) {
         int total = 0;
         for (Parada parada : mapa.values()) {
-            Cidade cidade = parada.getCidade();
-            if (cidade != null && cidade.getRegiao() == regiao) {
+            if (regiao != null && getRegiaoParada(parada) == regiao) {
                 for (Jogador dono : parada.getYurt()) {
                     if (dono == jogador) {
                         total++;
@@ -731,6 +730,125 @@ class TabuleiroPrincipal {
             }
         }
         return total;
+    }
+
+    private Regiao getRegiaoParada(Parada parada) {
+        // As seis paradas de conselheiro não pertencem a uma cidade.
+        switch (parada.getId()) {
+            case KIEV_MOSCOU:
+            case SARAI_KAESONG_KARAKORUM:
+                return Regiao.RUSSIA;
+            case KIEV_MOSCOU_SAMARCANDA_BAGDA:
+            case BAGDA_CABUL:
+                return Regiao.PERSIA;
+            case KAESONG_CANTAO:
+            case PEQUIM_CABUL_CANTAO:
+                return Regiao.CHINA;
+            default:
+                Cidade cidade = parada.getCidade();
+                return cidade == null ? null : cidade.getRegiao();
+        }
+    }
+
+    int getQuantidadeYurtsGovernador(Jogador jogador, Regiao regiao) {
+        int total = getQuantidadeYurts(jogador, regiao);
+        // A exclusão dos yurts de conquista vale para a maioria regional.
+        // Governador pede yurts na região, sem a restrição de adjacência das cartas de cidades.
+        for (Cidade cidade : cidades.values()) {
+            if (regiao != null && cidade.getRegiao() == regiao && cidade.getConquistador() == jogador) total++;
+        }
+        return total;
+    }
+
+    private int contarYurts(Parada parada, Jogador jogador) {
+        return Collections.frequency(parada.getYurt(), jogador);
+    }
+
+    int getMaiorRedeYurts(Jogador jogador) {
+        HashSet<Parada> visitadas = new HashSet<>();
+        int maior = 0;
+        for (Parada inicio : mapa.values()) {
+            if (contarYurts(inicio, jogador) == 0 || !visitadas.add(inicio)) continue;
+            Queue<Parada> fila = new LinkedList<>();
+            fila.add(inicio);
+            int tamanho = 0;
+            while (!fila.isEmpty()) {
+                Parada atual = fila.remove();
+                tamanho += contarYurts(atual, jogador);
+                for (Parada vizinha : atual.getVizinhos().values()) {
+                    if (contarYurts(vizinha, jogador) > 0 && visitadas.add(vizinha)) fila.add(vizinha);
+                }
+            }
+            maior = Math.max(maior, tamanho);
+        }
+        return maior;
+    }
+
+    int getQuantidadeCidadesComYurtsAdjacentes(Jogador jogador, int minimo) {
+        HashMap<Cidade, Integer> quantidades = new HashMap<>();
+        for (Parada parada : mapa.values()) {
+            Cidade cidade = parada.getCidade();
+            if (cidade != null && cidade.getId() != CidadeID.KARAKORUM) {
+                quantidades.put(cidade, quantidades.getOrDefault(cidade, 0) + contarYurts(parada, jogador));
+            }
+        }
+        int total = 0;
+        // Yurts no centro de cidades conquistadas não são adjacentes a elas.
+        for (int quantidade : quantidades.values()) if (quantidade >= minimo) total++;
+        return total;
+    }
+
+    int getQuantidadeProvinciasKhanComYurts(Jogador jogador, int minimo) {
+        int total = 0;
+        // Bajulador considera as quatro províncias que contêm o ícone do Khan,
+        // não todas as províncias que recebem tributos ao mover o Khan.
+        for (ProvinciaID provincia : new ProvinciaID[] {ProvinciaID.TL_YURT, ProvinciaID.TR_MOEDA,
+                ProvinciaID.BL_MOEDA, ProvinciaID.BR_YURT}) {
+            int quantidade = 0;
+            for (Parada parada : mapa.values()) {
+                if (parada.getProvincias().containsKey(provincia)) quantidade += contarYurts(parada, jogador);
+            }
+            if (quantidade >= minimo) total++;
+        }
+        return total;
+    }
+
+    int getQuantidadeParadasDuplasComYurts(Jogador jogador) {
+        int total = 0;
+        for (Parada parada : mapa.values()) {
+            if (parada.getId() != ParadaID.KARAKORUM && parada.getMultiplicidade() == 2
+                    && contarYurts(parada, jogador) > 0) total++;
+        }
+        return total;
+    }
+
+    int getDistanciaKarakorum(Jogador jogador) {
+        int menor = Integer.MAX_VALUE;
+        // Distância no mapa, sem considerar ocupação ou benefícios de movimento.
+        // Altani disputa o desempate com seu peão mais próximo da capital.
+        for (int i = 0; i < jogador.getQuantidadePeoes(); i++) {
+            Parada inicio = jogador.getPeao(i).getPosicao();
+            if (inicio == null) continue;
+            HashMap<Parada, Integer> distancias = new HashMap<>();
+            Queue<Parada> fila = new LinkedList<>();
+            distancias.put(inicio, 0);
+            fila.add(inicio);
+            while (!fila.isEmpty()) {
+                Parada atual = fila.remove();
+                int distancia = distancias.get(atual);
+                if (atual.getId() == ParadaID.KARAKORUM) {
+                    menor = Math.min(menor, distancia);
+                    break;
+                }
+                for (Parada vizinha : atual.getVizinhos().values()) {
+                    if (!distancias.containsKey(vizinha)) {
+                        distancias.put(vizinha, distancia + 1);
+                        fila.add(vizinha);
+                    }
+                }
+            }
+        }
+        return menor;
     }
     int getQuantidadeCidadesConquistadas(Jogador jogador) {
         int total = 0;

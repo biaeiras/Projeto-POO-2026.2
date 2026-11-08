@@ -56,6 +56,7 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1200, 800);
         setMinimumSize(new Dimension(900, 600));
+        ViewAPI.configurarLimitesJanela(this);
         setLocationRelativeTo(null);
 
         getContentPane().setBackground(pergaminho);

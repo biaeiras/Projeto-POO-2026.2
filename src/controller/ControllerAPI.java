@@ -301,6 +301,7 @@ public class ControllerAPI {
             janelaJogador.setContentPane(tela);
             janelaJogador.setMinimumSize(new java.awt.Dimension(900, 600));
             janelaJogador.setSize(1200, 800);
+            ViewAPI.configurarLimitesJanela(janelaJogador);
             janelaJogador.setLocationRelativeTo(viewPrincipal.getTelaPrincipal());
         }
 

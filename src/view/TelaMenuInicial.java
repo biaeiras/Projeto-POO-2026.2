@@ -24,6 +24,7 @@ public class TelaMenuInicial extends JFrame {
         
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1000, 680);
+        ViewAPI.configurarLimitesJanela(this);
         setMinimumSize(new Dimension(800, 550));
         setLocationRelativeTo(null);
 
