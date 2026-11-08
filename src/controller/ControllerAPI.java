@@ -16,11 +16,14 @@ import java.awt.event.FocusEvent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import java.util.HashMap;
+import model.ParadaID;
 import model.Cor;
 import model.FachadaJogo;
 import model.ObservadoJogo;
 import model.ObservadorJogo;
 import view.TelaJogador;
+import view.PainelAcoesPartida;
 import view.TelaMenuInicial;
 import view.TelaPreparacaoPartida;
 import view.ViewAPI;
@@ -61,6 +64,30 @@ public class ControllerAPI {
 
         viewAPI.getTabulerioPanel()
                .addMouseListener(mouseTabuleiro);
+    }
+
+    public void configurarAcoes(final PainelAcoesPartida painel) {
+        painel.getBotaoTerminarTurno().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evento) {
+                boolean terminou = fachada.terminarTurnoJogadorAtual();
+                if (!terminou) painel.mostrarInformacao("Existem pendências no turno. Conclua-as antes de terminar.");
+            }
+        });
+        painel.getBotaoEntregarTesouros().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evento) {
+                ParadaID local = painel.getLocalEntregaAtual();
+                if (local == null) return;
+                HashMap<String, Integer> entrega = painel.escolherTesourosEntrega(local);
+                if (entrega == null) return;
+                boolean entregou = fachada.entregarTesourosJogadorAtual(local, entrega);
+                painel.mostrarInformacao(entregou
+                        ? "Entrega realizada! Votos e peças de bônus atualizados."
+                        : "Não foi possível entregar. Confira os tesouros exigidos e a posição atual do peão.");
+            }
+        });
+        painel.atualizar(registrarObservador(painel));
     }
 
     public void abrirMenu() {
@@ -272,6 +299,7 @@ public class ControllerAPI {
             janelaJogador = new JFrame("Herdeiros de Khan - Jogador");
             janelaJogador.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
             janelaJogador.setContentPane(tela);
+            janelaJogador.setMinimumSize(new java.awt.Dimension(900, 600));
             janelaJogador.setSize(1200, 800);
             janelaJogador.setLocationRelativeTo(viewPrincipal.getTelaPrincipal());
         }

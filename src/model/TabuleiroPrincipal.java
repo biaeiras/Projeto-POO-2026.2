@@ -755,13 +755,29 @@ class TabuleiroPrincipal {
     }
 
 
+    boolean atacarCidade(CidadeID id, Jogador jogador, TipoTesouro tesouro) {
+        Cidade cidade = cidades.get(id);
+        if (cidade == null || id == CidadeID.KARAKORUM || jogador == null
+                || cidade.getConquistador() != null || !cidade.getTesouros().contains(tesouro)) {
+            return false;
+        }
+        cidade.atacar(jogador, tesouro);
+        // Só a retirada do último tesouro revela uma nova cidade.
+        // No fim da pilha, a conquista continua válida sem tentar retirar outra peça.
+        if (cidade.getConquistador() != null && !pilhaCidades.isEmpty()
+                && pilhaTesouros.size() >= 4) {
+            cidades.get(pilhaCidades.pop()).revelar(pilhaTesouros);
+        }
+        return true;
+    }
+
 	public boolean todasCidadesConquistadas() {
 	    if (!pilhaCidades.isEmpty()) {
 	        return false;
 	    }
 
 	    for (Cidade cidade : cidades.values()) {
-	        if (cidade.getConquistador() == null) {
+            if (cidade.getId() != CidadeID.KARAKORUM && cidade.getConquistador() == null) {
 	            return false;
 	        }
 	    }

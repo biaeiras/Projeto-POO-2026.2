@@ -15,6 +15,10 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
+import javax.swing.JLabel;
+import javax.swing.Icon;
+import java.awt.Component;
+import java.awt.Font;
 import javax.swing.SwingUtilities;
 
 import model.CidadeID;
@@ -29,6 +33,12 @@ import model.TipoTesouro;
 
 class PainelTabuleiro extends JPanel implements ObservadorJogo {
 	private static final long serialVersionUID = 1L;
+    private static final Color COR_MOVIMENTO = Color.MAGENTA;
+    private static final Color COR_ALCANCAVEL = Color.WHITE;
+    private static final Color COR_TRIBUTO = Color.CYAN;
+    private static final Color COR_TRIBUTO_SELECIONADO = Color.RED;
+    private static final Color COR_KHAN_SELECIONADO = Color.GREEN;
+    private static final Color COR_KHAN = Color.WHITE;
 	private static final double RAIO_PARADA = 0.021;
 	private static final double RAIO_PEAO = 0.015;
 	private static final double RAIO_YURT = 0.024;
@@ -55,6 +65,7 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
     private HashSet<KhanID> khans = new HashSet<>();
     private HashMap<ParadaID, TipoBonus> bonus = new HashMap<>();
     private KhanID khanSelecionado = null;
+    private KhanID khan = null;
     private HashMap<CidadeID, ArrayList<TipoTesouro>> cidades = new HashMap<>();
     private HashMap<CidadeID, Cor> cidadesConquistadas = new HashMap<>();
     private HashMap<TipoTesouro, Image> imagensTesouros = new HashMap<>();
@@ -191,15 +202,18 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
 
     private void drawKhan(Graphics2D g, HashSet<KhanID> khans) {
         g.setStroke(new BasicStroke((float)(ESPACAMENTO_YURT*(getWidth() + getHeight())/4)));
-        for(KhanID id: khans) {
+        HashSet<KhanID> marcacoes = new HashSet<>(khans);
+        if (khan != null) marcacoes.add(khan);
+        for (KhanID id : marcacoes) {
             Point2D.Double p = posicoesKhan.get(id);
-            if(id == khanSelecionado) g.setColor(Color.green);
-            else g.setColor(Color.white);
+            if(id == khanSelecionado) g.setColor(COR_KHAN_SELECIONADO);
+            else g.setColor(COR_KHAN);
             int x = (int)((p.getX()-(RAIO_PARADA+ESPACAMENTO_YURT))*getWidth());
             int y = (int)((p.getY()-(RAIO_PARADA+ESPACAMENTO_YURT))*getHeight());
             int w = (int) (2*(RAIO_PARADA+ESPACAMENTO_YURT)*getWidth());
             int h = (int) (2*(RAIO_PARADA+ESPACAMENTO_YURT)*getHeight());
-            g.drawOval(x, y, w, h);
+            if (id == khan) g.fillOval(x, y, w, h);
+            else g.drawOval(x, y, w, h);
         }
     }
 
@@ -267,17 +281,17 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
 	}
 	
  	private void drawParadas(Graphics2D g, HashSet<ParadaID> vizinhos, HashSet<ParadaID> possiveis) {
- 		drawParadas(g, possiveis, Color.white);
- 		drawParadas(g, vizinhos, Color.magenta);
+        drawParadas(g, possiveis, COR_ALCANCAVEL);
+        drawParadas(g, vizinhos, COR_MOVIMENTO);
  	}
  	
  	private void drawProvincias(Graphics2D g, HashMap<ProvinciaID, Integer> provincias, HashSet<ProvinciaID> interagiveis) {
  		g.setStroke(new BasicStroke((float)(ESPACAMENTO_YURT*(getWidth() + getHeight())/4)));
  		for(Map.Entry<ProvinciaID, Integer> entry: provincias.entrySet()) {
  			if(interagiveis.contains(entry.getKey()))
- 				g.setColor(Color.red);
+                g.setColor(COR_TRIBUTO_SELECIONADO);
  			else
- 				g.setColor(Color.cyan);
+                g.setColor(COR_TRIBUTO);
  			Point2D.Double p = posicoesProvincias.get(entry.getKey());
  			for(int i = 0; i<entry.getValue(); ++i) { 				
  				int x = (int)((p.getX()-(RAIO_PARADA+ESPACAMENTO_YURT*i))*getWidth());
@@ -285,11 +299,56 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
  				int w = (int) (2*(RAIO_PARADA+ESPACAMENTO_YURT*i)*getWidth());
  				int h = (int) (2*(RAIO_PARADA+ESPACAMENTO_YURT*i)*getHeight());
  				g.drawOval(x, y, w, h);
- 				g.setColor(Color.cyan);
+                g.setColor(COR_TRIBUTO);
  			}
  		}
  	}
  	
+    static JPanel criarLegenda() {
+        JPanel legenda = new JPanel();
+        legenda.setLayout(new javax.swing.BoxLayout(legenda, javax.swing.BoxLayout.Y_AXIS));
+        legenda.setOpaque(false);
+        adicionarLegenda(legenda, COR_MOVIMENTO, false, "Movimento imediato:<br>clique esquerdo.");
+        adicionarLegenda(legenda, COR_ALCANCAVEL, false, "Parada alcançável com<br>os movimentos restantes.");
+        adicionarLegenda(legenda, COR_TRIBUTO_SELECIONADO, false, "Coleta disponível / tributo<br>selecionado no Khan.");
+        adicionarLegenda(legenda, COR_TRIBUTO, false, "Peças de tributo presentes no mapa.");
+        adicionarLegenda(legenda, COR_KHAN, false, "Destino disponível<br>para mover o Khan.");
+        adicionarLegenda(legenda, COR_KHAN_SELECIONADO, false, "Região selecionada<br>para o Khan.");
+        adicionarLegenda(legenda, COR_KHAN, true, "Posição atual do Khan.");
+        JLabel controles = new JLabel("<html>Tesouro: clique esquerdo para atacar.<br>"
+                + "Parada: clique direito para construir yurt.<br>Peões e yurts usam a cor do jogador.</html>");
+        controles.setAlignmentX(Component.LEFT_ALIGNMENT);
+        controles.setFont(new Font("SansSerif", Font.PLAIN, 11));
+        controles.setForeground(new Color(75, 51, 30));
+        legenda.add(controles);
+        return legenda;
+    }
+
+    private static void adicionarLegenda(JPanel painel, final Color cor,
+            final boolean preenchido, String texto) {
+        Icon simbolo = new Icon() {
+            public int getIconWidth() { return 20; }
+            public int getIconHeight() { return 20; }
+            public void paintIcon(Component c, Graphics g, int x, int y) {
+                Graphics2D desenho = (Graphics2D) g.create();
+                desenho.setColor(new Color(75, 51, 30));
+                desenho.fillRoundRect(x, y, 20, 20, 4, 4);
+                desenho.setColor(cor);
+                desenho.setStroke(new BasicStroke(2));
+                if (preenchido) desenho.fillOval(x + 4, y + 4, 12, 12);
+                else desenho.drawOval(x + 4, y + 4, 12, 12);
+                desenho.dispose();
+            }
+        };
+        JLabel item = new JLabel("<html>" + texto + "</html>", simbolo, JLabel.LEFT);
+        item.setAlignmentX(Component.LEFT_ALIGNMENT);
+        item.setFont(new Font("SansSerif", Font.PLAIN, 11));
+        item.setMaximumSize(new java.awt.Dimension(Integer.MAX_VALUE, item.getPreferredSize().height));
+        item.setForeground(new Color(75, 51, 30));
+        painel.add(item);
+        painel.add(javax.swing.Box.createVerticalStrut(4));
+    }
+
     PainelTabuleiro() {
         initImages();
         initParadas();
@@ -327,6 +386,7 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         alcancaveis = observado.getAlcancaveisTotais();
         provinciasDisponiveis = observado.getProvincias();
         khans = observado.getKhans();
+        khan = observado.getKhan();
         khanSelecionado = observado.getKhanSelecionado();
         cidades = observado.getCidades();
         cidadesConquistadas = observado.getCidadesConquistadas();

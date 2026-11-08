@@ -178,15 +178,16 @@ class Jogador {
     }
 
     boolean usarYurt() {
+        return usarYurt(false);
+    }
 
-        if (yurtsDisponiveis <= 0 ||
-            getQuantidadeTributo(TipoTributo.YURT) <= 0) {
+    boolean usarYurt(boolean pagarComVirtual) {
+        if (yurtsDisponiveis <= 0
+                || (!pagarComVirtual && getQuantidadeTributo(TipoTributo.YURT) <= 0)) {
             return false;
         }
-
-        gastarTributo(TipoTributo.YURT, 1);
+        if (!pagarComVirtual) gastarTributo(TipoTributo.YURT, 1);
         yurtsDisponiveis--;
-
         return true;
     }
 

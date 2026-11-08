@@ -119,7 +119,7 @@ public class IntegracaoMapaTest {
     }
 
     @Test
-    public void tesourosDoAtaquePodemSerEntreguesNoMesmoTurno() {
+    public void tesourosDoAtaqueNaoPodemSerEntreguesEmKarakorumDepoisDeSair() {
         Partida partida = criarPartida();
         Jogador jogador = partida.getJogadorAtual();
         // Dois votos de Karakorum, sem peça extra neste cenário.
@@ -132,9 +132,10 @@ public class IntegracaoMapaTest {
         assertEquals(3, jogador.getTotalTesouros());
         HashMap<TipoTesouro, Integer> entrega = partida.getExigenciaEntrega(ParadaID.KARAKORUM);
         int votosAntes = jogador.getVotos(); // A carta de quatro espadas já pode ter pontuado.
-        assertTrue(partida.entregarTesouros(ParadaID.KARAKORUM, entrega));
-        assertEquals(0, jogador.getTotalTesouros());
-        assertEquals(votosAntes + 2, jogador.getVotos());
+        assertFalse(partida.entregarTesouros(ParadaID.KARAKORUM, entrega));
+        assertTrue(partida.getLocaisEntregaDisponiveis().isEmpty());
+        assertEquals(3, jogador.getTotalTesouros());
+        assertEquals(votosAntes, jogador.getVotos());
     }
 
     @Test
@@ -220,5 +221,112 @@ public class IntegracaoMapaTest {
         } finally {
             fachada.removerObservador(contador);
         }
+    }
+    @Test
+    public void conquistaAbreOutraCidadeEAUltimaNaoEstouraAPilha() {
+        Partida partida = criarPartida();
+        Jogador jogador = partida.getJogadorAtual();
+        TabuleiroPrincipal tabuleiro = new TabuleiroPrincipal(new HashMap<Peao, Jogador>());
+        assertEquals(3, contarCidadesReveladas(tabuleiro));
+        assertFalse(tabuleiro.todasCidadesConquistadas());
+        for (int conquistas = 1; conquistas <= 9; conquistas++) {
+            Cidade alvo = null;
+            for (CidadeID id : CidadeID.values()) {
+                Cidade cidade = tabuleiro.getCidade(id);
+                if (id != CidadeID.KARAKORUM && !cidade.getTesouros().isEmpty()) {
+                    alvo = cidade;
+                    break;
+                }
+            }
+            assertNotNull(alvo);
+            int reveladasAntes = contarCidadesReveladas(tabuleiro);
+            while (alvo.getTesouros().size() > 1) {
+                assertTrue(tabuleiro.atacarCidade(alvo.getId(), jogador, alvo.getTesouros().get(0)));
+                assertEquals(reveladasAntes, contarCidadesReveladas(tabuleiro));
+            }
+            assertTrue(tabuleiro.atacarCidade(alvo.getId(), jogador, alvo.getTesouros().get(0)));
+            assertSame(jogador, alvo.getConquistador());
+            assertEquals(Math.min(9, 3 + conquistas), contarCidadesReveladas(tabuleiro));
+            assertFalse(tabuleiro.atacarCidade(alvo.getId(), jogador, TipoTesouro.FERRO));
+            assertEquals(conquistas == 9, tabuleiro.todasCidadesConquistadas());
+        }
+        assertNull(tabuleiro.getCidade(CidadeID.KARAKORUM).getConquistador());
+    }
+
+    private int contarCidadesReveladas(TabuleiroPrincipal tabuleiro) {
+        int total = 0;
+        for (CidadeID id : CidadeID.values()) {
+            Cidade cidade = tabuleiro.getCidade(id);
+            if (!cidade.getTesouros().isEmpty() || cidade.getConquistador() != null) total++;
+        }
+        return total;
+    }
+
+    @Test
+    public void ataquePelaFachadaNotificaComANovaCidadeJaRevelada() {
+        Partida partida = criarPartida();
+        Jogador jogador = partida.getJogadorAtual();
+        Cidade alvo = null;
+        Parada acesso = null;
+        for (ParadaID id : ParadaID.values()) {
+            Parada parada = encontrarParada(partida, id);
+            Cidade cidade = parada.getCidade();
+            if (cidade != null && !cidade.getTesouros().isEmpty()) {
+                alvo = cidade;
+                acesso = parada;
+                break;
+            }
+        }
+        assertNotNull(alvo);
+        alvo.getTesouros().clear();
+        alvo.getTesouros().add(TipoTesouro.FERRO);
+        Peao peao = jogador.getPeao(0);
+        peao.getPosicao().removePeao(peao);
+        peao.setPosicao(acesso);
+        acesso.insertPeao(peao);
+        jogador.adicionarTributo(TipoTributo.ESPADA, 1);
+        assertTrue(partida.iniciarTurno(Regiao.PERSIA));
+        FachadaJogo fachada = FachadaJogo.getInstancia();
+        fachada.definirPartida(partida);
+        final CidadeID conquistada = alvo.getId();
+        final int[] notificacoes = {0};
+        ObservadorJogo observador = new ObservadorJogo() {
+            @Override
+            public void atualizar(ObservadoJogo observado) {
+                assertFalse(observado.getCidades().containsKey(conquistada));
+                assertEquals(3, observado.getCidades().size());
+                assertEquals(Cor.VERDE, observado.getCidadesConquistadas().get(conquistada));
+                notificacoes[0]++;
+            }
+        };
+        fachada.adicionarObservador(observador);
+        try {
+            assertTrue(fachada.atacarCidade(conquistada, 0));
+            assertEquals(1, notificacoes[0]);
+        } finally {
+            fachada.removerObservador(observador);
+        }
+    }
+
+    @Test
+    public void posicaoAtualDoKhanPersisteAoTrocarTurno() {
+        Partida partida = criarPartida();
+        FachadaJogo fachada = FachadaJogo.getInstancia();
+        fachada.definirPartida(partida);
+        assertNull(fachada.getKhan());
+        assertTrue(fachada.ativarColunaJogadorAtual(0));
+        assertTrue(fachada.selecionarKhan(KhanID.TL));
+        assertTrue(fachada.selecionarTributo(ProvinciaID.TL_ESPADA));
+        assertTrue(fachada.selecionarTributo(ProvinciaID.TL_MOEDA));
+        assertEquals(KhanID.TL, fachada.getKhan());
+        assertTrue(fachada.terminarTurnoJogadorAtual());
+        assertEquals(KhanID.TL, fachada.getKhan());
+        assertTrue(fachada.getKhans().isEmpty());
+        assertTrue(fachada.ativarColunaJogadorAtual(0));
+        assertFalse(fachada.getKhans().contains(fachada.getKhan()));
+        assertTrue(fachada.selecionarKhan(KhanID.M));
+        assertEquals(KhanID.M, fachada.getKhan());
+        assertTrue(fachada.terminarTurnoJogadorAtual());
+        assertEquals(KhanID.M, fachada.getKhan());
     }
 }
