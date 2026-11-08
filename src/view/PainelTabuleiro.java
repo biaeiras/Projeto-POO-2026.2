@@ -74,6 +74,7 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
     private HashMap<TipoTesouro, Image> imagensTesouros = new HashMap<>();
     private HashMap<TipoBonus, Image> imagensBonus = new HashMap<>();
     private final HashMap<Cor, BufferedImage> imagensPeoes = new HashMap<>();
+    private final BufferedImage imagemPeaoKhan = criarImagemPeao(Color.WHITE);
 
 
     private Image loadImage(String path) {
@@ -217,7 +218,7 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
             int y = (int)((p.getY()-(RAIO_PARADA+ESPACAMENTO_YURT))*getHeight());
             int w = (int) (2*(RAIO_PARADA+ESPACAMENTO_YURT)*getWidth());
             int h = (int) (2*(RAIO_PARADA+ESPACAMENTO_YURT)*getHeight());
-            if (id == khan) g.fillOval(x, y, w, h);
+            if (id == khan) g.drawImage(imagemPeaoKhan, x, y, w, h, this);
             else g.drawOval(x, y, w, h);
         }
     }
@@ -319,7 +320,6 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         adicionarLegenda(legenda, COR_TRIBUTO, false, "Peças de tributo presentes no mapa.");
         adicionarLegenda(legenda, COR_KHAN, false, "Destino disponível<br>para mover o Khan.");
         adicionarLegenda(legenda, COR_KHAN_SELECIONADO, false, "Região selecionada<br>para o Khan.");
-        adicionarLegenda(legenda, COR_KHAN, true, "Posição atual do Khan.");
         JLabel controles = new JLabel("<html>Tesouro: clique esquerdo para atacar.<br>"
                 + "Parada: clique direito para construir yurt.<br>Peões e yurts usam a cor do jogador.</html>");
         controles.setAlignmentX(Component.LEFT_ALIGNMENT);
