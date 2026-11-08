@@ -81,7 +81,7 @@ public class ConselheirosAbertosPartidaTest {
         }
         assertNotNull(cidade);
         cidade.getTesouros().clear();
-        cidade.getTesouros().put(TipoTesouro.FERRO, 1);
+        cidade.getTesouros().add(TipoTesouro.FERRO);
         for (int i = 0; i < 3; i++) {
             jogador.adicionarTesouro(TipoTesouro.FERRO);
         }

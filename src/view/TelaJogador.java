@@ -4,6 +4,8 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import model.ParadaID;
 
 import model.ObservadoJogo;
 import model.ObservadorJogo;
@@ -28,6 +30,9 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
     
     private PainelTabuleiroJogador painelTabuleiroJogador;
     private JButton botaoTerminarTurno;
+    private JButton botaoEntregarTesouros;
+    private PainelPecasBonus painelPecasBonus;
+    private ObservadoJogo observado;
     private JLabel informacaoTabuleiro;
     
 
@@ -78,22 +83,9 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
 
         JPanel bonus = criarSecao( "PEÇAS DE BÔNUS", new Color(213, 202, 235));
 
-    	PainelPecasBonus painelPecasBonus = new PainelPecasBonus();
+        painelPecasBonus = new PainelPecasBonus();
+        bonus.add(painelPecasBonus);
 
-    	bonus.add(painelPecasBonus);
-    	
-    	//SÓ PARA TESTAR : depois vai ser alterado para o controller
-    	
-    	painelPecasBonus.atualizarPecas(
-    		    new boolean[] {
-    		        true, true, false, false, false, false, false
-    		    },
-    		    new boolean[] {
-    		        false, true, false, false, false, false, false
-    		    }
-    		);
-        
-        
         JPanel cartaConselheiroSecreto = criarSecao( "MEU CONSELHEIRO SECRETO", new Color(213, 202, 235));
 
         painelCartaConselheiroSecreto = new PainelCartaConselheiroSecreto();
@@ -116,7 +108,9 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
         gradeAcoes.add(criarBotao("Construir yurt"));
         gradeAcoes.add(criarBotao("Atacar cidade"));
         gradeAcoes.add(criarBotao("Comprar melhoria"));
-        gradeAcoes.add(criarBotao("Entregar tesouros"));
+        botaoEntregarTesouros = criarBotao("Entregar tesouros");
+        botaoEntregarTesouros.setEnabled(false);
+        gradeAcoes.add(botaoEntregarTesouros);
         gradeAcoes.add(criarBotao("Cumprir conselheiros"));
     
         
@@ -242,6 +236,83 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
         return botaoTerminarTurno;
     }
 
+    public JButton getBotaoEntregarTesouros() {
+        return botaoEntregarTesouros;
+    }
+
+    public ParadaID escolherLocalEntrega() {
+        if (observado == null) return null;
+        ArrayList<ParadaID> locais = observado.getLocaisEntregaDisponiveis();
+        if (locais.isEmpty()) {
+            mostrarInformacaoTabuleiro("Visite uma parada de conselheiro neste turno para entregar tesouros.");
+            return null;
+        }
+        String[] nomes = new String[locais.size()];
+        for (int i = 0; i < nomes.length; i++) {
+            nomes[i] = locais.get(i).name().replace('_', ' ');
+        }
+        JComboBox<String> selecao = new JComboBox<>(nomes);
+        JPanel conteudo = new JPanel(new BorderLayout(8, 8));
+        conteudo.setBackground(pergaminho);
+        conteudo.setBorder(new EmptyBorder(12, 12, 12, 12));
+        conteudo.add(new JLabel("Escolha um conselheiro visitado neste turno:"), BorderLayout.NORTH);
+        conteudo.add(selecao, BorderLayout.CENTER);
+        int resposta = JOptionPane.showConfirmDialog(this, conteudo,
+                "Entregar tesouros", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        return resposta == JOptionPane.OK_OPTION ? locais.get(selecao.getSelectedIndex()) : null;
+    }
+
+    public HashMap<String, Integer> escolherTesourosEntrega(ParadaID local) {
+        if (observado == null) return null;
+        HashMap<String, Integer> exigencia = observado.getExigenciaEntrega(local);
+        HashMap<String, Integer> reais = observado.getTesourosJogadorAtual();
+        HashMap<String, Integer> virtuais = observado.getTesourosVirtuaisJogadorAtual();
+        // A View apresenta as exigências fornecidas pelo Model.
+        boolean escolhaLivre = exigencia.isEmpty();
+        String[] tipos = {"BOI", "FERRO", "PELE", "TECIDO", "ALIMENTO"};
+        JSpinner[] quantidades = new JSpinner[tipos.length];
+        JPanel conteudo = new JPanel(new BorderLayout(8, 8));
+        conteudo.setBackground(pergaminho);
+        conteudo.setBorder(new EmptyBorder(12, 12, 12, 12));
+        String bonus = observado.getBonusDisponivelEntrega(local);
+        JLabel instrucoes = new JLabel("<html><b>"
+                + local.name().replace('_', ' ') + "</b><br>"
+                + (escolhaLivre ? "Escolha 3 tesouros de qualquer tipo."
+                        : "Entregue o conjunto indicado abaixo.")
+                + "<br>Recompensa: " + observado.getVotosEntrega(local) + " voto(s).<br>"
+                + (bonus == null ? "A peça de bônus deste local já foi recolhida."
+                        : "Peça de bônus disponível: " + bonus.toLowerCase(java.util.Locale.ROOT).replace('_', ' '))
+                + "<br>Os tesouros virtuais disponíveis são utilizados primeiro.</html>");
+        instrucoes.setForeground(texto);
+        conteudo.add(instrucoes, BorderLayout.NORTH);
+        JPanel grade = new JPanel(new GridLayout(0, 3, 10, 6));
+        grade.setOpaque(false);
+        grade.add(new JLabel("Tesouro"));
+        grade.add(new JLabel("Estoque + virtuais"));
+        grade.add(new JLabel("Entregar"));
+        for (int i = 0; i < tipos.length; i++) {
+            String tipo = tipos[i];
+            int quantidade = escolhaLivre ? 0 : exigencia.getOrDefault(tipo, 0);
+            quantidades[i] = new JSpinner(new SpinnerNumberModel(quantidade, 0, 3, 1));
+            quantidades[i].setEnabled(escolhaLivre);
+            // Impede digitação parcial: o seletor continua utilizável pelas setas.
+            ((JSpinner.DefaultEditor) quantidades[i].getEditor()).getTextField().setEditable(false);
+            grade.add(new JLabel(tipo));
+            grade.add(new JLabel(reais.getOrDefault(tipo, 0) + " + " + virtuais.getOrDefault(tipo, 0)));
+            grade.add(quantidades[i]);
+        }
+        conteudo.add(grade, BorderLayout.CENTER);
+        int resposta = JOptionPane.showConfirmDialog(this, conteudo,
+                "Confirmar entrega", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (resposta != JOptionPane.OK_OPTION) return null;
+        HashMap<String, Integer> entrega = new HashMap<>();
+        for (int i = 0; i < tipos.length; i++) {
+            int quantidade = (Integer) quantidades[i].getValue();
+            if (quantidade > 0) entrega.put(tipos[i], quantidade);
+        }
+        return entrega;
+    }
+
     public void mostrarInformacaoTabuleiro(String mensagem) {
         informacaoTabuleiro.setText(mensagem);
     }
@@ -274,6 +345,12 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
     }
 
     private void atualizarInterface(ObservadoJogo observado) {
+        this.observado = observado;
+        painelPecasBonus.atualizarPecas(
+                observado.getPecasBonusConquistadasJogadorAtual(),
+                observado.getPecasBonusUsadasJogadorAtual());
+        botaoEntregarTesouros.setEnabled(observado.isTurnoEmAndamento()
+                && !observado.isPartidaEncerrada());
         if (!observado.existePartida()) {
             painelCartaConselheiroSecreto.definirCarta(null);
             painelTabuleiroJogador.definirPersonagem(null);

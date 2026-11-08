@@ -7,6 +7,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 
+import java.util.HashMap;
+import model.ParadaID;
 import model.FachadaJogo;
 import model.ObservadoJogo;
 import model.ObservadorJogo;
@@ -101,6 +103,21 @@ public class ControladorTabuleiroJogador {
                 }
             }
         );
+
+        tela.getBotaoEntregarTesouros().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evento) {
+                ParadaID local = ControladorTabuleiroJogador.this.tela.escolherLocalEntrega();
+                if (local == null) return;
+                HashMap<String, Integer> entrega =
+                        ControladorTabuleiroJogador.this.tela.escolherTesourosEntrega(local);
+                if (entrega == null) return;
+                boolean entregou = fachada.entregarTesourosJogadorAtual(local, entrega);
+                ControladorTabuleiroJogador.this.tela.mostrarInformacaoTabuleiro(entregou
+                        ? "Entrega realizada! Votos e peças de bônus atualizados."
+                        : "Não foi possível entregar. Confira o conjunto exigido, os tesouros disponíveis e o local visitado.");
+            }
+        });
 
         ObservadoJogo observado = registrarObservador(tela);
 

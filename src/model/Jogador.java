@@ -261,6 +261,15 @@ class Jogador {
         return true;
     }
 
+    boolean possuiPecaBonus(TipoBonus tipo) {
+        return pecasBonus.containsKey(tipo);
+    }
+
+    boolean isPecaBonusUsada(TipoBonus tipo) {
+        PecaBonus peca = pecasBonus.get(tipo);
+        return peca != null && peca.EhUsada();
+    }
+
     int getQuantidadePecasBonus() {
         // As peças usadas continuam pertencendo ao jogador, conforme o manual.
         return pecasBonus.size();
