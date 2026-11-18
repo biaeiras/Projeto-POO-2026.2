@@ -39,7 +39,6 @@ public class PainelAcoesPartida extends JPanel implements ObservadorJogo {
             botao.setEnabled(false);
             botoes.add(botao);
         }
-        botaoComprarMelhoria.setToolTipText("A compra de melhorias ainda não está disponível.");
         add(botoes, BorderLayout.CENTER);
         informacao.setForeground(texto);
         informacao.setFont(new Font("SansSerif", Font.PLAIN, 11));
@@ -71,6 +70,7 @@ public class PainelAcoesPartida extends JPanel implements ObservadorJogo {
         boolean turno = observado.isTurnoEmAndamento() && !observado.isPartidaEncerrada();
         botaoTerminarTurno.setEnabled(turno);
         botaoEntregarTesouros.setEnabled(turno && !observado.getLocaisEntregaDisponiveis().isEmpty());
+        botaoComprarMelhoria.setEnabled(turno&&observado.isCompravel());
         mostrarInformacao(observado.isPartidaEncerrada() ? "Partida encerrada."
                 : turno ? "Use o mapa para mover, coletar e atacar."
                 : "Escolha uma coluna na tela do jogador.");

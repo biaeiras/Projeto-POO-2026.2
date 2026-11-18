@@ -139,35 +139,6 @@ public class PainelTabuleiroJogador extends JPanel {
         return new int[] {x, y};
     }
     
-    private BufferedImage carregarMelhoria(String nomeArquivo) {
-
-        if (imagensMelhorias.containsKey(nomeArquivo)) {
-            return imagensMelhorias.get(nomeArquivo);
-        }
-
-        String caminho = "/melhorias/" + nomeArquivo;
-
-        java.net.URL recurso = getClass().getResource(caminho);
-
-        if (recurso == null) {
-            throw new IllegalArgumentException(
-                    "Imagem não encontrada: " + caminho
-            );
-        }
-
-        try {
-            BufferedImage imagem = ImageIO.read(recurso);
-
-            imagensMelhorias.put(nomeArquivo, imagem);
-
-            return imagem;
-
-        } catch (IOException e) {
-            throw new IllegalStateException(
-                    "Erro ao carregar melhoria: " + caminho, e
-            );
-        }
-    }
     
     private void desenharMelhoria(
             Graphics2D g2d,
@@ -176,7 +147,7 @@ public class PainelTabuleiroJogador extends JPanel {
             int linha
     ) {
 
-        BufferedImage imagem = carregarMelhoria(nomeMelhoria);
+        BufferedImage imagem = ImagensMelhorias.loadImage(nomeMelhoria);
 
         int x = (int) (COLUNAS_X[coluna] * getWidth());
         int y = (int) (LINHAS_Y[linha] * getHeight());

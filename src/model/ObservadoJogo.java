@@ -49,5 +49,6 @@ public interface ObservadoJogo {
     HashMap<CidadeID, Integer> getCidadesAtacaveis();
     HashMap<CidadeID, Cor> getCidadesConquistadas();
     HashMap<ParadaID, TipoBonus> getBonus();
-
+    ArrayList<Melhoria> getMelhorias();
+    boolean isCompravel();
 }

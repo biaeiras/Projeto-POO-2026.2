@@ -87,6 +87,12 @@ public class ControllerAPI {
                         : "Não foi possível entregar. Confira os tesouros exigidos e a posição atual do peão.");
             }
         });
+        painel.getBotaoComprarMelhoria().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evento) {
+                fachada.comprarMelhoriaDaPilha();
+            }
+        });
         painel.atualizar(registrarObservador(painel));
     }
 

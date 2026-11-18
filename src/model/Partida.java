@@ -373,7 +373,7 @@ class Partida  {
 
     private boolean concluirAcaoKhan(KhanID id) {
         if (encerrada || turnoAtual == null || !turnoAtual.isKhanPendente()
-                || !tabuleiroPrincipal.ativarKhan(id, new HashSet<>(selecaoKhan))) return false;
+                || !tabuleiroPrincipal.ativarKhan(id, new HashSet<>(selecaoKhan), turnoAtual.getJogador())) return false;
         turnoAtual.concluirAcaoKhan();
         ativandoKhan = null;
         selecaoKhan.clear();
@@ -737,7 +737,16 @@ class Partida  {
 	    verificarConselheirosAbertos();
 	    return true;
 	}
-	
+
+	boolean comprarMelhoriaTabuleiro(int index) {
+		Jogador jogador = getJogadorAtual();
+		if(index<0 || jogador.getQuantidadeTributo(TipoTributo.MOEDA)<2) return false;
+		Melhoria melhoria = tabuleiroPrincipal.comprarMelhoria(index);
+		if(melhoria == null) return false;
+		jogador.getTabuleiroJogador().adicionarMelhoria(melhoria);
+		jogador.gastarTributo(TipoTributo.MOEDA, 2);
+		return true;
+	}
 	//FIM DA PARTIDA
 	
     // Votos finais não avançam a ficha neutra nem disparam novos turnos.
@@ -926,6 +935,7 @@ class Partida  {
 	}
 	
 	HashSet<ProvinciaID> getProvincias(){
+
 		HashSet<ProvinciaID> ret = new HashSet<ProvinciaID>();
         if (turnoAtual == null || encerrada) return ret;
         if (ativandoKhan != null) return new HashSet<>(selecaoKhan);
@@ -933,5 +943,23 @@ class Partida  {
 		for(Provincia p: turnoAtual.getProvinciasVisitadas())
 			ret.add(p.getId());
 		return ret;
+	}
+	
+	boolean comprarMelhoriaDaPilha() {
+		Jogador jogador = getJogadorAtual();
+		if(jogador.getQuantidadeTributo(TipoTributo.MOEDA)<2) return false;
+		Melhoria melhoria = tabuleiroPrincipal.comprarMelhoriaDaPilha();
+		if(melhoria == null) return false;
+		jogador.getTabuleiroJogador().adicionarMelhoria(melhoria);
+		jogador.gastarTributo(TipoTributo.MOEDA, 2);
+		return true;
+	}
+	
+	boolean isCompravel() {
+		return getJogadorAtual().getQuantidadeTributo(TipoTributo.MOEDA)>=2;
+	}
+	
+	ArrayList<Melhoria> getMelhorias(){
+		return tabuleiroPrincipal.getMelhorias();
 	}
 }

@@ -177,6 +177,7 @@ class TabuleiroJogador {
         return colunaBranca.estaAtivada();
     }
 
+    
     boolean adicionarMelhoria(Regiao regiao, Melhoria melhoria) {
         Coluna coluna = colunasRegiao.get(regiao);
 
@@ -185,6 +186,9 @@ class TabuleiroJogador {
         }
 
         return coluna.adicionarMelhoria(melhoria);
+    }
+    boolean adicionarMelhoria(Melhoria melhoria) {
+    	return adicionarMelhoria(melhoria.getRegiao(), melhoria);
     }
 
     boolean adicionarMelhoriaBranca(Melhoria melhoria) {

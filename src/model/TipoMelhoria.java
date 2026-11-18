@@ -1,6 +1,6 @@
 package model;
 
-enum TipoMelhoria {
+public enum TipoMelhoria {
     MOEDA_VIRTUAL,
     ESPADA_VIRTUAL,
     YURT_VIRTUAL,
