@@ -2,6 +2,7 @@
 package view;
 
 import javax.swing.*;
+
 import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -19,6 +20,7 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
 
     private JPanel areaMapa;
     private JPanel painelLateral;
+    private JScrollPane rolagemLateral;
     private JPanel painelMensagens;
     private JPanel secaoUltimaRodada; 
     private PainelCartasConselheirosAberto painelCartas;
@@ -28,6 +30,7 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
     private JLabel votosFichaNeutra;
     private final ControllerAPI controlador;
     private JButton botaoJogador;
+    private PainelAcoesPartida painelAcoes;
     private JLabel jogadorAtual;
     private JLabel corJogador;
     private JLabel mensagemJogo;
@@ -38,6 +41,7 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
     private final Color pergaminho = new Color(239, 225, 190);
     private final Color texto = new Color(75, 51, 30);
     private final Color azul = new Color(48, 83, 105);
+    private boolean resultadoExibido = false; 
 
     public TelaPrincipal() {
         this(new ControllerAPI());
@@ -49,6 +53,7 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1200, 800);
         setMinimumSize(new Dimension(900, 600));
+        ViewAPI.configurarLimitesJanela(this);
         setLocationRelativeTo(null);
 
         getContentPane().setBackground(pergaminho);
@@ -58,12 +63,14 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         criarMapa();
         criarPainelLateral();
         criarMensagens();
+        controlador.configurarAcoes(painelAcoes);
 
         atualizar(controlador.registrarObservador(this));
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosed(WindowEvent evento) {
                 TelaPrincipal.this.controlador.removerObservador(TelaPrincipal.this);
+                TelaPrincipal.this.controlador.removerObservador(painelAcoes);
             }
         });
     }
@@ -117,29 +124,27 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
     }
 
     private void criarPainelLateral() {
-        painelLateral = new JPanel();
+        painelLateral = criarPainelLateralRolavel();
         painelLateral.setLayout(new BoxLayout(
             painelLateral, BoxLayout.Y_AXIS
         ));
         painelLateral.setBackground(pergaminho);
-        painelLateral.setPreferredSize(new Dimension(285, 0));
         painelLateral.setBorder(new EmptyBorder(8, 4, 8, 8));
 
-        JPanel navegacao = new JPanel(new GridLayout(1, 2, 6, 0));
+        JPanel navegacao = new JPanel(new GridLayout(1, 1, 6, 0));
         navegacao.setOpaque(false);
-        navegacao.setMaximumSize(new Dimension(280, 42));
+        navegacao.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
 
-        JButton botaoMapa = criarBotao("Mapa", azul);
-        botaoMapa.setEnabled(false); // O mapa já é o conteúdo desta janela.
+        
+        
         botaoJogador = criarBotao("Jogador", azul);
 
         
-        navegacao.add(botaoMapa);
         navegacao.add(botaoJogador);
 
         painelLateral.add(navegacao);
         painelLateral.add(Box.createVerticalStrut(10));
-        
+        adicionarSecao(criarLegendaRecolhivel());
         
         //Seção que mostra o jogador que irá jogar
 
@@ -160,6 +165,8 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         vez.add(corJogador);
 
         adicionarSecao(vez);
+        painelAcoes = new PainelAcoesPartida();
+        adicionarSecao(painelAcoes);
         
         
         //Se essa rodada for a última 
@@ -177,7 +184,7 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
   
   
 
-        JPanel conselheiros = criarSecao("CARTAS DE CONSELHEIROS ABERTO");
+        JPanel conselheiros = criarSecao("CONSELHEIROS ABERTOS");
 
         painelCartas = new PainelCartasConselheirosAberto();
 
@@ -208,6 +215,19 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         painelLateral.add(Box.createVerticalGlue());
 
         JScrollPane rolagem = new JScrollPane(painelLateral);
+        rolagemLateral = rolagem;
+        rolagem.setPreferredSize(new Dimension(larguraLateral(getWidth()), 0));
+        rolagem.getVerticalScrollBar().setUnitIncrement(16);
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent evento) {
+                int largura = larguraLateral(getWidth());
+                if (rolagemLateral.getPreferredSize().width != largura) {
+                    rolagemLateral.setPreferredSize(new Dimension(largura, 0));
+                    revalidate();
+                }
+            }
+        });
         rolagem.setBorder(null);
         rolagem.getViewport().setBackground(pergaminho);
         rolagem.setHorizontalScrollBarPolicy(
@@ -217,8 +237,70 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         add(rolagem, BorderLayout.EAST);
     }
 
+    static int larguraLateral(int larguraJanela) {
+        return Math.max(260, Math.min(380, larguraJanela / 4));
+    }
+
+    static JPanel criarPainelLateralRolavel() {
+        return new PainelLateralRolavel();
+    }
+
+    private static class PainelLateralRolavel extends JPanel implements Scrollable {
+        public Dimension getPreferredScrollableViewportSize() { return getPreferredSize(); }
+        public boolean getScrollableTracksViewportWidth() { return true; }
+        public boolean getScrollableTracksViewportHeight() { return false; }
+        public int getScrollableUnitIncrement(Rectangle area, int orientacao, int direcao) { return 16; }
+        public int getScrollableBlockIncrement(Rectangle area, int orientacao, int direcao) {
+            return Math.max(16, area.height - 16);
+        }
+    }
+
+    static JPanel criarLegendaRecolhivel() {
+        JPanel painel = new JPanel(new BorderLayout(0, 8)) {
+            @Override
+            public Dimension getMaximumSize() {
+                return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+            }
+        };
+        painel.setOpaque(false);
+        final JToggleButton botao = new JToggleButton("Mostrar legenda e controles");
+        botao.setName("alternarLegenda");
+        botao.setBackground(new Color(247, 237, 211));
+        botao.setForeground(new Color(75, 51, 30));
+        botao.setFont(new Font("SansSerif", Font.BOLD, 12));
+        final JPanel legenda = PainelTabuleiro.criarLegenda();
+        legenda.setName("conteudoLegenda");
+        legenda.setVisible(false);
+        painel.add(botao, BorderLayout.NORTH);
+        painel.add(legenda, BorderLayout.CENTER);
+        botao.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evento) {
+                legenda.setVisible(botao.isSelected());
+                botao.setText(botao.isSelected() ? "Ocultar legenda e controles" : "Mostrar legenda e controles");
+                painel.revalidate();
+                painel.repaint();
+            }
+        });
+        return painel;
+    }
+
+    static JPanel criarMolduraMapa(final JPanel mapa) {
+        JPanel moldura = new JPanel(new BorderLayout());
+        moldura.setOpaque(false);
+        moldura.setMinimumSize(new Dimension(180, 180));
+        moldura.setPreferredSize(new Dimension(600, 600));
+        moldura.add(mapa, BorderLayout.CENTER);
+        return moldura;
+    }
+
     private JPanel criarSecao(String titulo) {
-        JPanel secao = new JPanel();
+        JPanel secao = new JPanel() {
+            @Override
+            public Dimension getMaximumSize() {
+                return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+            }
+        };
         secao.setLayout(new BoxLayout(secao, BoxLayout.Y_AXIS));
         secao.setBackground(new Color(247, 237, 211));
         secao.setBorder(new CompoundBorder(
@@ -226,9 +308,6 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
             new EmptyBorder(8, 8, 8, 8)
         ));
         secao.setAlignmentX(Component.CENTER_ALIGNMENT);
-        secao.setMaximumSize(new Dimension(
-            Integer.MAX_VALUE, 180
-        ));
 
         JLabel rotulo = new JLabel(titulo);
         rotulo.setFont(new Font("SansSerif", Font.BOLD, 12));
@@ -360,13 +439,22 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
                 mensagemJogo.setText("Abra Jogador para escolher a coluna do turno.");
             }
         } else {
+        	resultadoExibido = false; 
             jogadorAtual.setText("");
             corJogador.setText("Cor: não definida");
             mensagemJogo.setText("Aguardando início da partida.");
         }
+        
+        if (observado.isFimDisparado()
+                && !secaoUltimaRodada.isVisible()) {
+
+            mostrarUltimaRodada("A última rodada começou! Prepare-se para o encerramento da partida.");
+        }
+        
+        
         painelCartas.definirConselheiros(observado.getConselheirosAbertos());
-        ArrayList<Map.Entry<String, Integer>> classificacao =
-            new ArrayList<>(observado.getPlacarVotos().entrySet());
+        
+        ArrayList<Map.Entry<String, Integer>> classificacao = new ArrayList<>(observado.getPlacarVotos().entrySet());
 
         Collections.sort(classificacao, new Comparator<Map.Entry<String, Integer>>() {
             @Override
@@ -384,11 +472,16 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         votosFichaNeutra.setText("Ficha neutra: " + observado.getVotosFichaNeutra());
         linhasPlacar.revalidate();
         linhasPlacar.repaint();
+        
+        if(observado.isPartidaEncerrada() && !resultadoExibido) {
+        	resultadoExibido = true; 
+        	mostrarResultadoFinal(observado);
+        }
     }
 
     public void definirMapa(JPanel mapa) {
         areaMapa.removeAll();
-        areaMapa.add(mapa, BorderLayout.CENTER);
+        areaMapa.add(criarMolduraMapa(mapa), BorderLayout.CENTER);
         areaMapa.revalidate();
         areaMapa.repaint();
     }
@@ -396,4 +489,22 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
     public JButton getBotaoJogador() {
         return botaoJogador;
     }
+    
+    public void mostrarResultadoFinal(ObservadoJogo observado) {
+
+        ArrayList<String> vencedores = observado.getNomesVencedores();
+
+        String mensagem;
+
+        if (vencedores.isEmpty()) {
+            mensagem = "Não foi possível identificar o vencedor.";
+        } else if (vencedores.size() == 1) {
+            mensagem = "VENCEDOR: " + vencedores.get(0);
+        } else {
+            mensagem = "EMPATE ENTRE: " + String.join(", ", vencedores);
+        }
+
+        javax.swing.JOptionPane.showMessageDialog(this,mensagem,"Fim de jogo", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+    }
+    
 }

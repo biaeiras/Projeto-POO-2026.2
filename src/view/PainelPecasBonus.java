@@ -7,9 +7,9 @@ import javax.imageio.ImageIO;
 
 public class PainelPecasBonus extends JPanel {
 
-    private final BufferedImage[] imagens = new BufferedImage[7];
-    private final boolean[] conquistadas = new boolean[7];
-    private final boolean[] usadas = new boolean[7];
+	private final BufferedImage[] imagens = new BufferedImage[7];
+	private final int[] indicesImagens = new int[7];
+	private final boolean[] usadas = new boolean[7];
 
     private int quantidadeConquistada = 0;
 
@@ -18,6 +18,8 @@ public class PainelPecasBonus extends JPanel {
         setPreferredSize(new Dimension(250, 115));
 
         carregarImagensPecas();
+        
+        java.util.Arrays.fill(indicesImagens, -1);
     }
 
     private BufferedImage carregarImagem(String nomeArquivo) {
@@ -32,6 +34,8 @@ public class PainelPecasBonus extends JPanel {
             return null;
         }
     }
+    
+   
 
     public void carregarImagensPecas() {
         imagens[0] = carregarImagem("TesourosAleatorios.jpg");
@@ -45,29 +49,21 @@ public class PainelPecasBonus extends JPanel {
         repaint();
     }
 
-    public void atualizarPecas(
-            boolean[] pecasConquistadas,
-            boolean[] pecasUsadas) {
-
-        if (pecasConquistadas == null || pecasConquistadas.length != 7
+    
+    public void atualizarPecas(int[] indices, boolean[] pecasUsadas) {
+        if (indices == null || indices.length != 7
                 || pecasUsadas == null || pecasUsadas.length != 7) {
             throw new IllegalArgumentException(
-                "Devem ser informadas exatamente 7 peças."
+                "Devem ser informadas exatamente 7 posições."
             );
         }
 
-        System.arraycopy(
-            pecasConquistadas, 0, conquistadas, 0, 7
-        );
-
-        System.arraycopy(
-            pecasUsadas, 0, usadas, 0, 7
-        );
+        System.arraycopy(indices, 0, indicesImagens, 0, 7);
+        System.arraycopy(pecasUsadas, 0, usadas, 0, 7);
 
         quantidadeConquistada = 0;
-
-        for (boolean conquistada : conquistadas) {
-            if (conquistada) {
+        for (int indice : indicesImagens) {
+            if (indice >= 0) {
                 quantidadeConquistada++;
             }
         }
@@ -91,30 +87,22 @@ public class PainelPecasBonus extends JPanel {
             int espacamento = 4;
             int larguraContador = 42;
 
-            int larguraPeca = (
-                getWidth() - 2 * margem
-                - 3 * espacamento - larguraContador
-            ) / 4;
+            int larguraPeca = (getWidth() - 2 * margem - 3 * espacamento - larguraContador) / 4;
 
-            int alturaPeca = (
-                getHeight() - 2 * margem - espacamento
-            ) / 2;
+            int alturaPeca = (getHeight() - 2 * margem - espacamento) / 2;
 
             for (int i = 0; i < 7; i++) {
 
                 int coluna = i % 4;
                 int linha = i / 4;
 
-                int x = margem
-                    + coluna * (larguraPeca + espacamento);
+                int x = margem + coluna * (larguraPeca + espacamento);
 
-                int y = margem
-                    + linha * (alturaPeca + espacamento);
+                int y = margem + linha * (alturaPeca + espacamento);
 
                 // Na segunda linha, as peças ficam à esquerda.
                 if (i >= 4) {
-                    x = margem
-                        + (i - 4) * (larguraPeca + espacamento);
+                    x = margem+ (i - 4) * (larguraPeca + espacamento);
                 }
 
                 // Fundo do espaço
@@ -126,10 +114,12 @@ public class PainelPecasBonus extends JPanel {
                 g2.drawRect(x, y, larguraPeca, alturaPeca);
 
                 // Mostrar somente peças conquistadas
-                if (conquistadas[i] && imagens[i] != null) {
+                int indiceImagem = indicesImagens[i];
+
+                if (indiceImagem >= 0 && indiceImagem < imagens.length && imagens[indiceImagem] != null) {
 
                     g2.drawImage(
-                        imagens[i],
+                    	imagens[indiceImagem],
                         x + 1,
                         y + 1,
                         larguraPeca - 2,
@@ -140,7 +130,7 @@ public class PainelPecasBonus extends JPanel {
                     // Peça usada continua visível, mas esmaecida
                     if (usadas[i]) {
                         g2.setColor(
-                            new Color(80, 80, 80, 140)
+                            new Color(210, 210, 210, 190)
                         );
 
                         g2.fillRect(
@@ -180,15 +170,11 @@ public class PainelPecasBonus extends JPanel {
             int yContador = getHeight() - alturaPeca - margem;
 
             g2.setColor(new Color(250, 245, 226));
-            g2.fillRect(
-                xContador, yContador,
-                larguraContador, alturaPeca
+            g2.fillRect( xContador, yContador,larguraContador, alturaPeca
             );
 
             g2.setColor(new Color(190, 145, 68));
-            g2.drawRect(
-                xContador, yContador,
-                larguraContador, alturaPeca
+            g2.drawRect( xContador, yContador,larguraContador, alturaPeca
             );
 
             g2.setColor(new Color(75, 51, 30));
@@ -198,12 +184,9 @@ public class PainelPecasBonus extends JPanel {
 
             FontMetrics fm = g2.getFontMetrics();
 
-            int textoX = xContador
-                + (larguraContador - fm.stringWidth(contador)) / 2;
+            int textoX = xContador+ (larguraContador - fm.stringWidth(contador)) / 2;
 
-            int textoY = yContador
-                + (alturaPeca - fm.getHeight()) / 2
-                + fm.getAscent();
+            int textoY = yContador + (alturaPeca - fm.getHeight()) / 2 + fm.getAscent();
 
             g2.drawString(contador, textoX, textoY);
 

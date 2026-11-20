@@ -14,6 +14,7 @@ class Jogador {
     private ConselheiroSecreto conselheiroSecreto;
     private final TabuleiroJogador tabuleiroJogador;
     private final HashMap<TipoBonus, PecaBonus> pecasBonus = new HashMap<>();
+    private final ArrayList<TipoBonus> ordemPecasBonus = new ArrayList<>();
 
     Jogador(
             ArrayList<ConselheiroSecreto> opcoesConselheiro,
@@ -177,15 +178,16 @@ class Jogador {
     }
 
     boolean usarYurt() {
+        return usarYurt(false);
+    }
 
-        if (yurtsDisponiveis <= 0 ||
-            getQuantidadeTributo(TipoTributo.YURT) <= 0) {
+    boolean usarYurt(boolean pagarComVirtual) {
+        if (yurtsDisponiveis <= 0
+                || (!pagarComVirtual && getQuantidadeTributo(TipoTributo.YURT) <= 0)) {
             return false;
         }
-
-        gastarTributo(TipoTributo.YURT, 1);
+        if (!pagarComVirtual) gastarTributo(TipoTributo.YURT, 1);
         yurtsDisponiveis--;
-
         return true;
     }
 
@@ -258,7 +260,12 @@ class Jogador {
             return false;
         }
         pecasBonus.put(peca.getTipo(), peca);
+        ordemPecasBonus.add(peca.getTipo());
         return true;
+    }
+    
+    ArrayList<TipoBonus> getOrdemPecasBonus() {
+        return new ArrayList<>(ordemPecasBonus);
     }
 
     boolean possuiPecaBonus(TipoBonus tipo) {
@@ -274,4 +281,10 @@ class Jogador {
         // As peças usadas continuam pertencendo ao jogador, conforme o manual.
         return pecasBonus.size();
     }
+    
+    HashMap<TipoBonus, PecaBonus> getPecasBonus(){
+    	return new HashMap<>(pecasBonus); 
+    }
+    
+    
 }

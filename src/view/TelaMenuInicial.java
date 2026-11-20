@@ -4,6 +4,8 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+
+
 import javax.imageio.ImageIO;
 
 public class TelaMenuInicial extends JFrame {
@@ -19,6 +21,7 @@ public class TelaMenuInicial extends JFrame {
         
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1000, 680);
+        ViewAPI.configurarLimitesJanela(this);
         setMinimumSize(new Dimension(800, 550));
         setLocationRelativeTo(null);
 
@@ -48,18 +51,12 @@ public class TelaMenuInicial extends JFrame {
             new EmptyBorder(14, 28, 14, 28)
         ));
         moldura.setAlignmentX(Component.CENTER_ALIGNMENT);
-        moldura.setMaximumSize(new Dimension(330, 220));
+        moldura.setMaximumSize(new Dimension(330, 120));
 
         iniciar = criarBotao("INICIAR PARTIDA");
-        JButton comoJogar = criarBotao("COMO JOGAR");
-        JButton sair = criarBotao("SAIR");
-
+        
         moldura.add(iniciar);
-        moldura.add(Box.createVerticalStrut(9));
-        moldura.add(comoJogar);
-        moldura.add(Box.createVerticalStrut(9));
-        moldura.add(sair);
-
+    
         areaBotoes.add(moldura);
         areaBotoes.add(Box.createVerticalStrut(25));
 
@@ -72,31 +69,6 @@ public class TelaMenuInicial extends JFrame {
 //                "Aqui vamos abrir a configuração da partida."
 //            );
 //        });
-
-        comoJogar.addActionListener(
-        	    new java.awt.event.ActionListener() {
-        	        @Override
-        	        public void actionPerformed(
-        	                java.awt.event.ActionEvent evento) {
-
-        	            JOptionPane.showMessageDialog(
-        	                TelaMenuInicial.this,
-        	                "Aqui vamos apresentar as regras do jogo."
-        	            );
-        	        }
-        	    }
-        	);
-
-        	sair.addActionListener(
-        	    new java.awt.event.ActionListener() {
-        	        @Override
-        	        public void actionPerformed(
-        	                java.awt.event.ActionEvent evento) {
-
-        	            dispose();
-        	        }
-        	    }
-        	);
 
         return fundo;
     }
@@ -175,4 +147,5 @@ public class TelaMenuInicial extends JFrame {
             menu.setVisible(true);
         });
     }
+    
 }

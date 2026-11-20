@@ -59,7 +59,7 @@ public class TelaPreparacaoPartida extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1200, 850);
         setMinimumSize(new Dimension(960, 700));
-        setMaximumSize(new Dimension(1400, 1050));
+        ViewAPI.configurarLimitesJanela(this);
         setLocationRelativeTo(null);
 
         JPanel raiz = new JPanel(new BorderLayout(0, 16));

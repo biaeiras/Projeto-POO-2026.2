@@ -5,6 +5,9 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.awt.geom.Path2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 import java.io.IOException;
@@ -15,6 +18,10 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
+import javax.swing.JLabel;
+import javax.swing.Icon;
+import java.awt.Component;
+import java.awt.Font;
 import javax.swing.SwingUtilities;
 
 import model.CidadeID;
@@ -29,6 +36,12 @@ import model.TipoTesouro;
 
 class PainelTabuleiro extends JPanel implements ObservadorJogo {
 	private static final long serialVersionUID = 1L;
+    private static final Color COR_MOVIMENTO = Color.MAGENTA;
+    private static final Color COR_ALCANCAVEL = Color.WHITE;
+    private static final Color COR_TRIBUTO = Color.CYAN;
+    private static final Color COR_TRIBUTO_SELECIONADO = Color.RED;
+    private static final Color COR_KHAN_SELECIONADO = Color.GREEN;
+    private static final Color COR_KHAN = Color.WHITE;
 	private static final double RAIO_PARADA = 0.021;
 	private static final double RAIO_PEAO = 0.015;
 	private static final double RAIO_YURT = 0.024;
@@ -57,10 +70,13 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
     private HashSet<KhanID> khans = new HashSet<>();
     private HashMap<ParadaID, TipoBonus> bonus = new HashMap<>();
     private KhanID khanSelecionado = null;
+    private KhanID khan = null;
     private HashMap<CidadeID, ArrayList<TipoTesouro>> cidades = new HashMap<>();
     private HashMap<CidadeID, Cor> cidadesConquistadas = new HashMap<>();
     private HashMap<TipoTesouro, Image> imagensTesouros = new HashMap<>();
     private HashMap<TipoBonus, Image> imagensBonus = new HashMap<>();
+    private final HashMap<Cor, BufferedImage> imagensPeoes = new HashMap<>();
+    private final BufferedImage imagemPeaoKhan = criarImagemPeao(Color.WHITE);
 
 
     private Image loadImage(String path) {
@@ -83,6 +99,7 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
 
     private void initImages() {
         imagemTabuleiro = loadImage("/tabuleiro.jpg");
+        for (Cor cor : Cor.values()) imagensPeoes.put(cor, criarImagemPeao(ViewAPI.getColor(cor)));
         imagensTesouros.put(TipoTesouro.BOI, loadImage("/fichas/cartoes7-1.jpg"));
         imagensTesouros.put(TipoTesouro.TECIDO, loadImage("/fichas/cartoes7-2.jpg"));
         imagensTesouros.put(TipoTesouro.FERRO, loadImage("/fichas/cartoes7-3.jpg"));
@@ -193,15 +210,18 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
 
     private void drawKhan(Graphics2D g, HashSet<KhanID> khans) {
         g.setStroke(new BasicStroke((float)(ESPACAMENTO_YURT*(getWidth() + getHeight())/4)));
-        for(KhanID id: khans) {
+        HashSet<KhanID> marcacoes = new HashSet<>(khans);
+        if (khan != null) marcacoes.add(khan);
+        for (KhanID id : marcacoes) {
             Point2D.Double p = posicoesKhan.get(id);
-            if(id == khanSelecionado) g.setColor(Color.green);
-            else g.setColor(Color.white);
+            if(id == khanSelecionado) g.setColor(COR_KHAN_SELECIONADO);
+            else g.setColor(COR_KHAN);
             int x = (int)((p.getX()-(RAIO_PARADA+ESPACAMENTO_YURT))*getWidth());
             int y = (int)((p.getY()-(RAIO_PARADA+ESPACAMENTO_YURT))*getHeight());
             int w = (int) (2*(RAIO_PARADA+ESPACAMENTO_YURT)*getWidth());
             int h = (int) (2*(RAIO_PARADA+ESPACAMENTO_YURT)*getHeight());
-            g.drawOval(x, y, w, h);
+            if (id == khan) g.drawImage(imagemPeaoKhan, x, y, w, h, this);
+            else g.drawOval(x, y, w, h);
         }
     }
 
@@ -269,17 +289,17 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
 	}
 	
  	private void drawParadas(Graphics2D g, HashSet<ParadaID> vizinhos, HashSet<ParadaID> possiveis) {
- 		drawParadas(g, possiveis, Color.white);
- 		drawParadas(g, vizinhos, Color.magenta);
+        drawParadas(g, possiveis, COR_ALCANCAVEL);
+        drawParadas(g, vizinhos, COR_MOVIMENTO);
  	}
  	
  	private void drawProvincias(Graphics2D g, HashMap<ProvinciaID, Integer> provincias, HashSet<ProvinciaID> interagiveis) {
  		g.setStroke(new BasicStroke((float)(ESPACAMENTO_YURT*(getWidth() + getHeight())/4)));
  		for(Map.Entry<ProvinciaID, Integer> entry: provincias.entrySet()) {
  			if(interagiveis.contains(entry.getKey()))
- 				g.setColor(Color.red);
+                g.setColor(COR_TRIBUTO_SELECIONADO);
  			else
- 				g.setColor(Color.cyan);
+                g.setColor(COR_TRIBUTO);
  			Point2D.Double p = posicoesProvincias.get(entry.getKey());
  			for(int i = 0; i<entry.getValue(); ++i) { 				
  				int x = (int)((p.getX()-(RAIO_PARADA+ESPACAMENTO_YURT*i))*getWidth());
@@ -287,11 +307,55 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
  				int w = (int) (2*(RAIO_PARADA+ESPACAMENTO_YURT*i)*getWidth());
  				int h = (int) (2*(RAIO_PARADA+ESPACAMENTO_YURT*i)*getHeight());
  				g.drawOval(x, y, w, h);
- 				g.setColor(Color.cyan);
+                g.setColor(COR_TRIBUTO);
  			}
  		}
  	}
  	
+    static JPanel criarLegenda() {
+        JPanel legenda = new JPanel();
+        legenda.setLayout(new javax.swing.BoxLayout(legenda, javax.swing.BoxLayout.Y_AXIS));
+        legenda.setOpaque(false);
+        adicionarLegenda(legenda, COR_MOVIMENTO, false, "Movimento imediato:<br>clique esquerdo.");
+        adicionarLegenda(legenda, COR_ALCANCAVEL, false, "Parada alcançável com<br>os movimentos restantes.");
+        adicionarLegenda(legenda, COR_TRIBUTO_SELECIONADO, false, "Coleta disponível / tributo<br>selecionado no Khan.");
+        adicionarLegenda(legenda, COR_TRIBUTO, false, "Peças de tributo presentes no mapa.");
+        adicionarLegenda(legenda, COR_KHAN, false, "Destino disponível<br>para mover o Khan.");
+        adicionarLegenda(legenda, COR_KHAN_SELECIONADO, false, "Região selecionada<br>para o Khan.");
+        JLabel controles = new JLabel("<html>Tesouro: clique esquerdo para atacar.<br>"
+                + "Parada: clique direito para construir yurt.<br>Peões e yurts usam a cor do jogador.</html>");
+        controles.setAlignmentX(Component.LEFT_ALIGNMENT);
+        controles.setFont(new Font("SansSerif", Font.PLAIN, 11));
+        controles.setForeground(new Color(75, 51, 30));
+        legenda.add(controles);
+        return legenda;
+    }
+
+    private static void adicionarLegenda(JPanel painel, final Color cor,
+            final boolean preenchido, String texto) {
+        Icon simbolo = new Icon() {
+            public int getIconWidth() { return 20; }
+            public int getIconHeight() { return 20; }
+            public void paintIcon(Component c, Graphics g, int x, int y) {
+                Graphics2D desenho = (Graphics2D) g.create();
+                desenho.setColor(new Color(75, 51, 30));
+                desenho.fillRoundRect(x, y, 20, 20, 4, 4);
+                desenho.setColor(cor);
+                desenho.setStroke(new BasicStroke(2));
+                if (preenchido) desenho.fillOval(x + 4, y + 4, 12, 12);
+                else desenho.drawOval(x + 4, y + 4, 12, 12);
+                desenho.dispose();
+            }
+        };
+        JLabel item = new JLabel("<html>" + texto + "</html>", simbolo, JLabel.LEFT);
+        item.setAlignmentX(Component.LEFT_ALIGNMENT);
+        item.setFont(new Font("SansSerif", Font.PLAIN, 11));
+        item.setMaximumSize(new java.awt.Dimension(Integer.MAX_VALUE, item.getPreferredSize().height));
+        item.setForeground(new Color(75, 51, 30));
+        painel.add(item);
+        painel.add(javax.swing.Box.createVerticalStrut(4));
+    }
+
     PainelTabuleiro() {
         initImages();
         initParadas();
@@ -331,6 +395,7 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         alcancaveis = observado.getAlcancaveisTotais();
         provinciasDisponiveis = observado.getProvincias();
         khans = observado.getKhans();
+        khan = observado.getKhan();
         khanSelecionado = observado.getKhanSelecionado();
         cidades = observado.getCidades();
         cidadesConquistadas = observado.getCidadesConquistadas();
@@ -345,10 +410,37 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
 		int y = (int) (py*getHeight());
 		int w = (int) (2*RAIO_PEAO*getWidth());
 		int h = (int) (2*RAIO_PEAO*getHeight());
-		g.setColor(ViewAPI.getColor(cor));
-		g.fillOval(x, y, w, h);
+		g.drawImage(imagensPeoes.get(cor), x, y, w, h, this);
 		return;
 	}
+
+    // Sprite transparente criado uma vez por cor e exibido no mapa por drawImage.
+    // Não há imagens de peões nos recursos fornecidos com este projeto.
+    static BufferedImage criarImagemPeao(Color cor) {
+        BufferedImage imagem = new BufferedImage(64, 80, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = imagem.createGraphics();
+        try {
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            Path2D corpo = new Path2D.Double();
+            corpo.moveTo(22, 28);
+            corpo.curveTo(23, 44, 18, 53, 9, 65);
+            corpo.lineTo(7, 74);
+            corpo.quadTo(32, 80, 57, 74);
+            corpo.lineTo(55, 65);
+            corpo.curveTo(46, 53, 41, 44, 42, 28);
+            corpo.closePath();
+            g.setColor(cor);
+            g.fill(corpo);
+            g.fill(new Ellipse2D.Double(18, 3, 28, 28));
+            g.setColor(new Color(50, 35, 25));
+            g.setStroke(new BasicStroke(2));
+            g.draw(corpo);
+            g.draw(new Ellipse2D.Double(18, 3, 28, 28));
+        } finally {
+            g.dispose();
+        }
+        return imagem;
+    }
 	
 	private void drawYurt(Graphics2D g, ParadaID id, Cor cor, int i) {
 		double px = posicoesParadas.get(id).getX() - RAIO_YURT - ESPACAMENTO_YURT*i;

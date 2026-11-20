@@ -19,9 +19,9 @@ class Partida  {
 	private boolean encerrada;
 	private boolean fimDisparado;
 	private int rodadasExtras;
-	private int indiceJogadorInicialFim;
-	private int indicePrimeiroJogador = 0;
+	private final int indicePrimeiroJogador = 0;
 	private int turnosRestantesAposFim;
+	private boolean pontuacaoFinalCalculada;
 	
 	private final HashMap<Peao, HashSet<Parada>> paradasPercorridas = new HashMap<>();
 	private final HashMap<Cidade, Integer> tesourosTomadosNoTurno = new HashMap<>();
@@ -333,6 +333,7 @@ class Partida  {
 
 	            if (turnosRestantesAposFim <= 0) {
 	                encerrada = true;
+	                contabilizarPontuacaoFinal();
 	            }
 	        }
 	    }
@@ -391,8 +392,6 @@ class Partida  {
 
 	    if (votosFichaNeutra >= limiteVotos || tabuleiroPrincipal.todasCidadesConquistadas()) {
 	        fimDisparado = true;
-	        indiceJogadorInicialFim = indiceJogadorAtual;
-	        indicePrimeiroJogador = indiceJogadorAtual;
 	    }
 	}
 	
@@ -573,9 +572,9 @@ class Partida  {
 	    //System.out.println(i++);
 	    Jogador jogador = turnoAtual.getJogador();
 
-	    if (!jogador.usarYurt()) {
-	        return false;
-	    }
+        boolean usarVirtual = turnoAtual.getQuantidadeRecursoVirtual(TipoMelhoria.YURT_VIRTUAL) > 0;
+        if (!jogador.usarYurt(usarVirtual)) return false;
+        if (usarVirtual) turnoAtual.usarRecursoVirtual(TipoMelhoria.YURT_VIRTUAL);
 
 	    //System.out.println(i++);
 	    tabuleiroPrincipal.adicionarYurt(jogador, parada);
@@ -592,7 +591,6 @@ class Partida  {
             return locais;
         }
         Parada atual = peaoAtivo.getPosicao();
-        // Passar por um conselheiro não permite entregar depois de sair dele.
         if (!hasToMove && atual != null && atual.ehConselheiro()) {
             locais.add(atual.getId());
         }
@@ -616,6 +614,11 @@ class Partida  {
 
     private TipoMelhoria tipoTesouroVirtual(TipoTesouro tipo) {
         return TipoMelhoria.valueOf(tipo.name() + "_VIRTUAL");
+    }
+
+    int getQuantidadeTributoVirtual(TipoTributo tipo) {
+        if (encerrada || turnoAtual == null || tipo == null || tipo == TipoTributo.VAZIO) return 0;
+        return turnoAtual.getQuantidadeRecursoVirtual(TipoMelhoria.valueOf(tipo.name() + "_VIRTUAL"));
     }
 
     int getQuantidadeTesouroVirtual(TipoTesouro tipo) {
@@ -736,7 +739,9 @@ class Partida  {
 
 	    Jogador jogador = turnoAtual.getJogador();
 
-	    cidade.atacar(jogador, tesouro);
+        if (!tabuleiroPrincipal.atacarCidade(cidade.getId(), jogador, tesouro)) {
+            return false;
+        }
 	    jogador.adicionarTesouro(tesouro);
 
 	    tesourosTomadosNoTurno.put(cidade, tesourosAnteriores + 1);
@@ -749,18 +754,56 @@ class Partida  {
 	
 	//FIM DA PARTIDA
 	
-	// Compara os votos acumulados; em caso de empate, vence quem tiver
-	// mais tesouros não entregues.
-	// Se o empate persistir, retorna todos os jogadores empatados.
-	// O desempate por distância até Karakorum ainda não está implementado.
-	// Os votos finais de influência regional e das cartas secretas
-	// precisam ser contabilizados antes de chamar este método.
+    // Votos finais não avançam a ficha neutra nem disparam novos turnos.
+    private void contabilizarPontuacaoFinal() {
+        if (!encerrada || pontuacaoFinalCalculada) return;
+        HashMap<Jogador, Integer> pontos = new HashMap<>();
+        for (Jogador jogador : jogadores) pontos.put(jogador, 0);
+        for (Regiao regiao : Regiao.values()) {
+            HashMap<Jogador, Integer> yurts = new HashMap<>();
+            int primeiro = 0;
+            int segundo = 0;
+            for (Jogador jogador : jogadores) {
+                int quantidade = tabuleiroPrincipal.getQuantidadeYurts(jogador, regiao);
+                yurts.put(jogador, quantidade);
+                if (quantidade > primeiro) {
+                    segundo = primeiro;
+                    primeiro = quantidade;
+                } else if (quantidade < primeiro) {
+                    segundo = Math.max(segundo, quantidade);
+                }
+            }
+            int empatadosPrimeiro = 0;
+            for (int quantidade : yurts.values()) if (quantidade == primeiro) empatadosPrimeiro++;
+            for (Jogador jogador : jogadores) {
+                int quantidade = yurts.get(jogador);
+                if (quantidade == 0) continue;
+                int melhorias = Math.min(4, jogador.getTabuleiroJogador().getQuantidadeMelhorias(regiao));
+                int votos = 0;
+                if (quantidade == primeiro) {
+                    votos = Math.max(1, melhorias);
+                } else if (empatadosPrimeiro == 1 && quantidade == segundo) {
+                    votos = (melhorias + 1) / 2;
+                }
+                pontos.put(jogador, pontos.get(jogador) + votos);
+            }
+        }
+        for (Jogador jogador : jogadores) {
+            ConselheiroSecreto carta = jogador.getConselheiroSecreto();
+            int votos = pontos.get(jogador)
+                    + (carta == null ? 0 : carta.calcularVotos(jogador, tabuleiroPrincipal));
+            if (votos > 0) jogador.adicionarVotos(votos);
+        }
+        pontuacaoFinalCalculada = true;
+    }
 	
 	List<Jogador> calcularVencedores() {
 	    if (!encerrada) {
 	        throw new IllegalStateException(
 	            "A partida ainda não terminou." );
 	    }
+
+        contabilizarPontuacaoFinal();
 
 	    ArrayList<Jogador> melhores = new ArrayList<>();
 
@@ -790,7 +833,10 @@ class Partida  {
 	        return Integer.compare(a.getVotos(), b.getVotos());
 	    }
 
-	    return Integer.compare(totalTesouros(a), totalTesouros(b));
+        int tesouros = Integer.compare(totalTesouros(a), totalTesouros(b));
+        if (tesouros != 0) return tesouros;
+        return Integer.compare(tabuleiroPrincipal.getDistanciaKarakorum(b),
+                tabuleiroPrincipal.getDistanciaKarakorum(a));
 	}
 
 	// Soma os tesouros que o jogador ainda possui.
@@ -811,6 +857,8 @@ class Partida  {
         }
         return destinos;
     }
+
+    KhanID getKhan() { return tabuleiroPrincipal.getKhan(); }
 
     boolean getAtivacaoKhan() { return ativandoKhan != null; }
     KhanID getKhanSelecionado() { return ativandoKhan; }

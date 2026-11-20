@@ -86,6 +86,9 @@ public class PainelTabuleiroJogador extends JPanel {
         }
 
         imagemTabuleiro = new ImageIcon(recurso).getImage();
+        setPreferredSize(new Dimension(800,
+                (int) Math.round(800.0 * imagemTabuleiro.getHeight(this) / imagemTabuleiro.getWidth(this))));
+        revalidate();
         personagemExibido = nomePersonagem;
         repaint();
     }

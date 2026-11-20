@@ -13,6 +13,7 @@ class JanelaTabuleiro extends JFrame{
 	JanelaTabuleiro(FachadaJogo fachada){
 		painel = new PainelTabuleiro(fachada);
 		setSize(STANDARD_WIDTH, STANDARD_HEIGHT);
+        ViewAPI.configurarLimitesJanela(this);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		setResizable(true);
 		System.out.println(getWidth());
