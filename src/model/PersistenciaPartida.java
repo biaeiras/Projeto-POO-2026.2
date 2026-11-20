@@ -439,6 +439,102 @@ class PersistenciaPartida {
         }
 
         tabuleiro.restaurarPilhas(cidadesSalvas, tesourosSalvos);
+        
+        // Restaura as melhorias disponíveis no tabuleiro principal.
+        ArrayList<Melhoria> melhoriasTabuleiro =restaurarListaMelhorias( obter(dados, "MELHORIAS_TABULEIRO") );
+
+        // Restaura a pilha de melhorias.
+        ArrayList<Melhoria> listaPilhaMelhorias = restaurarListaMelhorias(obter(dados, "PILHA_MELHORIAS"));
+
+        Stack<Melhoria> pilhaMelhorias = new Stack<>();
+        pilhaMelhorias.addAll(listaPilhaMelhorias);
+
+        tabuleiro.restaurarMelhorias( melhoriasTabuleiro, pilhaMelhorias);
+        
+     // Restaura as yurts colocadas no mapa.
+        HashMap<ParadaID, ArrayList<Cor>> yurtsSalvas = new HashMap<>();
+
+        for (ParadaID id : ParadaID.values()) {
+            String valor = dados.get("YURTS_" + id.name());
+
+            if (valor != null) {
+                ArrayList<Cor> cores = new ArrayList<>();
+
+                if (!valor.isEmpty()) {
+                    for (String cor : valor.split(",", -1)) {
+                        cores.add(obterEnum(cor, Cor.class));
+                    }
+                }
+
+                yurtsSalvas.put(id, cores);
+            }
+        }
+
+        // Restaura os bônus ainda presentes nas paradas.
+        HashMap<ParadaID, TipoBonus> bonusSalvos = new HashMap<>();
+
+        for (ParadaID id : ParadaID.values()) {
+            String valor = dados.get("BONUS_" + id.name());
+
+            if (valor != null) {
+                bonusSalvos.put(id, obterEnum(valor, TipoBonus.class));
+            }
+        }
+
+        // Recupera a posição do Khan.
+        String khanSalvo = obter(dados, "KHAN");
+        KhanID khan = khanSalvo.equals("NENHUM")? null : obterEnum(khanSalvo, KhanID.class);
+
+        // Aplica o estado recuperado ao mapa.
+        tabuleiro.restaurarEstadoMapa( yurtsSalvas,bonusSalvos,khan, partida.getJogadores());
+        
+     // Restaura os conselheiros abertos e quem já os cumpriu.
+        ArrayList<TipoConselheiroAberto> tiposConselheiros = new ArrayList<>();
+
+        ArrayList<Jogador> cumpridosPor = new ArrayList<>();
+
+        for (int i = 0; i < 4; i++) {
+            String tipo = obter(dados, "CONSELHEIRO_ABERTO_" + i);
+
+            tiposConselheiros.add( obterEnum(tipo, TipoConselheiroAberto.class));
+
+            String cor = obter( dados, "CONSELHEIRO_ABERTO_CUMPRIDO_POR_" + i);
+
+            Jogador cumpridoPor = null;
+
+            if (!cor.equals("NENHUM")) {
+                Cor corJogador = obterEnum(cor, Cor.class);
+
+                for (Jogador jogador : partida.getJogadores()) {
+                    if (jogador.getTabuleiroJogador().getPersonagem().getCor() == corJogador) {
+                        cumpridoPor = jogador;
+                        break;
+                    }
+                }
+
+                if (cumpridoPor == null) {
+                    throw new IOException("Jogador do conselheiro não encontrado.");
+                }
+            }
+
+            cumpridosPor.add(cumpridoPor);
+        }
+
+        partida.restaurarConselheirosAbertos(tiposConselheiros, cumpridosPor );
+        
+        // Restaura o estado geral da partida.
+        partida.restaurarLimiteVotos(obterInteiro(dados, "LIMITE_VOTOS"));
+
+        partida.restaurarEstadoGeral(
+            obterInteiro(dados, "JOGADOR_ATUAL"),
+            obterInteiro(dados, "VOTOS_FICHA_NEUTRA"),
+            obterBooleano(dados, "ENCERRADA"),
+            obterBooleano(dados, "FIM_DISPARADO"),
+            obterInteiro(dados, "RODADAS_EXTRAS"),
+            obterInteiro(dados, "TURNOS_RESTANTES"),
+            obterBooleano(dados, "PONTUACAO_FINAL_CALCULADA")
+        );
+        
 
 	     // Restaura a posição dos peões de cada jogador.
 	     for (int i = 0; i < quantidade; i++) {
@@ -606,6 +702,11 @@ class PersistenciaPartida {
         } catch (IllegalArgumentException e) {
             throw new IOException("Valor inválido para " + tipo.getSimpleName() + ": " + valor, e);
         }
+    }
+    
+    Partida carregarPartida(File arquivo) throws IOException {
+        HashMap<String, String> dados = lerDados(arquivo);
+        return restaurarJogadores(dados);
     }
     
 }
