@@ -611,64 +611,67 @@ class TabuleiroPrincipal {
 		for(Provincia p: parada.getProvincias().values()) provincias.add(p);
 		return provincias;
 	}
-	HashMap<Parada, Integer> getMovimentosPossiveis(Peao peao, int movimentos){
-		HashMap<Parada, Integer> ret = new HashMap<Parada, Integer>();
-		Queue<Parada> fila = new LinkedList<Parada>();
-		ret.put(peao.getPosicao(), 0);
-		fila.add(peao.getPosicao());
-		while (!fila.isEmpty()) {
-			Parada atual = fila.poll();
-			int i = ret.get(atual);
-			int custo = (atual.getYurt().contains(peao.getJogador()))? 0:1;
-			if(i+custo>movimentos) continue;
-			for(Parada p: atual.getVizinhos().values()) {
-				int novoPasso = i + custo;
-				
-				if(!ret.containsKey(p)||novoPasso<ret.get(p)) {
-					ret.put(p, novoPasso);
-					fila.add(p);
-				}
-			}
-			
-		}
-		HashSet<Parada> ocupados = new HashSet<Parada>();
-		
-		for(Parada p: ret.keySet()) {
-			if(p.isMoveble()) continue;
-			ocupados.add(p);
-		}
-		ret.keySet().removeAll(ocupados);
-		return ret;
-	}
-	HashMap<Parada, Integer> getMovimentosPossiveis(Peao peao, Parada parada, int movimentos){
-		HashMap<Parada, Integer> ret = new HashMap<Parada, Integer>();
-		Queue<Parada> fila = new LinkedList<Parada>();
-		ret.put(parada, 0);
-		fila.add(parada);
-		while (!fila.isEmpty()) {
-			Parada atual = fila.poll();
-			int i = ret.get(atual);
-			int custo = (atual.getYurt().contains(peao.getJogador()))? 0:1;
-			if(i+custo>movimentos) continue;
-			for(Parada p: atual.getVizinhos().values()) {
-				int novoPasso = i + custo;
-				
-				if(!ret.containsKey(p)||novoPasso<ret.get(p)) {
-					ret.put(p, novoPasso);
-					fila.add(p);
-				}
-			}
-			
-		}
-		HashSet<Parada> ocupados = new HashSet<Parada>();
-		
-		for(Parada p: ret.keySet()) {
-			if(p.isMoveble()) continue;
-			ocupados.add(p);
-		}
-		ret.keySet().removeAll(ocupados);
-		return ret;
-	}
+    HashMap<Parada, Integer> getMovimentosPossiveis(Peao peao, int movimentos) {
+        return getMovimentosPossiveis(peao, peao.getPosicao(), movimentos);
+    }
+
+    HashMap<Parada, Integer> getMovimentosPossiveis(Peao peao, Parada inicio, int movimentos) {
+        HashMap<Parada, Integer> possiveis = new HashMap<>();
+        if (inicio == null || movimentos <= 0) return possiveis;
+        HashMap<Parada, Integer> distancias = calcularCaminhos(peao, inicio, new HashMap<Parada, Parada>());
+        for (Map.Entry<Parada, Integer> entrada : distancias.entrySet()) {
+            Parada destino = entrada.getKey();
+            int custo = entrada.getValue();
+            // O destino final é uma parada efetiva, mesmo quando possui yurt próprio.
+            if (destino.getYurt().contains(peao.getJogador())) custo++;
+            boolean vaga = destino.isMoveble();
+            if (destino == peao.getPosicao()) {
+                vaga = destino.getNumPeoes() - 1 < destino.getMultiplicidade();
+            }
+            if (destino != inicio && vaga && custo <= movimentos) possiveis.put(destino, custo);
+        }
+        return possiveis;
+    }
+
+    private HashMap<Parada, Integer> calcularCaminhos(Peao peao, Parada inicio,
+            HashMap<Parada, Parada> anteriores) {
+        HashMap<Parada, Integer> distancias = new HashMap<>();
+        Queue<Parada> fila = new LinkedList<>();
+        distancias.put(inicio, 0);
+        fila.add(inicio);
+        while (!fila.isEmpty()) {
+            Parada atual = fila.remove();
+            for (Parada vizinha : atual.getVizinhos().values()) {
+                if (vizinha == inicio) continue;
+                // Só os yurts intermediários podem ser pulados sem consumir movimento.
+                int custo = vizinha.getYurt().contains(peao.getJogador()) ? 0 : 1;
+                int distancia = distancias.get(atual) + custo;
+                if (!distancias.containsKey(vizinha) || distancia < distancias.get(vizinha)) {
+                    distancias.put(vizinha, distancia);
+                    anteriores.put(vizinha, atual);
+                    fila.add(vizinha);
+                }
+            }
+        }
+        return distancias;
+    }
+
+    ArrayList<Parada> getCaminhoDeUmMovimento(Peao peao, Parada destino) {
+        ArrayList<Parada> caminho = new ArrayList<>();
+        Parada inicio = peao.getPosicao();
+        if (inicio == null || destino == null || destino == inicio) return caminho;
+        HashMap<Parada, Parada> anteriores = new HashMap<>();
+        HashMap<Parada, Integer> distancias = calcularCaminhos(peao, inicio, anteriores);
+        Integer distancia = distancias.get(destino);
+        if (distancia == null) return caminho;
+        int custo = distancia + (destino.getYurt().contains(peao.getJogador()) ? 1 : 0);
+        if (custo != 1) return caminho;
+        for (Parada parada = destino; parada != inicio; parada = anteriores.get(parada)) {
+            caminho.add(parada);
+        }
+        Collections.reverse(caminho);
+        return caminho;
+    }
 	HashMap<ParadaID, Parada> getMapa(){
 		return this.mapa;
 	}
@@ -696,6 +699,27 @@ class TabuleiroPrincipal {
         }
         return true;
     }
+    boolean colocarYurtInicial(Jogador jogador) {
+        if (jogador == null) {
+            return false;
+        }
+        Personagem personagem = jogador.getTabuleiroJogador().getPersonagem();
+        Parada parada = mapa.get(personagem.getPosicaoYurtInicial());
+        if (parada == null || parada.getYurt().contains(jogador)) {
+            return false;
+        }
+        if (!jogador.retirarYurtInicialDoEstoque()) {
+            return false;
+        }
+        // O yurt inicial de Tolui é a exceção à proibição de construir na capital.
+        parada.getYurt().add(jogador);
+        if (!yurts.containsKey(parada.getId())) {
+            yurts.put(parada.getId(), new ArrayList<Cor>());
+        }
+        yurts.get(parada.getId()).add(personagem.getCor());
+        return true;
+    }
+
 	void adicionarYurt(Jogador jogador, Parada parada) {
 		if(!parada.adicionarYurt(jogador)) return;
 		if(!yurts.containsKey(parada.getId()))
@@ -901,7 +925,20 @@ class TabuleiroPrincipal {
     	return ret;
     }
     
+    void devolverMelhoriaAPilha(Melhoria melhoria) {
+        if (melhoria != null) pilhaMelhorias.insertElementAt(melhoria, 0);
+    }
+
+    Melhoria consultarMelhoria(int index) {
+        return index < 0 || index >= melhorias.size() ? null : melhorias.get(index).getMelhoria();
+    }
+
+    Melhoria consultarMelhoriaDaPilha() {
+        return pilhaMelhorias.isEmpty() ? null : pilhaMelhorias.peek();
+    }
+
     Melhoria comprarMelhoria(int index) {
+        if (consultarMelhoria(index) == null) return null;
     	SlotMelhoria slot = melhorias.get(index);
     	Melhoria ret = slot.getMelhoria();
     	slot.setMelhoria(null);
@@ -910,7 +947,7 @@ class TabuleiroPrincipal {
     }
     
     Melhoria comprarMelhoriaDaPilha() {
-    	return pilhaMelhorias.pop();
+    	return pilhaMelhorias.isEmpty() ? null : pilhaMelhorias.pop();
     }
     
 	public boolean todasCidadesConquistadas() {

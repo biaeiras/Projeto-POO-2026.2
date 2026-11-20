@@ -430,6 +430,12 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
 
             if (observado.isPartidaEncerrada()) {
                 mensagemJogo.setText("Partida encerrada.");
+            } else if (observado.isEscolhaColunaMelhoriaPendente()) {
+                mensagemJogo.setText("Jochi: abra Jogador e clique na coluna que receberá a melhoria comprada.");
+            } else if (observado.isSelecaoTesouroHabilidadePendente()) {
+                mensagemJogo.setText("Ogedei: clique em um tesouro de uma cidade com pelo menos dois tesouros. Para desistir, use Cancelar seleção de tesouro.");
+            } else if (observado.isEscolhaPeaoPendente()) {
+                mensagemJogo.setText("Clique no mapa no peão da Altani que deseja usar neste turno.");
             } else if (observado.isTurnoEmAndamento()) {
                 mensagemJogo.setText("Turno de " + observado.getNomePersonagemAtual()
                     + ": clique no mapa para executar as ações disponíveis.");

@@ -15,6 +15,7 @@ public class PainelAcoesPartida extends JPanel implements ObservadorJogo {
     private final JButton botaoComprarMelhoria = new JButton("Comprar melhoria");
     private final JButton botaoEntregarTesouros = new JButton("Entregar tesouros");
     private final JButton botaoTerminarTurno = new JButton("Terminar turno");
+    private final JButton botaoHabilidadeEspecial = new JButton("Usar habilidade especial");
     private final JLabel informacao = new JLabel("Inicie um turno para realizar ações.");
     private ObservadoJogo observado;
 
@@ -23,14 +24,15 @@ public class PainelAcoesPartida extends JPanel implements ObservadorJogo {
         setBackground(new Color(190, 220, 173));
         setBorder(new CompoundBorder(new LineBorder(new Color(190, 145, 68)),
                 new EmptyBorder(8, 8, 8, 8)));
-        setMaximumSize(new Dimension(Integer.MAX_VALUE, 230));
+        setMaximumSize(new Dimension(Integer.MAX_VALUE, 280));
         JLabel titulo = new JLabel("AÇÕES DA PARTIDA");
         titulo.setForeground(new Color(166, 45, 48));
         titulo.setFont(new Font("SansSerif", Font.BOLD, 12));
         add(titulo, BorderLayout.NORTH);
-        JPanel botoes = new JPanel(new GridLayout(3, 1, 0, 6));
+        JPanel botoes = new JPanel(new GridLayout(0, 1, 0, 6));
         botoes.setOpaque(false);
-        JButton[] acoes = {botaoComprarMelhoria, botaoEntregarTesouros, botaoTerminarTurno};
+        JButton[] acoes = {botaoComprarMelhoria, botaoEntregarTesouros,
+                botaoHabilidadeEspecial, botaoTerminarTurno};
         for (JButton botao : acoes) {
             botao.setBackground(new Color(250, 245, 226));
             botao.setForeground(texto);
@@ -39,6 +41,8 @@ public class PainelAcoesPartida extends JPanel implements ObservadorJogo {
             botao.setEnabled(false);
             botoes.add(botao);
         }
+        botaoHabilidadeEspecial.setName("botaoHabilidadeEspecial");
+        botaoHabilidadeEspecial.setToolTipText("Ativar a habilidade do personagem uma vez neste turno.");
         add(botoes, BorderLayout.CENTER);
         informacao.setForeground(texto);
         informacao.setFont(new Font("SansSerif", Font.PLAIN, 11));
@@ -48,6 +52,7 @@ public class PainelAcoesPartida extends JPanel implements ObservadorJogo {
     public JButton getBotaoComprarMelhoria() { return botaoComprarMelhoria; }
     public JButton getBotaoEntregarTesouros() { return botaoEntregarTesouros; }
     public JButton getBotaoTerminarTurno() { return botaoTerminarTurno; }
+    public JButton getBotaoHabilidadeEspecial() { return botaoHabilidadeEspecial; }
 
     public void mostrarInformacao(String mensagem) {
         informacao.setText("<html>" + mensagem + "</html>");
@@ -67,11 +72,20 @@ public class PainelAcoesPartida extends JPanel implements ObservadorJogo {
 
     private void atualizarInterface(ObservadoJogo observado) {
         this.observado = observado;
+        boolean selecionando = observado.isSelecaoTesouroHabilidadePendente();
+        botaoHabilidadeEspecial.setText(selecionando
+                ? "Cancelar seleção de tesouro" : "Usar habilidade especial");
+        botaoHabilidadeEspecial.setToolTipText(selecionando
+                ? "Cancelar sem gastar moeda ou usar a habilidade."
+                : "Ativar a habilidade do personagem uma vez neste turno.");
+        botaoHabilidadeEspecial.setEnabled(selecionando || observado.podeAtivarHabilidadeJogadorAtual());
         boolean turno = observado.isTurnoEmAndamento() && !observado.isPartidaEncerrada();
-        botaoTerminarTurno.setEnabled(turno);
+        botaoTerminarTurno.setEnabled(turno && !selecionando && !observado.isEscolhaColunaMelhoriaPendente());
         botaoEntregarTesouros.setEnabled(turno && !observado.getLocaisEntregaDisponiveis().isEmpty());
         botaoComprarMelhoria.setEnabled(turno&&observado.isCompravel());
         mostrarInformacao(observado.isPartidaEncerrada() ? "Partida encerrada."
+                : observado.isEscolhaColunaMelhoriaPendente() ? "Abra Jogador e escolha a coluna da melhoria comprada."
+                : selecionando ? "Clique em um tesouro de uma cidade com pelo menos dois tesouros ou cancele a seleção."
                 : turno ? "Use o mapa para mover, coletar e atacar."
                 : "Escolha uma coluna na tela do jogador.");
     }

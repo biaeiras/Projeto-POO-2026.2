@@ -177,6 +177,14 @@ class Jogador {
         return yurtsDisponiveis;
     }
 
+    boolean retirarYurtInicialDoEstoque() {
+        if (yurtsDisponiveis <= 0) {
+            return false;
+        }
+        yurtsDisponiveis--;
+        return true;
+    }
+
     boolean usarYurt() {
         return usarYurt(false);
     }

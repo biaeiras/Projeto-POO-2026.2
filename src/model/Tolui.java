@@ -9,6 +9,16 @@ class Tolui extends Personagem {
     }
 
     @Override
+    ParadaID getPosicaoYurtInicial() {
+        return ParadaID.KARAKORUM;
+    }
+
+    @Override
+    boolean permiteConstruirYurtAdjacente() {
+        return true;
+    }
+
+    @Override
     HashMap<Enum<?>, Integer> getAcoesBase(Regiao regiao) {
         if (regiao == null) {
             return criarAcoesBase(2, 1, true, false);

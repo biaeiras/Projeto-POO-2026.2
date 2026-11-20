@@ -24,6 +24,84 @@ public class FachadaJogo implements ObservadoJogo {
     // Partida gerenciada pela fachada
     private Partida partida;
 
+    @Override
+    public boolean possuiHabilidadeAtivavelJogadorAtual() {
+        return partida != null && partida.possuiHabilidadeAtivavelJogadorAtual();
+    }
+
+    @Override
+    public boolean podeAtivarHabilidadeJogadorAtual() {
+        return partida != null && partida.podeAtivarHabilidadeJogadorAtual();
+    }
+
+    public boolean ativarHabilidadeJogadorAtual() {
+        verificarPartidaIniciada();
+        boolean ativou = partida.ativarHabilidadeJogadorAtual();
+        if (ativou) {
+            notificarObservadores();
+        }
+        return ativou;
+    }
+
+    @Override
+    public boolean isSelecaoTesouroHabilidadePendente() {
+        return partida != null && partida.isSelecaoTesouroHabilidadePendente();
+    }
+
+    @Override
+    public HashMap<CidadeID, Integer> getCidadesSelecionaveisHabilidade() {
+        return partida == null ? new HashMap<CidadeID, Integer>()
+                : partida.getCidadesSelecionaveisHabilidade();
+    }
+
+    public boolean cancelarSelecaoTesouroHabilidade() {
+        verificarPartidaIniciada();
+        boolean cancelou = partida.cancelarSelecaoTesouroHabilidade();
+        if (cancelou) notificarObservadores();
+        return cancelou;
+    }
+
+    public boolean escolherTesouroHabilidade(CidadeID cidade, int indiceTesouro) {
+        verificarPartidaIniciada();
+        boolean escolheu = partida.escolherTesouroHabilidade(cidade, indiceTesouro);
+        if (escolheu) notificarObservadores();
+        return escolheu;
+    }
+
+    @Override
+    public boolean isEscolhaPeaoPendente() {
+        return partida != null && partida.isEscolhaPeaoPendente();
+    }
+
+    @Override
+    public HashMap<Integer, ParadaID> getPeoesSelecionaveisJogadorAtual() {
+        HashMap<Integer, ParadaID> peoes = new HashMap<>();
+        if (!isEscolhaPeaoPendente()) {
+            return peoes;
+        }
+        Jogador jogador = partida.getJogadorAtual();
+        for (int indice = 0; indice < jogador.getQuantidadePeoes(); indice++) {
+            Parada posicao = jogador.getPeao(indice).getPosicao();
+            if (posicao != null) {
+                peoes.put(indice, posicao.getId());
+            }
+        }
+        return peoes;
+    }
+
+    public boolean escolherPeaoJogadorAtual(int indice) {
+        verificarPartidaIniciada();
+        Jogador jogador = partida.getJogadorAtual();
+        if (jogador == null || indice < 0 || indice >= jogador.getQuantidadePeoes()) {
+            return false;
+        }
+        boolean escolheu = partida.escolherPeaoAtivo(jogador.getPeao(indice));
+        if (escolheu) {
+            notificarObservadores();
+        }
+        return escolheu;
+    }
+
     
     // Inicia uma partida com as cores escolhidas
     public void iniciarPartida(ArrayList<Cor> coresEscolhidas) {
@@ -45,10 +123,28 @@ public class FachadaJogo implements ObservadoJogo {
         return escolheu;
     }
 
+    @Override
+    public boolean isEscolhaMelhoriaInicialPendente() {
+        return partida != null && partida.isEscolhaMelhoriaInicialPendente();
+    }
+
+    @Override
+    public ArrayList<Melhoria> getOpcoesMelhoriaInicial() {
+        return partida == null ? new ArrayList<Melhoria>() : partida.getOpcoesMelhoriaInicial();
+    }
+
+    public boolean escolherMelhoriaInicial(int indice) {
+        verificarPartidaIniciada();
+        boolean escolheu = partida.escolherMelhoriaInicial(indice);
+        if (escolheu) notificarObservadores();
+        return escolheu;
+    }
+
     public void avancarJogadorNaPreparacao() {
         verificarPartidaIniciada();
 
-        if (partida.isEncerrada() || partida.getTurnoAtual() != null) {
+        if (partida.isEncerrada() || partida.getTurnoAtual() != null
+                || partida.isEscolhaMelhoriaInicialPendente()) {
             throw new IllegalStateException(
                 "Não é possível avançar na preparação neste momento."
             );
@@ -698,6 +794,28 @@ public class FachadaJogo implements ObservadoJogo {
     	notificarObservadores();
     }
     
+    @Override
+    public boolean isEscolhaColunaMelhoriaPendente() {
+        return partida != null && partida.isEscolhaColunaMelhoriaPendente();
+    }
+
+    @Override
+    public ArrayList<Integer> getColunasDisponiveisMelhoria() {
+        return partida == null ? new ArrayList<Integer>() : partida.getColunasDisponiveisMelhoria();
+    }
+
+    @Override
+    public Melhoria getMelhoriaCompraPendente() {
+        return partida == null ? null : partida.getMelhoriaCompraPendente();
+    }
+
+    public boolean escolherColunaMelhoria(int coluna) {
+        verificarPartidaIniciada();
+        boolean escolheu = partida.escolherColunaMelhoria(coluna);
+        if (escolheu) notificarObservadores();
+        return escolheu;
+    }
+
     public boolean isCompravel() {
     	return partida.isCompravel();
     }

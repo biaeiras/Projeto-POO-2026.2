@@ -213,6 +213,21 @@ public class PainelTabuleiroJogador extends JPanel {
     }
 
     // Retorna -1 quando o clique não corresponde a uma coluna disponível.
+    private final boolean[] destinosMelhoria = new boolean[4];
+
+    public void definirDestinosMelhoria(java.util.ArrayList<Integer> colunas) {
+        java.util.Arrays.fill(destinosMelhoria, false);
+        for (Integer coluna : colunas) destinosMelhoria[coluna] = true;
+    }
+
+    public int getColunaMelhoriaNoPonto(int x, int y) {
+        if (imagemTabuleiro == null) return -1;
+        for (int i = 0; i < 4; i++) {
+            if (destinosMelhoria[i] && getRetanguloAtivacao(i).contains(x, y)) return i;
+        }
+        return -1;
+    }
+
     public int getColunaDisponivelNoPonto(int x, int y) {
         if (imagemTabuleiro == null || !podeEscolherColuna) {
             return -1;

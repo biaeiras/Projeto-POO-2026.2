@@ -69,6 +69,8 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
     private HashMap<ProvinciaID, Integer> cargas = new HashMap<>();
     private HashMap<ParadaID, ArrayList<Cor>> yurts = new HashMap<>();
     private HashMap<ParadaID, ArrayList<Cor>> peoes = new HashMap<>();
+    private HashMap<Integer, ParadaID> peoesSelecionaveis = new HashMap<>();
+    private Cor corJogadorAtual;
     private HashSet<ParadaID> vizinhos = new HashSet<>();
     private HashSet<ParadaID> alcancaveis = new HashSet<>();
     private HashSet<ProvinciaID> provinciasDisponiveis = new HashSet<>();
@@ -409,6 +411,8 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         cargas = observado.getCargasProvincias();
         yurts = observado.getYurts();
         peoes = observado.getPosicoesPeoes();
+        peoesSelecionaveis = observado.getPeoesSelecionaveisJogadorAtual();
+        corJogadorAtual = observado.existePartida() ? observado.getCorJogadorAtual() : null;
         vizinhos = observado.getVizinhosPossiveis();
         alcancaveis = observado.getAlcancaveisTotais();
         provinciasDisponiveis = observado.getProvincias();
@@ -503,6 +507,34 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         } finally {
             g2d.dispose();
         }
+    }
+
+    int getCollisionPeaoSelecionavel(int x, int y) {
+        if (getWidth() <= 0 || getHeight() <= 0 || peoesSelecionaveis.isEmpty()) return -1;
+        for (Map.Entry<ParadaID, ArrayList<Cor>> entrada : peoes.entrySet()) {
+            Point2D.Double posicao = posicoesParadas.get(entrada.getKey());
+            ArrayList<Cor> cores = entrada.getValue();
+            // O último peão desenhado fica por cima quando as áreas se sobrepõem.
+            for (int lugar = cores.size() - 1; lugar >= 0; lugar--) {
+                int esquerda = (int) ((posicao.x - RAIO_PEAO) * getWidth());
+                int topo = (int) ((posicao.y - RAIO_PEAO - ESPACAMENTO_PEAO * lugar) * getHeight());
+                Ellipse2D area = new Ellipse2D.Double(esquerda, topo,
+                        (int) (2 * RAIO_PEAO * getWidth()), (int) (2 * RAIO_PEAO * getHeight()));
+                if (!area.contains(x, y)) continue;
+                if (cores.get(lugar) != corJogadorAtual) return -1;
+                int ordem = 0;
+                for (int anterior = 0; anterior < lugar; anterior++) {
+                    if (cores.get(anterior) == corJogadorAtual) ordem++;
+                }
+                ArrayList<Integer> indices = new ArrayList<>();
+                for (Map.Entry<Integer, ParadaID> peao : peoesSelecionaveis.entrySet()) {
+                    if (peao.getValue() == entrada.getKey()) indices.add(peao.getKey());
+                }
+                java.util.Collections.sort(indices);
+                return ordem < indices.size() ? indices.get(ordem) : -1;
+            }
+        }
+        return -1;
     }
 
 	ParadaID getCollisionParada(int x, int y) {

@@ -27,6 +27,29 @@ class MouseTabuleiro extends MouseAdapter {
             return;
         }
 
+        if (fachada.isEscolhaColunaMelhoriaPendente()) return;
+
+        if (fachada.isEscolhaPeaoPendente()) {
+            if (evento.getButton() == MouseEvent.BUTTON1) {
+                int indice = viewAPI.getClickPeaoSelecionavel(evento.getX(), evento.getY());
+                if (indice >= 0) fachada.escolherPeaoJogadorAtual(indice);
+            }
+            return;
+        }
+
+        if (fachada.isSelecaoTesouroHabilidadePendente()) {
+            if (evento.getButton() == MouseEvent.BUTTON1) {
+                for (Map.Entry<CidadeID, Integer> entry : fachada.getCidadesSelecionaveisHabilidade().entrySet()) {
+                    int indice = viewAPI.getClickTesouro(evento.getX(), evento.getY(), entry.getKey(), entry.getValue());
+                    if (indice >= 0) {
+                        fachada.escolherTesouroHabilidade(entry.getKey(), indice);
+                        return;
+                    }
+                }
+            }
+            return;
+        }
+
         if (evento.getButton() == MouseEvent.BUTTON2) {
             fachada.terminarTurnoJogadorAtual();
             return;

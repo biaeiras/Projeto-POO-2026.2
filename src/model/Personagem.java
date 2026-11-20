@@ -35,7 +35,35 @@ abstract class Personagem {
         return acoes;
     }
     
+    boolean ignoraCorMelhoria() {
+        return false;
+    }
+
+    int getQuantidadeOpcoesMelhoriaInicial() {
+        return 0;
+    }
+
     int getQuantidadePeoesIniciais() {
         return 1;
+    }
+
+    ParadaID getPosicaoYurtInicial() {
+        return null;
+    }
+
+    boolean permiteConstruirYurtAdjacente() {
+        return false;
+    }
+
+    boolean possuiHabilidadeAtivavel() {
+        return false;
+    }
+
+    boolean podeAtivarHabilidade(Turno turno) {
+        return false;
+    }
+
+    boolean ativarHabilidade(Turno turno) {
+        return false;
     }
 }

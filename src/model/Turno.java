@@ -12,6 +12,8 @@ class Turno {
 	private HashMap<TipoMelhoria, Integer> recursosVirtuais;
 
 	private boolean khanPendente;
+    private boolean habilidadeEspecialUsada;
+    private boolean selecaoTesouroHabilidadePendente;
 
 	private HashSet<Provincia> provinciasVisitadas;
 	
@@ -77,6 +79,43 @@ class Turno {
 	    }
 	}
 	
+    boolean isHabilidadeEspecialUsada() {
+        return habilidadeEspecialUsada;
+    }
+
+    boolean isSelecaoTesouroHabilidadePendente() {
+        return selecaoTesouroHabilidadePendente;
+    }
+
+    boolean iniciarSelecaoTesouroHabilidade() {
+        if (habilidadeEspecialUsada || selecaoTesouroHabilidadePendente) {
+            return false;
+        }
+        selecaoTesouroHabilidadePendente = true;
+        return true;
+    }
+
+    boolean cancelarSelecaoTesouroHabilidade() {
+        if (!selecaoTesouroHabilidadePendente) {
+            return false;
+        }
+        selecaoTesouroHabilidadePendente = false;
+        return true;
+    }
+
+    boolean concluirSelecaoTesouroHabilidade() {
+        if (!selecaoTesouroHabilidadePendente || habilidadeEspecialUsada) {
+            return false;
+        }
+        selecaoTesouroHabilidadePendente = false;
+        registrarUsoHabilidadeEspecial();
+        return true;
+    }
+
+    void registrarUsoHabilidadeEspecial() {
+        habilidadeEspecialUsada = true;
+    }
+
 	Jogador getJogador() {
 	    return jogador;
 	}
