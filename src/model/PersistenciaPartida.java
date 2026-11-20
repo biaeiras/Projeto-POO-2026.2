@@ -2,8 +2,11 @@
 package model;
 
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
+import java.io.FileInputStream;
+import java.io.OutputStreamWriter;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,6 +15,7 @@ import java.util.Stack;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.HashSet;
+import java.io.File;
 
 class PersistenciaPartida {
 
@@ -26,7 +30,7 @@ class PersistenciaPartida {
             );
         }
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(arquivo))) {
+        try (BufferedWriter writer = new BufferedWriter( new OutputStreamWriter(new FileOutputStream(arquivo),StandardCharsets.US_ASCII))) {
 
             TabuleiroPrincipal tabuleiro = partida.getTabuleiroPrincipal();
 
@@ -612,7 +616,7 @@ class PersistenciaPartida {
 
         HashMap<String, String> dados = new HashMap<>();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(arquivo))) {
+        try (BufferedReader reader = new BufferedReader( new InputStreamReader( new FileInputStream(arquivo), StandardCharsets.US_ASCII))) {
             String linha;
             int numeroLinha = 0;
 
