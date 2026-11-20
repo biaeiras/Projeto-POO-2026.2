@@ -75,6 +75,29 @@ class Jogador {
     int getQuantidadePeoes() {
         return peoes.size();
     }
+    
+ // Retorna uma cópia da lista de peões do jogador.
+    ArrayList<Peao> getPeoes() {
+        return new ArrayList<>(peoes);
+    }
+
+    // Restaura a posição de um peão.
+    void restaurarPosicaoPeao(int indice, Parada posicao) {
+        if (indice < 0 || indice >= peoes.size() || posicao == null) {
+            throw new IllegalArgumentException("Posição do peão inválida.");
+        }
+
+        Peao peao = peoes.get(indice);
+
+        Parada posicaoAnterior = peao.getPosicao();
+
+        if (posicaoAnterior != null) {
+            posicaoAnterior.removePeao(peao);
+        }
+
+        peao.setPosicao(posicao);
+        posicao.insertPeao(peao);
+    }
 
     boolean possuiPeao(Peao peao) {
         return peoes.contains(peao);
@@ -285,6 +308,68 @@ class Jogador {
     HashMap<TipoBonus, PecaBonus> getPecasBonus(){
     	return new HashMap<>(pecasBonus); 
     }
+    
+    void restaurarEstado(int yurtsDisponiveis,int votos,TipoConselheiroSecreto tipoConselheiro) {
+        this.yurtsDisponiveis = yurtsDisponiveis;
+        
+        this.votos = votos;
+
+        if (tipoConselheiro != null) {
+            this.conselheiroSecreto =
+                    new ConselheiroSecreto(tipoConselheiro);
+        }
+    }
+    
+ // Retorna cópias dos inventários para a persistência.
+    HashMap<TipoTributo, Integer> getTributos() {
+        return new HashMap<>(tributos);
+    }
+
+    HashMap<TipoTesouro, Integer> getTesouros() {
+        return new HashMap<>(tesouros);
+    }
+
+    ArrayList<ConselheiroSecreto> getOpcoesConselheiro() {
+        return new ArrayList<>(opcoesConselheiro);
+    }
+
+    // Restaura os inventários do jogador.
+    void restaurarInventarios(
+            HashMap<TipoTributo, Integer> tributosSalvos,
+            HashMap<TipoTesouro, Integer> tesourosSalvos) {
+
+        if (tributosSalvos == null || tesourosSalvos == null) {
+            throw new IllegalArgumentException("Inventário salvo inválido.");
+        }
+
+        for (TipoTributo tipo : TipoTributo.values()) {
+            Integer quantidade = tributosSalvos.get(tipo);
+
+            if (quantidade == null || quantidade < 0) {
+                throw new IllegalArgumentException(
+                        "Quantidade de tributo inválida: " + tipo
+                );
+            }
+        }
+
+        for (TipoTesouro tipo : TipoTesouro.values()) {
+            Integer quantidade = tesourosSalvos.get(tipo);
+
+            if (quantidade == null || quantidade < 0) {
+                throw new IllegalArgumentException(
+                        "Quantidade de tesouro inválida: " + tipo
+                );
+            }
+        }
+
+        tributos.clear();
+        tributos.putAll(tributosSalvos);
+
+        tesouros.clear();
+        tesouros.putAll(tesourosSalvos);
+    }
+    
+    
     
     
 }

@@ -672,6 +672,15 @@ class TabuleiroPrincipal {
 	HashMap<ParadaID, Parada> getMapa(){
 		return this.mapa;
 	}
+	
+	Parada buscarParada(ParadaID id) {
+	    if (id == null) {
+	        throw new IllegalArgumentException("Identificador da parada inválido.");
+	    }
+
+	    return mapa.get(id);
+	}
+	
 	HashMap<ProvinciaID, Provincia> getProvincias(){
 		return this.provincias;
 	}
@@ -925,5 +934,67 @@ class TabuleiroPrincipal {
 	    }
 
 	    return true;
+	}
+	
+	//getMapa jpa retorna o mapa completo
+	Parada getParada(ParadaID id) {
+	    if (id == null) {
+	        throw new IllegalArgumentException("Identificador da parada inválido.");
+	    }
+
+	    return mapa.get(id);
+	}
+	
+	
+	//Guardar e restaurar estadps das cidades, tesouros restantes na pilha, melhorias
+	
+	HashMap<CidadeID, Cidade> getCidades() {
+	    return new HashMap<>(cidades);
+	}
+
+	Stack<TipoTesouro> getPilhaTesouros() {
+	    return new Stack<TipoTesouro>() {{
+	        addAll(pilhaTesouros);
+	    }};
+	}
+	
+	Stack<CidadeID> getPilhaCidades() {
+	    Stack<CidadeID> copia = new Stack<>();
+	    copia.addAll(pilhaCidades);
+	    return copia;
+	}
+	
+	void restaurarPilhas(Stack<CidadeID> cidadesSalvas, Stack<TipoTesouro> tesourosSalvos) {
+
+	    if (cidadesSalvas == null || tesourosSalvos == null) {
+	        throw new IllegalArgumentException("Pilhas salvas inválidas.");
+	    }
+
+	    pilhaCidades.clear();
+	    pilhaCidades.addAll(cidadesSalvas);
+
+	    pilhaTesouros.clear();
+	    pilhaTesouros.addAll(tesourosSalvos);
+	}
+	
+	Stack<Melhoria> getPilhaMelhorias() {
+	    Stack<Melhoria> copia = new Stack<>();
+	    copia.addAll(pilhaMelhorias);
+	    return copia;
+	}
+
+	void restaurarMelhorias(ArrayList<Melhoria> melhoriasSalvas,Stack<Melhoria> pilhaSalva) {
+
+	    if (melhoriasSalvas == null || melhoriasSalvas.size() != MELHORIAS
+	            || pilhaSalva == null) {
+	        throw new IllegalArgumentException("Melhorias salvas inválidas.");
+	    }
+
+	    for (int i = 0; i < MELHORIAS; i++) {
+	        melhorias.get(i).setMelhoria(melhoriasSalvas.get(i));
+	    }
+
+	    pilhaMelhorias.clear();
+	    pilhaMelhorias.addAll(pilhaSalva);
 	}
 }

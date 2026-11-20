@@ -38,4 +38,6 @@ abstract class Personagem {
     int getQuantidadePeoesIniciais() {
         return 1;
     }
+    
+    
 }

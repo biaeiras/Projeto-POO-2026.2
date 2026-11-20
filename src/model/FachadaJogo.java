@@ -701,4 +701,8 @@ public class FachadaJogo implements ObservadoJogo {
     public boolean isCompravel() {
     	return partida.isCompravel();
     }
+    
+    public boolean podeSalvarPartida() {
+		return partida != null && !partida.isEncerrada() && partida.getTurnoAtual() == null && partida.todosEscolheramConselheiro(); 
+	}
 }

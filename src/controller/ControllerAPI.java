@@ -56,6 +56,10 @@ public class ControllerAPI {
     public void removerObservador(ObservadorJogo observador) {
         fachada.removerObservador(observador);
     }
+    
+    public boolean podeSalvarPartida() {
+    	return fachada.podeSalvarPartida(); 
+    }
 
     public ControllerAPI(ViewAPI viewAPI, FachadaJogo fachada) {
         this.fachada = fachada;

@@ -34,9 +34,15 @@ class Partida  {
     private final HashSet<ProvinciaID> selecaoKhan = new HashSet<>();
     private final HashMap<Integer, ConselheiroAberto> conselheirosAbertos = new HashMap<>();
 	
+ // Construtor usado exclusivamente na restauração de uma partida salva.
+    Partida() {
+        this.jogadores = new ArrayList<>();
+    }
+    
 	Partida(ArrayList<Cor> coresEscolhidas) {
         this(coresEscolhidas, sortearConselheirosAbertos());
     }
+
 
     // Também permite preparar uma partida determinística nos testes do Model.
     Partida(ArrayList<Cor> coresEscolhidas, List<TipoConselheiroAberto> cartasAbertas) {
@@ -962,4 +968,37 @@ class Partida  {
 	ArrayList<Melhoria> getMelhorias(){
 		return tabuleiroPrincipal.getMelhorias();
 	}
+	
+	
+	void adicionarJogador(Jogador jogador) {
+	    jogadores.add(jogador);
+	}
+	
+
+	TabuleiroPrincipal getTabuleiroPrincipal() {
+	    return tabuleiroPrincipal;
+	}
+
+	int getIndiceJogadorAtual() {
+	    return indiceJogadorAtual;
+	}
+
+	int getLimiteVotos() {
+	    return limiteVotos;
+	}
+
+
+	int getRodadasExtras() {
+	    return rodadasExtras;
+	}
+
+	int getTurnosRestantesAposFim() {
+	    return turnosRestantesAposFim;
+	}
+
+	boolean isPontuacaoFinalCalculada() {
+	    return pontuacaoFinalCalculada;
+	}
+	
+	
 }

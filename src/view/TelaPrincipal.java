@@ -30,6 +30,7 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
     private JLabel votosFichaNeutra;
     private final ControllerAPI controlador;
     private JButton botaoJogador;
+    private JButton botaoSalvarPartida; 
     private PainelAcoesPartida painelAcoes;
     private JLabel jogadorAtual;
     private JLabel corJogador;
@@ -125,9 +126,7 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
 
     private void criarPainelLateral() {
         painelLateral = criarPainelLateralRolavel();
-        painelLateral.setLayout(new BoxLayout(
-            painelLateral, BoxLayout.Y_AXIS
-        ));
+        painelLateral.setLayout(new BoxLayout(painelLateral, BoxLayout.Y_AXIS ));
         painelLateral.setBackground(pergaminho);
         painelLateral.setBorder(new EmptyBorder(8, 4, 8, 8));
 
@@ -165,6 +164,15 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         vez.add(corJogador);
 
         adicionarSecao(vez);
+        
+        botaoSalvarPartida = criarBotao("Salvar partida", vermelho);
+        botaoSalvarPartida.setEnabled(false);
+        botaoSalvarPartida.setAlignmentX(Component.CENTER_ALIGNMENT);
+        botaoSalvarPartida.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+
+        painelLateral.add(botaoSalvarPartida);
+        painelLateral.add(Box.createVerticalStrut(8));
+        
         painelAcoes = new PainelAcoesPartida();
         adicionarSecao(painelAcoes);
         
@@ -423,6 +431,8 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
     }
 
     private void atualizarCartasEPlacar(ObservadoJogo observado) {
+    	botaoSalvarPartida.setEnabled(observado.existePartida()&& controlador.podeSalvarPartida());
+    	
         if (observado.existePartida()) {
             jogadorAtual.setText("● " + observado.getNomePersonagemAtual());
             corJogador.setText("Cor: " + observado.getCorJogadorAtual().name());
