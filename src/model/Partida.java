@@ -28,7 +28,6 @@ class Partida  {
 	private Peao peaoAtivo; 
 	private boolean acaoRestritaFeita; 
 	private int melhoriasGratisPendentes; 
-	private boolean skipped = false;
 	private boolean hasToMove = false;
     private KhanID ativandoKhan;
     private final HashSet<ProvinciaID> selecaoKhan = new HashSet<>();
@@ -69,6 +68,7 @@ class Partida  {
 	    criarJogadores(coresEscolhidas);
 	    distribuirMoedasInicias();
 	    criarTabuleiroPrincipal(); 
+        colocarYurtsIniciais();
 	    
 	    
 	}
@@ -216,6 +216,16 @@ class Partida  {
 
 	}
 	
+    private void colocarYurtsIniciais() {
+        for (Jogador jogador : jogadores) {
+            Personagem personagem = jogador.getTabuleiroJogador().getPersonagem();
+            if (personagem.getPosicaoYurtInicial() != null
+                    && !tabuleiroPrincipal.colocarYurtInicial(jogador)) {
+                throw new IllegalStateException("Não foi possível colocar o yurt inicial de " + personagem.getNome());
+            }
+        }
+    }
+
 	private  void distribuirMoedasInicias() {
 	    for (int i = 0; i < jogadores.size(); i++) {
 	        int moedasIniciais = (i < 2) ? 1 : 2;
@@ -461,30 +471,22 @@ class Partida  {
 	    
 	    Parada origem = peaoAtivo.getPosicao();
 
-	    if (origem == null || !origem.getVizinhos().containsValue(destino)) {
-	        return false;
-	    }
-	    //System.out.println(turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO));
-
-	    if (turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO) <= 0) {
-	        return false;
-	    }
-
-	    
-	    if (!destino.isMoveble()) {
-	    	if(tabuleiroPrincipal.getMovimentosPossiveis(peaoAtivo, turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO)-1).isEmpty())
-	    		return false;
-	    	else hasToMove = true;
-	    }else hasToMove = false;
-
-	    HashSet<Provincia> provinciasVisitadas =
-	            tabuleiroPrincipal.moverPeao(peaoAtivo, destino);
-	    //System.out.println(peaoAtivo.getPosicao().getId());
-	    if(skipped || !destino.getYurt().contains(peaoAtivo.getJogador())) {
-	    	skipped = false;
-	    	if(!turnoAtual.usarAcao(TipoAcao.MOVIMENTO)) return false;
-	    }
-	    else skipped = true;
+        if (origem == null || turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO) <= 0) {
+            return false;
+        }
+        ArrayList<Parada> caminho = tabuleiroPrincipal.getCaminhoDeUmMovimento(peaoAtivo, destino);
+        if (caminho.isEmpty()) return false;
+        boolean ocupado = !destino.isMoveble();
+        if (ocupado) {
+            int restantes = turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO) - 1;
+            if (tabuleiroPrincipal.getMovimentosPossiveis(peaoAtivo, destino, restantes).isEmpty()) {
+                return false;
+            }
+        }
+        if (!turnoAtual.usarAcao(TipoAcao.MOVIMENTO)) return false;
+        HashSet<Provincia> provinciasVisitadas = tabuleiroPrincipal.moverPeao(peaoAtivo, destino);
+        hasToMove = ocupado;
+        // As paradas com yurts puladas no caminho não são registradas como visitadas.
 
 	    turnoAtual.adicionarProvinciasVisitadas(provinciasVisitadas);
 	    paradasPercorridas.get(peaoAtivo).add(destino);
@@ -570,6 +572,15 @@ class Partida  {
         paradasPercorridas.put(peaoAtivo, paradas);
     }
 	
+    private boolean podeConstruirYurtAdjacente(Parada destino) {
+        if (peaoAtivo == null || peaoAtivo.getPosicao() == null || destino == null) {
+            return false;
+        }
+        Personagem personagem = peaoAtivo.getJogador().getTabuleiroJogador().getPersonagem();
+        return personagem.permiteConstruirYurtAdjacente()
+                && peaoAtivo.getPosicao().getVizinhos().containsValue(destino);
+    }
+
 	boolean construirYurt(ParadaID id) {
 		int i = 0;
 		//System.out.println(i++);
@@ -585,7 +596,8 @@ class Partida  {
 
 	    HashSet<Parada> percorridas = paradasPercorridas.get(peaoAtivo);
 
-	    if (percorridas == null || !percorridas.contains(parada)) {
+	    if ((percorridas == null || !percorridas.contains(parada))
+                && !podeConstruirYurtAdjacente(parada)) {
 	        return false;
 	    }
 
@@ -948,22 +960,27 @@ class Partida  {
 		HashSet<ParadaID> ret = new HashSet<ParadaID>();
         if (turnoAtual == null || peaoAtivo == null || ativandoKhan != null || encerrada) return ret;
 		int passos = turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO);
-		if(skipped) passos--;
 		for(Parada p: tabuleiroPrincipal.getMovimentosPossiveis(peaoAtivo, passos).keySet()) ret.add(p.getId());
 		return ret;
 		
 	}
 	
-	HashSet<ParadaID> getVizinhosPossiveis(){
-		HashSet<ParadaID> ret = new HashSet<ParadaID>();
-        if (turnoAtual == null || peaoAtivo == null || ativandoKhan != null || encerrada) return ret;
-		if(turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO)<=0) return ret;
-		for(Parada viz: peaoAtivo.getPosicao().getVizinhos().values()) {
-			if(!tabuleiroPrincipal.getMovimentosPossiveis(peaoAtivo, viz, turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO)-1).isEmpty()) ret.add(viz.getId());
-		}
-		return ret;
-	}
-	
+    HashSet<ParadaID> getVizinhosPossiveis() {
+        HashSet<ParadaID> destinos = new HashSet<>();
+        if (turnoAtual == null || peaoAtivo == null || ativandoKhan != null || encerrada) return destinos;
+        int movimentos = turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO);
+        if (movimentos <= 0) return destinos;
+        for (Parada parada : tabuleiroPrincipal.getMovimentosPossiveis(peaoAtivo, 1).keySet()) {
+            destinos.add(parada.getId());
+        }
+        // Uma parada ocupada só pode ser atravessada se ainda houver como continuar.
+        for (Parada vizinha : peaoAtivo.getPosicao().getVizinhos().values()) {
+            if (!vizinha.isMoveble() && !tabuleiroPrincipal.getMovimentosPossiveis(
+                    peaoAtivo, vizinha, movimentos - 1).isEmpty()) destinos.add(vizinha.getId());
+        }
+        return destinos;
+    }
+
 	HashSet<ProvinciaID> getProvincias(){
 		HashSet<ProvinciaID> ret = new HashSet<ProvinciaID>();
         if (turnoAtual == null || encerrada) return ret;

@@ -39,6 +39,14 @@ abstract class Personagem {
         return 1;
     }
 
+    ParadaID getPosicaoYurtInicial() {
+        return null;
+    }
+
+    boolean permiteConstruirYurtAdjacente() {
+        return false;
+    }
+
     boolean possuiHabilidadeAtivavel() {
         return false;
     }
