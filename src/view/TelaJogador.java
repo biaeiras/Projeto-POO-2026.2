@@ -400,6 +400,8 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
 
         if (observado.isPartidaEncerrada()) {
             situacao = "Partida encerrada.";
+        } else if (observado.isEscolhaPeaoPendente()) {
+            situacao = "Clique no mapa no peão da Altani que deseja usar neste turno.";
         } else if (turnoAberto) {
             situacao = "Turno em andamento.";
         } else if (observado.podeEscolherColuna()) {

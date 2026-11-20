@@ -16,6 +16,8 @@ public interface ObservadoJogo {
     boolean isColunaJogadorAtualAtivada(int coluna);
     boolean podeEscolherColuna();
     boolean isTurnoEmAndamento();
+    boolean isEscolhaPeaoPendente();
+    HashMap<Integer, ParadaID> getPeoesSelecionaveisJogadorAtual();
     boolean isPartidaEncerrada();
     ArrayList<String> getMelhoriasTabuleiroJogador(int coluna);
     int getMoedasJogadorAtual();

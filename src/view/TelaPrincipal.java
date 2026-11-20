@@ -351,6 +351,8 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
 
             if (observado.isPartidaEncerrada()) {
                 mensagemJogo.setText("Partida encerrada.");
+            } else if (observado.isEscolhaPeaoPendente()) {
+                mensagemJogo.setText("Clique no mapa no peão da Altani que deseja usar neste turno.");
             } else if (observado.isTurnoEmAndamento()) {
                 mensagemJogo.setText("Turno de " + observado.getNomePersonagemAtual()
                     + ": clique no mapa para executar as ações disponíveis.");

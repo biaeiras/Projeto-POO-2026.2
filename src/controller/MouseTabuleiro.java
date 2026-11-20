@@ -27,6 +27,14 @@ class MouseTabuleiro extends MouseAdapter {
             return;
         }
 
+        if (fachada.isEscolhaPeaoPendente()) {
+            if (evento.getButton() == MouseEvent.BUTTON1) {
+                int indice = viewAPI.getClickPeaoSelecionavel(evento.getX(), evento.getY());
+                if (indice >= 0) fachada.escolherPeaoJogadorAtual(indice);
+            }
+            return;
+        }
+
         if (evento.getButton() == MouseEvent.BUTTON2) {
             fachada.terminarTurnoJogadorAtual();
             return;

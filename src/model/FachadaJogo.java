@@ -24,6 +24,40 @@ public class FachadaJogo implements ObservadoJogo {
     // Partida gerenciada pela fachada
     private Partida partida;
 
+    @Override
+    public boolean isEscolhaPeaoPendente() {
+        return partida != null && partida.isEscolhaPeaoPendente();
+    }
+
+    @Override
+    public HashMap<Integer, ParadaID> getPeoesSelecionaveisJogadorAtual() {
+        HashMap<Integer, ParadaID> peoes = new HashMap<>();
+        if (!isEscolhaPeaoPendente()) {
+            return peoes;
+        }
+        Jogador jogador = partida.getJogadorAtual();
+        for (int indice = 0; indice < jogador.getQuantidadePeoes(); indice++) {
+            Parada posicao = jogador.getPeao(indice).getPosicao();
+            if (posicao != null) {
+                peoes.put(indice, posicao.getId());
+            }
+        }
+        return peoes;
+    }
+
+    public boolean escolherPeaoJogadorAtual(int indice) {
+        verificarPartidaIniciada();
+        Jogador jogador = partida.getJogadorAtual();
+        if (jogador == null || indice < 0 || indice >= jogador.getQuantidadePeoes()) {
+            return false;
+        }
+        boolean escolheu = partida.escolherPeaoAtivo(jogador.getPeao(indice));
+        if (escolheu) {
+            notificarObservadores();
+        }
+        return escolheu;
+    }
+
     
     // Inicia uma partida com as cores escolhidas
     public void iniciarPartida(ArrayList<Cor> coresEscolhidas) {

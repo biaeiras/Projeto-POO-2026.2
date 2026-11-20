@@ -296,20 +296,11 @@ class Partida  {
 	    tesourosTomadosNoTurno.clear();
 	    acaoRestritaFeita = false;
 	    melhoriasGratisPendentes = 0;
-	    peaoAtivo = jogador.getPeao(0);
-	
-	    for (int i = 0; i < jogador.getQuantidadePeoes(); i++) {
-	        Peao peao = jogador.getPeao(i);
-	        HashSet<Parada> paradas = new HashSet<>();
-	        Parada posicao = peao.getPosicao();
-	
-	        if (posicao != null) {
-	            paradas.add(posicao);
-	            turnoAtual.adicionarProvinciasVisitadas(new HashSet<Provincia>(posicao.getProvincias().values()));
-	        }
-	
-	        paradasPercorridas.put(peao, paradas);
-	    }
+	    peaoAtivo = null;
+        if (!(jogador.getTabuleiroJogador().getPersonagem() instanceof Altani)) {
+            peaoAtivo = jogador.getPeao(0);
+            registrarPosicaoInicialPeaoAtivo();
+        }
 
 	    //System.out.println("turno aberto");
 	    verificarConselheirosAbertos();
@@ -322,7 +313,7 @@ class Partida  {
 	        return false;
 	    }
 
-	    if (turnoAtual.isKhanPendente() || hasToMove) {
+	    if (isEscolhaPeaoPendente() || turnoAtual.isKhanPendente() || hasToMove) {
 	        return false;
 	    }
 	    verificarConselheirosAbertos();
@@ -524,13 +515,36 @@ class Partida  {
 	
 	//escolher qual peao do Altani usar 
 	boolean escolherPeaoAtivo(Peao peao) {
-		if(encerrada || turnoAtual == null || acaoRestritaFeita || peao == null || peao.getJogador() != turnoAtual.getJogador()) {
+		if (!isEscolhaPeaoPendente() || peao == null || peao.getPosicao() == null
+                || peao.getJogador() != turnoAtual.getJogador()) {
 			return false; 
 		}
-		peaoAtivo = peao; 
-		return true; 
+        Jogador jogador = turnoAtual.getJogador();
+        for (int i = 0; i < jogador.getQuantidadePeoes(); i++) {
+            if (jogador.getPeao(i) == peao) {
+                peaoAtivo = peao;
+                registrarPosicaoInicialPeaoAtivo();
+                return true;
+            }
+        }
+        return false;
 	
 	}
+
+    boolean isEscolhaPeaoPendente() {
+        return !encerrada && turnoAtual != null && peaoAtivo == null
+                && turnoAtual.getJogador().getTabuleiroJogador().getPersonagem() instanceof Altani;
+    }
+
+    private void registrarPosicaoInicialPeaoAtivo() {
+        HashSet<Parada> paradas = new HashSet<>();
+        Parada posicao = peaoAtivo.getPosicao();
+        if (posicao != null) {
+            paradas.add(posicao);
+            turnoAtual.adicionarProvinciasVisitadas(new HashSet<Provincia>(posicao.getProvincias().values()));
+        }
+        paradasPercorridas.put(peaoAtivo, paradas);
+    }
 	
 	boolean construirYurt(ParadaID id) {
 		int i = 0;
@@ -792,7 +806,7 @@ class Partida  {
 	
     HashSet<KhanID> getKhans() {
         HashSet<KhanID> destinos = new HashSet<>();
-        if (!encerrada && turnoAtual != null && turnoAtual.isKhanPendente()) {
+        if (!encerrada && turnoAtual != null && !isEscolhaPeaoPendente() && turnoAtual.isKhanPendente()) {
             for (KhanID id : KhanID.values()) if (id != tabuleiroPrincipal.getKhan()) destinos.add(id);
         }
         return destinos;
@@ -859,7 +873,7 @@ class Partida  {
 	
 	HashSet<ParadaID> getAlcancaveisTotais(){
 		HashSet<ParadaID> ret = new HashSet<ParadaID>();
-        if (turnoAtual == null || ativandoKhan != null || encerrada) return ret;
+        if (turnoAtual == null || peaoAtivo == null || ativandoKhan != null || encerrada) return ret;
 		int passos = turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO);
 		if(skipped) passos--;
 		for(Parada p: tabuleiroPrincipal.getMovimentosPossiveis(peaoAtivo, passos).keySet()) ret.add(p.getId());
@@ -869,7 +883,7 @@ class Partida  {
 	
 	HashSet<ParadaID> getVizinhosPossiveis(){
 		HashSet<ParadaID> ret = new HashSet<ParadaID>();
-        if (turnoAtual == null || ativandoKhan != null || encerrada) return ret;
+        if (turnoAtual == null || peaoAtivo == null || ativandoKhan != null || encerrada) return ret;
 		if(turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO)<=0) return ret;
 		for(Parada viz: peaoAtivo.getPosicao().getVizinhos().values()) {
 			if(!tabuleiroPrincipal.getMovimentosPossiveis(peaoAtivo, viz, turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO)-1).isEmpty()) ret.add(viz.getId());
