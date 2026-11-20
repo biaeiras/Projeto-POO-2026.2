@@ -41,7 +41,6 @@ public class PainelAcoesPartida extends JPanel implements ObservadorJogo {
             botao.setEnabled(false);
             botoes.add(botao);
         }
-        botaoComprarMelhoria.setToolTipText("A compra de melhorias ainda não está disponível.");
         botaoHabilidadeEspecial.setName("botaoHabilidadeEspecial");
         botaoHabilidadeEspecial.setToolTipText("Ativar a habilidade do personagem uma vez neste turno.");
         add(botoes, BorderLayout.CENTER);
@@ -83,6 +82,7 @@ public class PainelAcoesPartida extends JPanel implements ObservadorJogo {
         boolean turno = observado.isTurnoEmAndamento() && !observado.isPartidaEncerrada();
         botaoTerminarTurno.setEnabled(turno && !selecionando);
         botaoEntregarTesouros.setEnabled(turno && !observado.getLocaisEntregaDisponiveis().isEmpty());
+        botaoComprarMelhoria.setEnabled(turno&&observado.isCompravel());
         mostrarInformacao(observado.isPartidaEncerrada() ? "Partida encerrada."
                 : selecionando ? "Clique em um tesouro de uma cidade com pelo menos dois tesouros ou cancele a seleção."
                 : turno ? "Use o mapa para mover, coletar e atacar."

@@ -19,7 +19,7 @@ class TabuleiroPrincipal {
 	private final static int MELHORIAS_YURT = 8;
 	private final static int MELHORIAS_MOVIMENTO = 9;
 	private final static int MULTIPLICIDADE_TESOURO = 8;
-	protected final static TipoMelhoria[] MELHORIAS_EXTRAS= {null, TipoMelhoria.MOEDA_VIRTUAL, null, TipoMelhoria.ESPADA_VIRTUAL, null};
+	protected final static TipoTributo[] MELHORIAS_EXTRAS= {null, TipoTributo.MOEDA, null, TipoTributo.ESPADA, null};
     final static Map<KhanID, ProvinciaKhanID> KHAN_MAP = initKhanMap();
 	
     private static Map<KhanID, ProvinciaKhanID> initKhanMap() {
@@ -66,14 +66,14 @@ class TabuleiroPrincipal {
 	}
 	private class SlotMelhoria{
 		private Melhoria melhoria = null;
-		private TipoMelhoria melhoriaExtra;
+		private TipoTributo extra;
 		
-		SlotMelhoria(TipoMelhoria melhoriaExtra) {
-			this.melhoriaExtra = melhoriaExtra;
+		SlotMelhoria(TipoTributo extra) {
+			this.extra = extra;
 		}
 		
-		TipoMelhoria getMelhoriaExtra() {
-			return this.melhoriaExtra;
+		TipoTributo getExtra() {
+			return this.extra;
 		}
 		
 		void setMelhoria(Melhoria melhoria) {
@@ -532,12 +532,17 @@ class TabuleiroPrincipal {
 		return;
 	}
 	private void initMelhorias() {
-		for(int i = 0; i<MELHORIAS_MOEDAS; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.MOEDA_VIRTUAL, Regiao.CHINA));
-		for(int i = 0; i<MELHORIAS_ESPADAS; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.ESPADA_VIRTUAL, Regiao.CHINA));
+		for(int i = 0; i<MELHORIAS_MOEDAS; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.MOEDA_VIRTUAL, Regiao.values()[i%Regiao.values().length]));
+		for(int i = 0; i<MELHORIAS_ESPADAS; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.ESPADA_VIRTUAL, Regiao.values()[i%Regiao.values().length]));
 		for(int i = 0; i<MELHORIAS_PEGAR_TRIBUTO; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.PEGAR_TRIBUTO_EXTRA, Regiao.CHINA));
 		for(int i = 0; i<MELHORIAS_TESOURO; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.FERRO_VIRTUAL, Regiao.CHINA));
-		for(int i = 0; i<MELHORIAS_YURT; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.YURT_VIRTUAL, Regiao.CHINA));
-		for(int i = 0; i<MELHORIAS_MOVIMENTO; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.MOVIMENTO_EXTRA, Regiao.CHINA));
+		for(int i = 0; i<MELHORIAS_TESOURO; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.BOI_VIRTUAL, Regiao.RUSSIA));
+		for(int i = 0; i<MELHORIAS_TESOURO; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.ALIMENTO_VIRTUAL, Regiao.RUSSIA));
+		for(int i = 0; i<MELHORIAS_TESOURO; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.PELE_VIRTUAL, Regiao.PERSIA));
+		for(int i = 0; i<MELHORIAS_TESOURO; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.TECIDO_VIRTUAL, Regiao.PERSIA));
+		for(int i = 0; i<MELHORIAS_YURT; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.YURT_VIRTUAL, Regiao.values()[i%Regiao.values().length]));
+		for(int i = 0; i<MELHORIAS_MOVIMENTO; i++) pilhaMelhorias.push(new Melhoria(TipoMelhoria.MOVIMENTO_EXTRA, Regiao.values()[i%Regiao.values().length]));
+		Collections.shuffle(pilhaMelhorias);
 		for(int i = 0; i<MELHORIAS; i++) { 
 			melhorias.add(i, new SlotMelhoria(MELHORIAS_EXTRAS[i]));
 			melhorias.get(i).setMelhoria(pilhaMelhorias.pop());
@@ -676,7 +681,7 @@ class TabuleiroPrincipal {
     KhanID getKhan() {
 		return this.khan;
 	}
-    boolean ativarKhan(KhanID id, HashSet<ProvinciaID> tributos) {
+    boolean ativarKhan(KhanID id, HashSet<ProvinciaID> tributos, Jogador jogador) {
         if (id == null || id == khan || tributos == null) return false;
         if (id != KhanID.M && (tributos.size() != 2
                 || !getProvinicasKhan(id).containsAll(tributos))) return false;
@@ -686,6 +691,7 @@ class TabuleiroPrincipal {
             for (SlotMelhoria slot : melhorias) {
                 if (slot.getMelhoria() == null && !pilhaMelhorias.isEmpty()) {
                     slot.setMelhoria(pilhaMelhorias.pop());
+                    if(slot.getExtra()!=null) jogador.adicionarTributo(slot.getExtra(), 1);
                 }
             }
         } else {
@@ -896,7 +902,6 @@ class TabuleiroPrincipal {
         return ret;
     }
 
-
     boolean atacarCidade(CidadeID id, Jogador jogador, TipoTesouro tesouro) {
         Cidade cidade = cidades.get(id);
         if (cidade == null || id == CidadeID.KARAKORUM || jogador == null
@@ -913,6 +918,25 @@ class TabuleiroPrincipal {
         return true;
     }
 
+    ArrayList<Melhoria> getMelhorias(){
+    	ArrayList<Melhoria> ret = new ArrayList<>();
+    	for(int i = 0; i<melhorias.size();++i)
+    		ret.add(i, melhorias.get(i).getMelhoria());
+    	return ret;
+    }
+    
+    Melhoria comprarMelhoria(int index) {
+    	SlotMelhoria slot = melhorias.get(index);
+    	Melhoria ret = slot.getMelhoria();
+    	slot.setMelhoria(null);
+    	return ret;
+    	
+    }
+    
+    Melhoria comprarMelhoriaDaPilha() {
+    	return pilhaMelhorias.pop();
+    }
+    
 	public boolean todasCidadesConquistadas() {
 	    if (!pilhaCidades.isEmpty()) {
 	        return false;

@@ -130,6 +130,10 @@ public class ViewAPI {
     public int getClickTesouro(int x, int y, CidadeID id, int n) {
         return painel.getCollisionCidade(x, y, id, n);
     }
+    
+    public int getClickMelhorias(int x, int y) {
+    	return painel.getCollisionMelhoria(x, y);
+    }
 
     public JPanel getTabulerioPanel() {
         return painel;
@@ -144,4 +148,6 @@ public class ViewAPI {
         controlador.removerObservador(janela);
         janela.dispose();
     }
+    
+    
 }

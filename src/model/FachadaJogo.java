@@ -762,4 +762,21 @@ public class FachadaJogo implements ObservadoJogo {
         return partida == null ? new HashMap<>() : partida.getBonus();
     }
 
+    public ArrayList<Melhoria> getMelhorias(){
+    	return partida.getMelhorias();
+    }
+    
+    public void comprarMelhoria(int i) {
+    	
+    	if(partida.comprarMelhoriaTabuleiro(i)) notificarObservadores();
+    }
+    
+    public void comprarMelhoriaDaPilha() {
+    	partida.comprarMelhoriaDaPilha();
+    	notificarObservadores();
+    }
+    
+    public boolean isCompravel() {
+    	return partida.isCompravel();
+    }
 }

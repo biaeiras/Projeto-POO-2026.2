@@ -67,9 +67,9 @@ class MouseTabuleiro extends MouseAdapter {
                 return;
             }
             for (Map.Entry<CidadeID, Integer> entry : fachada.getCidadesAtacaveis().entrySet()) {
-                int indice = viewAPI.getClickTesouro(evento.getX(), evento.getY(), entry.getKey(), entry.getValue());
-                if (indice >= 0) {
-                    fachada.atacarCidade(entry.getKey(), indice);
+                int indiceTesouro = viewAPI.getClickTesouro(evento.getX(), evento.getY(), entry.getKey(), entry.getValue());
+                if (indiceTesouro >= 0) {
+                    fachada.atacarCidade(entry.getKey(), indiceTesouro);
                     return;
                 }
             }
@@ -80,6 +80,9 @@ class MouseTabuleiro extends MouseAdapter {
             }
             ProvinciaID provincia = viewAPI.getClickProvinciaID(evento.getX(), evento.getY());
             if (provincia != null) fachada.selecionarTributo(provincia);
+            
+            int indiceMelhoria = viewAPI.getClickMelhorias(evento.getX(), evento.getY());
+            if(indiceMelhoria>=0) fachada.comprarMelhoria(indiceMelhoria);
         } else if (evento.getButton() == MouseEvent.BUTTON3) {
             ParadaID parada = viewAPI.getClickParadaID(evento.getX(), evento.getY());
             if (parada != null) fachada.construirYurt(parada);
