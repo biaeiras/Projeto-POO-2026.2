@@ -67,6 +67,14 @@ public class ControllerAPI {
     }
 
     public void configurarAcoes(final PainelAcoesPartida painel) {
+        painel.getBotaoHabilidadeEspecial().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evento) {
+                if (!fachada.ativarHabilidadeJogadorAtual()) {
+                    painel.mostrarInformacao("Não foi possível usar a habilidade especial neste momento.");
+                }
+            }
+        });
         painel.getBotaoTerminarTurno().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evento) {

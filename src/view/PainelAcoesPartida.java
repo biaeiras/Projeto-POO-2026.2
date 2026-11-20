@@ -15,6 +15,7 @@ public class PainelAcoesPartida extends JPanel implements ObservadorJogo {
     private final JButton botaoComprarMelhoria = new JButton("Comprar melhoria");
     private final JButton botaoEntregarTesouros = new JButton("Entregar tesouros");
     private final JButton botaoTerminarTurno = new JButton("Terminar turno");
+    private final JButton botaoHabilidadeEspecial = new JButton("Usar habilidade especial");
     private final JLabel informacao = new JLabel("Inicie um turno para realizar ações.");
     private ObservadoJogo observado;
 
@@ -23,14 +24,15 @@ public class PainelAcoesPartida extends JPanel implements ObservadorJogo {
         setBackground(new Color(190, 220, 173));
         setBorder(new CompoundBorder(new LineBorder(new Color(190, 145, 68)),
                 new EmptyBorder(8, 8, 8, 8)));
-        setMaximumSize(new Dimension(Integer.MAX_VALUE, 230));
+        setMaximumSize(new Dimension(Integer.MAX_VALUE, 280));
         JLabel titulo = new JLabel("AÇÕES DA PARTIDA");
         titulo.setForeground(new Color(166, 45, 48));
         titulo.setFont(new Font("SansSerif", Font.BOLD, 12));
         add(titulo, BorderLayout.NORTH);
-        JPanel botoes = new JPanel(new GridLayout(3, 1, 0, 6));
+        JPanel botoes = new JPanel(new GridLayout(0, 1, 0, 6));
         botoes.setOpaque(false);
-        JButton[] acoes = {botaoComprarMelhoria, botaoEntregarTesouros, botaoTerminarTurno};
+        JButton[] acoes = {botaoComprarMelhoria, botaoEntregarTesouros,
+                botaoHabilidadeEspecial, botaoTerminarTurno};
         for (JButton botao : acoes) {
             botao.setBackground(new Color(250, 245, 226));
             botao.setForeground(texto);
@@ -40,6 +42,8 @@ public class PainelAcoesPartida extends JPanel implements ObservadorJogo {
             botoes.add(botao);
         }
         botaoComprarMelhoria.setToolTipText("A compra de melhorias ainda não está disponível.");
+        botaoHabilidadeEspecial.setName("botaoHabilidadeEspecial");
+        botaoHabilidadeEspecial.setToolTipText("Ativar a habilidade do personagem uma vez neste turno.");
         add(botoes, BorderLayout.CENTER);
         informacao.setForeground(texto);
         informacao.setFont(new Font("SansSerif", Font.PLAIN, 11));
@@ -49,6 +53,7 @@ public class PainelAcoesPartida extends JPanel implements ObservadorJogo {
     public JButton getBotaoComprarMelhoria() { return botaoComprarMelhoria; }
     public JButton getBotaoEntregarTesouros() { return botaoEntregarTesouros; }
     public JButton getBotaoTerminarTurno() { return botaoTerminarTurno; }
+    public JButton getBotaoHabilidadeEspecial() { return botaoHabilidadeEspecial; }
 
     public void mostrarInformacao(String mensagem) {
         informacao.setText("<html>" + mensagem + "</html>");
@@ -68,6 +73,7 @@ public class PainelAcoesPartida extends JPanel implements ObservadorJogo {
 
     private void atualizarInterface(ObservadoJogo observado) {
         this.observado = observado;
+        botaoHabilidadeEspecial.setEnabled(observado.podeAtivarHabilidadeJogadorAtual());
         boolean turno = observado.isTurnoEmAndamento() && !observado.isPartidaEncerrada();
         botaoTerminarTurno.setEnabled(turno);
         botaoEntregarTesouros.setEnabled(turno && !observado.getLocaisEntregaDisponiveis().isEmpty());
