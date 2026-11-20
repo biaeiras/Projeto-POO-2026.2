@@ -997,4 +997,70 @@ class TabuleiroPrincipal {
 	    pilhaMelhorias.clear();
 	    pilhaMelhorias.addAll(pilhaSalva);
 	}
+	
+	void restaurarEstadoMapa(HashMap<ParadaID, ArrayList<Cor>> yurtsSalvas, HashMap<ParadaID, TipoBonus> bonusSalvos,KhanID khanSalvo, ArrayList<Jogador> jogadores) {
+
+	    if (yurtsSalvas == null || bonusSalvos == null || jogadores == null) {
+	        throw new IllegalArgumentException("Estado do mapa inválido.");
+	    }
+
+	    // Restaurar yurts
+	    yurts.clear();
+
+	    for (Parada parada : mapa.values()) {
+	        parada.setYurt(new ArrayList<Jogador>());
+	    }
+
+	    for (Map.Entry<ParadaID, ArrayList<Cor>> entrada : yurtsSalvas.entrySet()) {
+
+	        Parada parada = mapa.get(entrada.getKey());
+
+	        if (parada == null || entrada.getValue() == null) {
+	            throw new IllegalArgumentException("Yurt salva inválida.");
+	        }
+
+	        ArrayList<Jogador> donos = new ArrayList<>();
+
+	        for (Cor cor : entrada.getValue()) {
+
+	            Jogador dono = null;
+
+	            for (Jogador jogador : jogadores) {
+	                if (jogador.getTabuleiroJogador()
+	                        .getPersonagem().getCor() == cor) {
+	                    dono = jogador;
+	                    break;
+	                }
+	            }
+
+	            if (dono == null) {
+	                throw new IllegalArgumentException("Jogador das yurts não encontrado.");
+	            }
+
+	            donos.add(dono);
+	        }
+
+	        parada.setYurt(donos);
+	        yurts.put(entrada.getKey(), new ArrayList<>(entrada.getValue()));
+	    }
+
+	    // Restaurar bônus nas paradas
+	    for (Parada parada : mapa.values()) {
+	        parada.setBonus(null);
+	    }
+
+	    for (Map.Entry<ParadaID, TipoBonus> entrada : bonusSalvos.entrySet()) {
+
+	        Parada parada = mapa.get(entrada.getKey());
+
+	        if (parada == null || entrada.getValue() == null) {
+	            throw new IllegalArgumentException("Bônus salvo inválido.");
+	        }
+
+	        parada.setBonus(entrada.getValue());
+	    }
+
+	    // Restaurar Khan
+	    this.khan = khanSalvo;
+	}
 }

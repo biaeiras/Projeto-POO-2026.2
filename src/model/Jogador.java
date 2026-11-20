@@ -334,9 +334,7 @@ class Jogador {
     }
 
     // Restaura os inventários do jogador.
-    void restaurarInventarios(
-            HashMap<TipoTributo, Integer> tributosSalvos,
-            HashMap<TipoTesouro, Integer> tesourosSalvos) {
+    void restaurarInventarios(HashMap<TipoTributo, Integer> tributosSalvos, HashMap<TipoTesouro, Integer> tesourosSalvos) {
 
         if (tributosSalvos == null || tesourosSalvos == null) {
             throw new IllegalArgumentException("Inventário salvo inválido.");
@@ -368,6 +366,42 @@ class Jogador {
         tesouros.clear();
         tesouros.putAll(tesourosSalvos);
     }
+    
+    void restaurarPecasBonus(ArrayList<TipoBonus> tipos, ArrayList<Boolean> usadas) {
+
+		if (tipos == null || usadas == null || tipos.size() != usadas.size()) {
+			throw new IllegalArgumentException("Dados das peças bônus inválidos.");
+		}
+		
+		// Verifica os dados antes de alterar o estado atual
+		for (int i = 0; i < tipos.size(); i++) {
+			
+			if (tipos.get(i) == null || usadas.get(i) == null) {
+				throw new IllegalArgumentException("Peça bônus inválida.");
+			}
+			
+			if (tipos.indexOf(tipos.get(i)) != i) {
+				throw new IllegalArgumentException("Peça bônus duplicada.");
+			}
+		}
+		
+		pecasBonus.clear();
+		ordemPecasBonus.clear();
+		
+		for (int i = 0; i < tipos.size(); i++) {
+			
+			TipoBonus tipo = tipos.get(i);
+			
+			PecaBonus peca = new PecaBonus(tipo);
+			
+			if (usadas.get(i)) {
+				peca.usar();
+			}
+			
+			pecasBonus.put(tipo, peca);
+			ordemPecasBonus.add(tipo);
+		}
+}
     
     
     

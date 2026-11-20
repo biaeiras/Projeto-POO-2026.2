@@ -1037,4 +1037,37 @@ class Partida  {
 	    this.tabuleiroPrincipal = tabuleiro;
 	}
 	
+	void restaurarConselheirosAbertos( ArrayList<TipoConselheiroAberto> tipos, ArrayList<Jogador> cumpridosPor) {
+
+	    if (tipos == null || cumpridosPor == null
+	            || tipos.size() != 4 || cumpridosPor.size() != 4) {
+	        throw new IllegalArgumentException("Dados dos conselheiros abertos inválidos.");
+	    }
+
+	    for (int i = 0; i < 4; i++) {
+	        TipoConselheiroAberto tipo = tipos.get(i);
+	        Jogador jogador = cumpridosPor.get(i);
+
+	        if (tipo == null || tipos.indexOf(tipo) != i) {
+	            throw new IllegalArgumentException("Conselheiro aberto inválido ou repetido.");
+	        }
+
+	        if (jogador != null && !jogadores.contains(jogador)) {
+	            throw new IllegalArgumentException("Jogador do conselheiro não pertence à partida.");
+	        }
+	    }
+
+	    conselheirosAbertos.clear();
+
+	    for (int i = 0; i < 4; i++) {
+	        ConselheiroAberto carta = new ConselheiroAberto(tipos.get(i));
+
+	        if (cumpridosPor.get(i) != null) {
+	            carta.restaurarCumprimento(cumpridosPor.get(i));
+	        }
+
+	        conselheirosAbertos.put(i, carta);
+	    }
+	}
+	
 }

@@ -93,12 +93,16 @@ class ConselheiroAberto extends CartaConselheiro {
 	void marcarCumprida(Jogador jogador) {
 		if( jogador == null) {
 			throw new IllegalStateException("Jogador não pode ser nulo"); 
-	}
+		}
 	
-	if (isCumprida()) {
-	    throw new IllegalStateException("Carta já foi cumprida por outro jogador");
+		if (isCumprida()) {
+			throw new IllegalStateException("Carta já foi cumprida por outro jogador");
 		}
 		cumpridaPor = jogador;
 		//assim que essa carta for cumprida ela sai do jogo 
 	 }	
+	
+	void restaurarCumprimento(Jogador jogador) {
+	    cumpridaPor = jogador;
+	}
 }
