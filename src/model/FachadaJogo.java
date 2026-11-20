@@ -25,6 +25,25 @@ public class FachadaJogo implements ObservadoJogo {
     private Partida partida;
 
     @Override
+    public boolean possuiHabilidadeAtivavelJogadorAtual() {
+        return partida != null && partida.possuiHabilidadeAtivavelJogadorAtual();
+    }
+
+    @Override
+    public boolean podeAtivarHabilidadeJogadorAtual() {
+        return partida != null && partida.podeAtivarHabilidadeJogadorAtual();
+    }
+
+    public boolean ativarHabilidadeJogadorAtual() {
+        verificarPartidaIniciada();
+        boolean ativou = partida.ativarHabilidadeJogadorAtual();
+        if (ativou) {
+            notificarObservadores();
+        }
+        return ativou;
+    }
+
+    @Override
     public boolean isEscolhaPeaoPendente() {
         return partida != null && partida.isEscolhaPeaoPendente();
     }

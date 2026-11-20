@@ -38,4 +38,16 @@ abstract class Personagem {
     int getQuantidadePeoesIniciais() {
         return 1;
     }
+
+    boolean possuiHabilidadeAtivavel() {
+        return false;
+    }
+
+    boolean podeAtivarHabilidade(Turno turno) {
+        return false;
+    }
+
+    boolean ativarHabilidade(Turno turno) {
+        return false;
+    }
 }

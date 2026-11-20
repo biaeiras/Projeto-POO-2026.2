@@ -12,6 +12,7 @@ class Turno {
 	private HashMap<TipoMelhoria, Integer> recursosVirtuais;
 
 	private boolean khanPendente;
+    private boolean habilidadeEspecialUsada;
 
 	private HashSet<Provincia> provinciasVisitadas;
 	
@@ -77,6 +78,14 @@ class Turno {
 	    }
 	}
 	
+    boolean isHabilidadeEspecialUsada() {
+        return habilidadeEspecialUsada;
+    }
+
+    void registrarUsoHabilidadeEspecial() {
+        habilidadeEspecialUsada = true;
+    }
+
 	Jogador getJogador() {
 	    return jogador;
 	}

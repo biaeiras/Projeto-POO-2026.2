@@ -92,6 +92,31 @@ class Partida  {
         return votosFichaNeutra;
     }
 
+    boolean possuiHabilidadeAtivavelJogadorAtual() {
+        Jogador jogador = getJogadorAtual();
+        return jogador != null && jogador.getTabuleiroJogador().getPersonagem().possuiHabilidadeAtivavel();
+    }
+
+    boolean podeAtivarHabilidadeJogadorAtual() {
+        if (encerrada || turnoAtual == null) {
+            return false;
+        }
+        Personagem personagem = turnoAtual.getJogador().getTabuleiroJogador().getPersonagem();
+        return personagem.podeAtivarHabilidade(turnoAtual);
+    }
+
+    boolean ativarHabilidadeJogadorAtual() {
+        if (!podeAtivarHabilidadeJogadorAtual()) {
+            return false;
+        }
+        Personagem personagem = turnoAtual.getJogador().getTabuleiroJogador().getPersonagem();
+        boolean ativou = personagem.ativarHabilidade(turnoAtual);
+        if (ativou) {
+            verificarConselheirosAbertos();
+        }
+        return ativou;
+    }
+
     int verificarConselheirosAbertos() {
         if (encerrada || turnoAtual == null) {
             return 0;
