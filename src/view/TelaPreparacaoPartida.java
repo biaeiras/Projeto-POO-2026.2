@@ -33,7 +33,7 @@ import javax.swing.plaf.basic.BasicButtonUI;
 
 import model.Cor;
 
-public class TelaPreparacaoPartida extends JFrame {
+public class TelaPreparacaoPartida extends JFrame implements model.ObservadorJogo {
 
     private static final Color VERMELHO = new Color(166, 45, 48);
     private static final Color DOURADO = new Color(190, 145, 68);
@@ -260,6 +260,31 @@ public class TelaPreparacaoPartida extends JFrame {
         conteudo.add(cartas, BorderLayout.CENTER);
         mensagem.setText("Clique diretamente na carta para escolher seu conselheiro.");
         detalhe.setText("Escolha uma carta. A outra será descartada.");
+        atualizarLayout();
+    }
+
+    @Override
+    public void atualizar(final model.ObservadoJogo observado) {
+        if (!javax.swing.SwingUtilities.isEventDispatchThread()) {
+            javax.swing.SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() { atualizar(observado); }
+            });
+            return;
+        }
+        if (!observado.isEscolhaMelhoriaInicialPendente()) return;
+        ArrayList<model.Melhoria> opcoes = observado.getOpcoesMelhoriaInicial();
+        prepararEtapaConselheiros("MELHORIA INICIAL DE JOCHI");
+        primeiraCarta.definirCarta(ImagensMelhorias.loadImage(opcoes.get(0)));
+        segundaCarta.definirCarta(ImagensMelhorias.loadImage(opcoes.get(1)));
+        JPanel cartas = new JPanel(new GridLayout(1, 2, 32, 0));
+        cartas.setOpaque(false);
+        cartas.setBorder(BorderFactory.createEmptyBorder(4, 70, 4, 70));
+        cartas.add(criarMolduraCarta(primeiraCarta, "PRIMEIRA OPÇÃO"));
+        cartas.add(criarMolduraCarta(segundaCarta, "SEGUNDA OPÇÃO"));
+        conteudo.add(cartas, BorderLayout.CENTER);
+        mensagem.setText("Clique na melhoria que deseja colocar gratuitamente na coluna branca.");
+        detalhe.setText("A melhoria não escolhida volta para a pilha.");
         atualizarLayout();
     }
 

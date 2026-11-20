@@ -9,6 +9,16 @@ class Jochi extends Personagem {
     }
 
     @Override
+    boolean ignoraCorMelhoria() {
+        return true;
+    }
+
+    @Override
+    int getQuantidadeOpcoesMelhoriaInicial() {
+        return 2;
+    }
+
+    @Override
     HashMap<Enum<?>, Integer> getAcoesBase(Regiao regiao) {
         if (regiao == null) {
             return criarAcoesBase(2, 1, true, false);

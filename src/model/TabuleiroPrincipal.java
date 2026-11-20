@@ -925,7 +925,20 @@ class TabuleiroPrincipal {
     	return ret;
     }
     
+    void devolverMelhoriaAPilha(Melhoria melhoria) {
+        if (melhoria != null) pilhaMelhorias.insertElementAt(melhoria, 0);
+    }
+
+    Melhoria consultarMelhoria(int index) {
+        return index < 0 || index >= melhorias.size() ? null : melhorias.get(index).getMelhoria();
+    }
+
+    Melhoria consultarMelhoriaDaPilha() {
+        return pilhaMelhorias.isEmpty() ? null : pilhaMelhorias.peek();
+    }
+
     Melhoria comprarMelhoria(int index) {
+        if (consultarMelhoria(index) == null) return null;
     	SlotMelhoria slot = melhorias.get(index);
     	Melhoria ret = slot.getMelhoria();
     	slot.setMelhoria(null);
@@ -934,7 +947,7 @@ class TabuleiroPrincipal {
     }
     
     Melhoria comprarMelhoriaDaPilha() {
-    	return pilhaMelhorias.pop();
+    	return pilhaMelhorias.isEmpty() ? null : pilhaMelhorias.pop();
     }
     
 	public boolean todasCidadesConquistadas() {

@@ -125,6 +125,7 @@ public class ControllerAPI {
 
     private void abrirPreparacao() {
         preparacao = new TelaPreparacaoPartida();
+        preparacao.atualizar(registrarObservador(preparacao));
 
         for (Cor cor : Cor.values()) {
             final Cor escolhida = cor;
@@ -253,6 +254,10 @@ public class ControllerAPI {
     }
 
     private void escolherConselheiro(int indice) {
+        if (fachada.isEscolhaMelhoriaInicialPendente()) {
+            if (fachada.escolherMelhoriaInicial(indice)) avancarPreparacao();
+            return;
+        }
         boolean escolheu =
             fachada.escolherConselheiroJogadorAtual(indice);
 
@@ -264,6 +269,11 @@ public class ControllerAPI {
             return;
         }
 
+        if (fachada.isEscolhaMelhoriaInicialPendente()) return;
+        avancarPreparacao();
+    }
+
+    private void avancarPreparacao() {
         // Também avança depois da última escolha.
         // Assim, o primeiro jogador volta a ser o atual.
         fachada.avancarJogadorNaPreparacao();
@@ -304,6 +314,7 @@ public class ControllerAPI {
             }
         });
 
+        removerObservador(preparacao);
         preparacao.dispose();
         viewPrincipal.exibir();
         mostrarJanelaJogador();

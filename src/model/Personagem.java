@@ -35,6 +35,14 @@ abstract class Personagem {
         return acoes;
     }
     
+    boolean ignoraCorMelhoria() {
+        return false;
+    }
+
+    int getQuantidadeOpcoesMelhoriaInicial() {
+        return 0;
+    }
+
     int getQuantidadePeoesIniciais() {
         return 1;
     }

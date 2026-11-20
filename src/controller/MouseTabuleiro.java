@@ -27,6 +27,8 @@ class MouseTabuleiro extends MouseAdapter {
             return;
         }
 
+        if (fachada.isEscolhaColunaMelhoriaPendente()) return;
+
         if (fachada.isEscolhaPeaoPendente()) {
             if (evento.getButton() == MouseEvent.BUTTON1) {
                 int indice = viewAPI.getClickPeaoSelecionavel(evento.getX(), evento.getY());

@@ -123,10 +123,28 @@ public class FachadaJogo implements ObservadoJogo {
         return escolheu;
     }
 
+    @Override
+    public boolean isEscolhaMelhoriaInicialPendente() {
+        return partida != null && partida.isEscolhaMelhoriaInicialPendente();
+    }
+
+    @Override
+    public ArrayList<Melhoria> getOpcoesMelhoriaInicial() {
+        return partida == null ? new ArrayList<Melhoria>() : partida.getOpcoesMelhoriaInicial();
+    }
+
+    public boolean escolherMelhoriaInicial(int indice) {
+        verificarPartidaIniciada();
+        boolean escolheu = partida.escolherMelhoriaInicial(indice);
+        if (escolheu) notificarObservadores();
+        return escolheu;
+    }
+
     public void avancarJogadorNaPreparacao() {
         verificarPartidaIniciada();
 
-        if (partida.isEncerrada() || partida.getTurnoAtual() != null) {
+        if (partida.isEncerrada() || partida.getTurnoAtual() != null
+                || partida.isEscolhaMelhoriaInicialPendente()) {
             throw new IllegalStateException(
                 "Não é possível avançar na preparação neste momento."
             );
@@ -776,6 +794,28 @@ public class FachadaJogo implements ObservadoJogo {
     	notificarObservadores();
     }
     
+    @Override
+    public boolean isEscolhaColunaMelhoriaPendente() {
+        return partida != null && partida.isEscolhaColunaMelhoriaPendente();
+    }
+
+    @Override
+    public ArrayList<Integer> getColunasDisponiveisMelhoria() {
+        return partida == null ? new ArrayList<Integer>() : partida.getColunasDisponiveisMelhoria();
+    }
+
+    @Override
+    public Melhoria getMelhoriaCompraPendente() {
+        return partida == null ? null : partida.getMelhoriaCompraPendente();
+    }
+
+    public boolean escolherColunaMelhoria(int coluna) {
+        verificarPartidaIniciada();
+        boolean escolheu = partida.escolherColunaMelhoria(coluna);
+        if (escolheu) notificarObservadores();
+        return escolheu;
+    }
+
     public boolean isCompravel() {
     	return partida.isCompravel();
     }

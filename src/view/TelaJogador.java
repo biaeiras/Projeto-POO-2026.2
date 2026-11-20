@@ -30,6 +30,9 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
     private PainelTabuleiroJogador painelTabuleiroJogador;
     private PainelPecasBonus painelPecasBonus;
     private JLabel informacaoTabuleiro;
+    private JPanel previaMelhoria;
+    private PainelCartaConselheiroSecreto imagemMelhoriaPendente;
+
     private final HashMap<String, JLabel[]> contadoresTesouros = new HashMap<>();
  
     
@@ -63,7 +66,9 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
     }
 
     private void criarConteudo() {
-        JPanel conteudo = new JPanel(new BorderLayout(6, 6));
+        JPanel conteudo = new ConteudoRolavel();
+        conteudo.setLayout(new BorderLayout(6, 6));
+        conteudo.setMinimumSize(new Dimension(920, 650));
         conteudo.setOpaque(false);
 
         // Tabuleiro individual
@@ -139,7 +144,12 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
         conteudo.add(tabuleiro, BorderLayout.CENTER);
         conteudo.add(inferior, BorderLayout.SOUTH);
 
-        add(conteudo, BorderLayout.CENTER);
+        JScrollPane rolagem = new JScrollPane(conteudo);
+        rolagem.setBorder(null);
+        rolagem.getViewport().setBackground(pergaminho);
+        rolagem.getVerticalScrollBar().setUnitIncrement(24);
+        rolagem.getHorizontalScrollBar().setUnitIncrement(24);
+        add(rolagem, BorderLayout.CENTER);
     }
 
 
@@ -156,6 +166,9 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
             new PainelTabuleiroJogador(null);
 
         cartela.add(criarMolduraTabuleiro(painelTabuleiroJogador), BorderLayout.CENTER);
+        previaMelhoria = criarPreviaMelhoria();
+        previaMelhoria.setVisible(false);
+        cartela.add(previaMelhoria, BorderLayout.EAST);
 
         informacaoTabuleiro = new JLabel(
             "Aguardando início da partida.",
@@ -167,6 +180,65 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
         return cartela;
     }
     
+    private JPanel criarPreviaMelhoria() {
+        JPanel painel = new JPanel(new BorderLayout(6, 10));
+        painel.setName("previaMelhoriaPendente");
+        painel.setBackground(new Color(250, 240, 216));
+        painel.setBorder(new CompoundBorder(new LineBorder(dourado),
+                new EmptyBorder(12, 10, 12, 10)));
+        painel.setPreferredSize(new Dimension(180, 180));
+        JLabel titulo = new JLabel("<html><center>MELHORIA A<br>POSICIONAR</center></html>", SwingConstants.CENTER);
+        titulo.setForeground(vermelho);
+        titulo.setFont(new Font("SansSerif", Font.BOLD, 12));
+        painel.add(titulo, BorderLayout.NORTH);
+        imagemMelhoriaPendente = new PainelCartaConselheiroSecreto();
+        imagemMelhoriaPendente.setName("imagemMelhoriaPendente");
+        imagemMelhoriaPendente.setPreferredSize(new Dimension(150, 100));
+        JPanel centro = new JPanel(new GridBagLayout());
+        centro.setOpaque(false);
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1;
+        centro.add(imagemMelhoriaPendente, c);
+        painel.add(centro, BorderLayout.CENTER);
+        JLabel instrucao = new JLabel("<html><center>Clique na coluna<br>de destino.</center></html>", SwingConstants.CENTER);
+        instrucao.setForeground(texto);
+        instrucao.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        painel.add(instrucao, BorderLayout.SOUTH);
+        return painel;
+    }
+
+    private static class ConteudoRolavel extends JPanel implements Scrollable {
+        @Override
+        public Dimension getPreferredSize() {
+            Dimension tamanho = super.getPreferredSize();
+            Dimension minimo = getMinimumSize();
+            return new Dimension(Math.max(tamanho.width, minimo.width),
+                    Math.max(tamanho.height, minimo.height));
+        }
+
+        @Override
+        public Dimension getPreferredScrollableViewportSize() { return getPreferredSize(); }
+
+        @Override
+        public int getScrollableUnitIncrement(Rectangle visivel, int orientacao, int direcao) { return 24; }
+
+        @Override
+        public int getScrollableBlockIncrement(Rectangle visivel, int orientacao, int direcao) {
+            return Math.max(24, (orientacao == SwingConstants.VERTICAL ? visivel.height : visivel.width) - 24);
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            return getParent() != null && getParent().getWidth() >= getMinimumSize().width;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportHeight() {
+            return getParent() != null && getParent().getHeight() >= getMinimumSize().height;
+        }
+    }
+
     static JPanel criarMolduraTabuleiro(final PainelTabuleiroJogador painel) {
         JPanel moldura = new JPanel(null) {
             @Override
@@ -379,6 +451,15 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
     }
 
     private void atualizarInterface(ObservadoJogo observado) {
+        model.Melhoria melhoria = observado.getMelhoriaCompraPendente();
+        imagemMelhoriaPendente.definirCarta(melhoria == null ? null : ImagensMelhorias.loadImage(melhoria));
+        boolean mostrarPrevia = observado.isEscolhaColunaMelhoriaPendente() && melhoria != null;
+        if (previaMelhoria.isVisible() != mostrarPrevia) {
+            previaMelhoria.setVisible(mostrarPrevia);
+            revalidate();
+            repaint();
+        }
+        painelTabuleiroJogador.definirDestinosMelhoria(observado.getColunasDisponiveisMelhoria());
         atualizarTesouros(observado);
        
         if (!observado.existePartida()) {
@@ -455,6 +536,8 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
 
         if (observado.isPartidaEncerrada()) {
             situacao = "Partida encerrada.";
+        } else if (observado.isEscolhaColunaMelhoriaPendente()) {
+            situacao = "Posicione a melhoria ao lado: clique no retângulo inferior de uma coluna disponível.";
         } else if (observado.isEscolhaPeaoPendente()) {
             situacao = "Clique no mapa no peão da Altani que deseja usar neste turno.";
         } else if (turnoAberto) {
