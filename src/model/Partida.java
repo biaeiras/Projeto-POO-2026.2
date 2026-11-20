@@ -1070,4 +1070,10 @@ class Partida  {
 	    }
 	}
 	
+	// Disponibiliza a criação do personagem para a restauração,
+	// sem expor diretamente o método interno da partida.
+	Personagem criarPersonagemParaRestauracao(Cor cor) {
+	    return criarPersonagem(cor);
+	}
+	
 }

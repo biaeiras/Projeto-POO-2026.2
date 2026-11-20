@@ -251,6 +251,280 @@ class PersistenciaPartida {
         return resultado.toString();
     }
     
+    
+    private static Jogador restaurarJogador( HashMap<String, String> dados, Partida partida, int indice) throws IOException {
+
+        String prefixo = "JOGADOR_" + indice + "_";
+
+        // Recupera a cor e cria o personagem correspondente.
+        Cor cor = obterEnum( obter(dados, prefixo + "COR"),Cor.class );
+
+        Personagem personagem = partida.criarPersonagemParaRestauracao(cor);
+
+        TabuleiroJogador tabuleiroJogador =new TabuleiroJogador(personagem);
+
+        // Recupera as duas opções de conselheiro secreto.
+        String[] tipos = obter( dados, prefixo + "OPCOES_CONSELHEIRO").split(",", -1);
+
+        if (tipos.length != 2) {
+            throw new IOException("Quantidade inválida de conselheiros do jogador " + indice );
+        }
+
+        ArrayList<ConselheiroSecreto> opcoes =new ArrayList<>();
+
+        for (String tipo : tipos) {
+            opcoes.add(new ConselheiroSecreto(obterEnum(tipo, TipoConselheiroSecreto.class) ));
+        }
+
+        Jogador jogador = new Jogador(opcoes, tabuleiroJogador);
+
+        // Recupera os dados básicos do jogador.
+        String conselheiroSalvo = obter(dados, prefixo + "CONSELHEIRO");
+
+        TipoConselheiroSecreto conselheiro = null;
+
+        if (!conselheiroSalvo.equals("NENHUM")) {
+            conselheiro = obterEnum(conselheiroSalvo,TipoConselheiroSecreto.class );
+        }
+
+        jogador.restaurarEstado( obterInteiro(dados, prefixo + "YURTS"),obterInteiro(dados, prefixo + "VOTOS"),conselheiro );
+
+        // Restaura os tributos.
+        HashMap<TipoTributo, Integer> tributos = new HashMap<>();
+
+        for (TipoTributo tipo : TipoTributo.values()) {
+            tributos.put(tipo, obterInteiro(dados, prefixo + "TRIBUTO_" + tipo.name() ));
+        }
+
+        // Restaura os tesouros.
+        HashMap<TipoTesouro, Integer> tesouros = new HashMap<>();
+
+        for (TipoTesouro tipo : TipoTesouro.values()) {
+            tesouros.put(tipo, obterInteiro(dados, prefixo + "TESOURO_" + tipo.name()));
+        }
+
+        jogador.restaurarInventarios(tributos, tesouros);
+
+        // Restaura as peças bônus e seu estado de utilização.
+        int quantidadeBonus = obterInteiro(dados, prefixo + "QUANTIDADE_PECAS_BONUS");
+
+        if (quantidadeBonus < 0) {
+        	throw new IOException("Quantidade de peças bônus inválida.");
+        }
+
+        ArrayList<TipoBonus> tiposBonus = new ArrayList<>();
+        ArrayList<Boolean> bonusUsados = new ArrayList<>();
+
+        for (int i = 0; i < quantidadeBonus; i++) {
+        	tiposBonus.add(obterEnum(obter(dados, prefixo + "PECA_BONUS_" + i),TipoBonus.class));
+
+        	bonusUsados.add(obterBooleano(dados, prefixo + "PECA_BONUS_USADA_" + i));
+        }
+
+        jogador.restaurarPecasBonus(tiposBonus, bonusUsados);
+
+	     // Restaura as ativações das colunas.
+	     HashMap<Regiao, Boolean> colunasAtivadas = new HashMap<>();
+
+	     for (Regiao regiao : Regiao.values()) {
+	         colunasAtivadas.put( regiao,obterBooleano( dados,prefixo + "COLUNA_ATIVADA_" + regiao.name())
+	         );
+	     }
+
+	     tabuleiroJogador.restaurarAtivacoes(obterInteiro(dados, prefixo + "FICHAS_ATIVACAO"),colunasAtivadas,obterBooleano(dados, prefixo + "COLUNA_BRANCA_ATIVADA"));
+
+    	// Restaura as melhorias de cada região.
+    	HashMap<Regiao, ArrayList<Melhoria>> melhoriasRegiao = new HashMap<>();
+
+    	for (Regiao regiao : Regiao.values()) {
+    	    melhoriasRegiao.put(regiao,restaurarListaMelhorias(obter(dados, prefixo + "MELHORIAS_" + regiao.name())));
+    	}
+
+	    	// Restaura as melhorias da coluna branca.
+    	ArrayList<Melhoria> melhoriasBrancas =restaurarListaMelhorias( obter(dados, prefixo + "MELHORIAS_BRANCAS"));
+
+    	tabuleiroJogador.restaurarMelhorias( melhoriasRegiao, melhoriasBrancas);
+
+    	return jogador;
+	    
+    }
+    
+    private static ArrayList<Melhoria> restaurarListaMelhorias( String valor) throws IOException {
+
+        ArrayList<Melhoria> melhorias = new ArrayList<>();
+
+        if (valor.isEmpty()) {
+            return melhorias;
+        }
+
+        for (String item : valor.split(",", -1)) {
+
+        	if (item.equals("VAZIO")) {
+        	    melhorias.add(null);
+        	    continue;
+        	}
+
+            String[] partes = item.split(":", -1);
+
+            if (partes.length != 2) {
+                throw new IOException("Melhoria inválida: " + item);
+            }
+
+            TipoMelhoria tipo = obterEnum(
+                    partes[0], TipoMelhoria.class
+            );
+
+            Regiao regiao = partes[1].equals("BRANCA") ? null : obterEnum(partes[1], Regiao.class);
+
+            melhorias.add(new Melhoria(tipo, regiao));
+        }
+
+        return melhorias;
+    }
+    
+    //Lê a quantidade de jogadores salva, cria uma partida vazia, reconstrói cada jogador usando o método restaurarJogador e adiciona os jogadores à nova partida
+    
+    private static Partida restaurarJogadores( HashMap<String, String> dados) throws IOException {
+
+        int quantidade = obterInteiro(dados, "QUANTIDADE_JOGADORES");
+
+        if (quantidade < 2 || quantidade > 5) {
+            throw new IOException("Quantidade de jogadores inválida.");
+        }
+
+        Partida partida = new Partida();
+
+        for (int i = 0; i < quantidade; i++) {
+            Jogador jogador = restaurarJogador(dados, partida, i);
+
+            partida.adicionarJogador(jogador);
+        }
+
+        // Associa cada peão ao seu respectivo jogador.
+        HashMap<Peao, Jogador> peoes = new HashMap<>();
+
+        for (Jogador jogador : partida.getJogadores()) {
+            for (Peao peao : jogador.getPeoes()) {
+                peoes.put(peao, jogador);
+            }
+        }
+
+        // Cria a estrutura inicial do tabuleiro principal.
+        TabuleiroPrincipal tabuleiro = new TabuleiroPrincipal(peoes,new Stack<Melhoria>() );
+
+        partida.restaurarTabuleiroPrincipal(tabuleiro);
+        
+        //  Restaura a pilha de cidades.
+        Stack<CidadeID> cidadesSalvas = new Stack<>();
+
+        String cidades = obter(dados, "PILHA_CIDADES");
+
+        if (!cidades.isEmpty()) {
+            for (String id : cidades.split(",", -1)) {
+                cidadesSalvas.push(
+                        obterEnum(id, CidadeID.class)
+                );
+            }
+        }
+
+        // Restaura a pilha de tesouros.
+        Stack<TipoTesouro> tesourosSalvos = new Stack<>();
+
+        String valorPilhaTesouros = obter(dados, "PILHA_TESOUROS");
+
+        if (!valorPilhaTesouros.isEmpty()) {
+            for (String tipo : valorPilhaTesouros.split(",", -1)) {
+                tesourosSalvos.push( obterEnum(tipo, TipoTesouro.class));
+            }
+        }
+
+        tabuleiro.restaurarPilhas(cidadesSalvas, tesourosSalvos);
+
+	     // Restaura a posição dos peões de cada jogador.
+	     for (int i = 0; i < quantidade; i++) {
+	         Jogador jogador = partida.getJogadores().get(i);
+	
+	         String prefixo = "JOGADOR_" + i + "_";
+	
+	         int quantidadePeoes = obterInteiro( dados, prefixo + "QUANTIDADE_PEOES");
+	
+	         if (quantidadePeoes != jogador.getQuantidadePeoes()) {
+	             throw new IOException("Quantidade de peões inválida para o jogador " + i);
+	         }
+	
+	         for (int p = 0; p < quantidadePeoes; p++) {
+	             String posicaoSalva = obter(dados, prefixo + "PEAO_" + p
+	             );
+	
+	             if (!posicaoSalva.equals("NENHUMA")) {
+	                 ParadaID id = obterEnum(posicaoSalva, ParadaID.class );
+	
+	                 Parada parada = tabuleiro.getParada(id);
+	
+	                 if (parada == null) {
+	                     throw new IOException("Posição de peão inválida: " + id);
+	                 }
+	
+	                 jogador.restaurarPosicaoPeao(p, parada);
+	             }
+	         }
+	     }
+	     
+	  // Restaura as cargas das províncias.
+	     for (Map.Entry<ProvinciaID, Provincia> entrada :tabuleiro.getProvincias().entrySet()) {
+
+	         int cargas = obterInteiro( dados, "PROVINCIA_" + entrada.getKey().name());
+
+	         entrada.getValue().restaurarCargas(cargas);
+	     }
+	     
+	  // Restaura o estado das cidades.
+	     for (Map.Entry<CidadeID, Cidade> entrada : tabuleiro.getCidades().entrySet()) {
+
+	         CidadeID id = entrada.getKey();
+	         String prefixoCidade = "CIDADE_" + id.name() + "_";
+
+	         // Recupera os tesouros ainda disponíveis.
+	         String valorTesouros = obter( dados, prefixoCidade + "TESOUROS");
+
+	         ArrayList<TipoTesouro> tesouros = new ArrayList<>();
+
+	         if (!valorTesouros.isEmpty()) {
+	             for (String tipo : valorTesouros.split(",", -1)) {
+	                 tesouros.add(obterEnum(tipo, TipoTesouro.class));
+	             }
+	         }
+
+	         // Recupera o jogador que conquistou a cidade.
+	         String corSalva = obter(  dados, prefixoCidade + "CONQUISTADOR");
+
+	         Jogador conquistador = null;
+
+	         if (!corSalva.equals("NENHUM")) {
+	             Cor cor = obterEnum(corSalva, Cor.class);
+
+	             for (Jogador jogador : partida.getJogadores()) {
+	                 if (jogador.getTabuleiroJogador().getPersonagem().getCor() == cor) {
+	                     conquistador = jogador;
+	                     break;
+	                 }
+	             }
+
+	             if (conquistador == null) {
+	                 throw new IOException(
+	                         "Conquistador não encontrado para a cidade " + id
+	                 );
+	             }
+	         }
+
+	         entrada.getValue().restaurarEstado(tesouros, conquistador);
+	     }
+
+	     return partida;
+
+       
+    }
+    
     private static HashMap<String, String> lerDados(File arquivo) throws IOException {
 
         if (arquivo == null || !arquivo.isFile()) {
@@ -273,9 +547,7 @@ class PersistenciaPartida {
                 int separador = linha.indexOf('=');
 
                 if (separador <= 0) {
-                    throw new IOException(
-                            "Linha inválida no arquivo: " + numeroLinha
-                    );
+                    throw new IOException( "Linha inválida no arquivo: " + numeroLinha );
                 }
 
                 String chave = linha.substring(0, separador).trim();
@@ -335,4 +607,5 @@ class PersistenciaPartida {
             throw new IOException("Valor inválido para " + tipo.getSimpleName() + ": " + valor, e);
         }
     }
+    
 }

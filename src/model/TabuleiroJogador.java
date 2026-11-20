@@ -271,6 +271,25 @@ class TabuleiroJogador {
     ArrayList<Melhoria> exportarMelhoriasBrancas() {
         return colunaBranca.getMelhorias();
     }
+    
+    void restaurarMelhorias( HashMap<Regiao, ArrayList<Melhoria>> melhoriasRegiao, ArrayList<Melhoria> melhoriasBrancas) {
+
+        if (melhoriasRegiao == null || melhoriasBrancas == null) {
+            throw new IllegalArgumentException( "Melhorias salvas inválidas."  );
+        }
+
+        for (Regiao regiao : Regiao.values()) {
+            ArrayList<Melhoria> melhorias = melhoriasRegiao.get(regiao);
+
+            if (melhorias == null) {
+                throw new IllegalArgumentException( "Melhorias ausentes para " + regiao );
+            }
+
+            colunasRegiao.get(regiao).restaurarMelhorias(melhorias);
+        }
+
+        colunaBranca.restaurarMelhorias(melhoriasBrancas);
+    }
 
     void restaurarAtivacoes(int fichasDisponiveis, HashMap<Regiao, Boolean> colunasAtivadas,
             boolean colunaBrancaAtivada) {
