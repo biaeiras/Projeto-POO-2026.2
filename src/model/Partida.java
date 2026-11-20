@@ -1000,5 +1000,41 @@ class Partida  {
 	    return pontuacaoFinalCalculada;
 	}
 	
+	void restaurarEstadoGeral(
+	        int indiceJogador,
+	        int votos,
+	        boolean partidaEncerrada,
+	        boolean fimDisparado,
+	        int rodadasExtras,
+	        int turnosRestantes,
+	        boolean pontuacaoCalculada) {
+
+	    if (indiceJogador < 0 || indiceJogador >= jogadores.size()|| votos < 0 || rodadasExtras < 0 || turnosRestantes < 0) {
+	        throw new IllegalArgumentException("Estado da partida inválido.");
+	    }
+
+	    this.indiceJogadorAtual = indiceJogador;
+	    this.votosFichaNeutra = votos;
+	    this.encerrada = partidaEncerrada;
+	    this.fimDisparado = fimDisparado;
+	    this.rodadasExtras = rodadasExtras;
+	    this.turnosRestantesAposFim = turnosRestantes;
+	    this.pontuacaoFinalCalculada = pontuacaoCalculada;
+	}
+	
+	void restaurarLimiteVotos(int limite) {
+	    if (limite <= 0) {
+	        throw new IllegalArgumentException("Limite de votos inválido.");
+	    }
+	    this.limiteVotos = limite;
+	}
+	
+	void restaurarTabuleiroPrincipal(TabuleiroPrincipal tabuleiro) {
+	    if (tabuleiro == null) {
+	        throw new IllegalArgumentException("Tabuleiro inválido.");
+	    }
+
+	    this.tabuleiroPrincipal = tabuleiro;
+	}
 	
 }
