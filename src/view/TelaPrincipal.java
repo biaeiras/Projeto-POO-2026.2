@@ -65,6 +65,31 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         criarPainelLateral();
         criarMensagens();
         controlador.configurarAcoes(painelAcoes);
+        
+        botaoSalvarPartida.addActionListener(evento -> {
+            JFileChooser seletor = new JFileChooser();
+            seletor.setDialogTitle("Salvar partida");
+
+            int resultado = seletor.showSaveDialog(this);
+
+            if (resultado == JFileChooser.APPROVE_OPTION) {
+                java.io.File arquivo = seletor.getSelectedFile();
+
+                if (!arquivo.getName().toLowerCase().endsWith(".txt")) {
+                    arquivo = new java.io.File( arquivo.getParentFile(),arquivo.getName() + ".txt" );
+                }
+
+                try {
+                    controlador.salvarPartida(arquivo);
+
+                    JOptionPane.showMessageDialog( this,"Partida salva com sucesso!");
+
+                } catch (java.io.IOException e) {
+                    JOptionPane.showMessageDialog( this,"Erro ao salvar a partida: " + e.getMessage(),"Erro",JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        });
 
         atualizar(controlador.registrarObservador(this));
         addWindowListener(new WindowAdapter() {

@@ -15,7 +15,7 @@ import java.util.HashSet;
 
 class PersistenciaPartida {
 
-    private PersistenciaPartida() {
+    PersistenciaPartida() {
     }
 
     static void salvarPartida(Partida partida, File arquivo) throws IOException {
@@ -241,11 +241,7 @@ class PersistenciaPartida {
                 continue;
             }
 
-            resultado.append(melhoria.getTipo().name())
-                    .append(":")
-                    .append(melhoria.getRegiao() == null
-                            ? "BRANCA"
-                            : melhoria.getRegiao().name());
+            resultado.append(melhoria.getTipo().name()).append(":") .append(melhoria.getRegiao() == null ? "BRANCA" : melhoria.getRegiao().name());
         }
 
         return resultado.toString();
@@ -263,20 +259,7 @@ class PersistenciaPartida {
 
         TabuleiroJogador tabuleiroJogador =new TabuleiroJogador(personagem);
 
-        // Recupera as duas opções de conselheiro secreto.
-        String[] tipos = obter( dados, prefixo + "OPCOES_CONSELHEIRO").split(",", -1);
-
-        if (tipos.length != 2) {
-            throw new IOException("Quantidade inválida de conselheiros do jogador " + indice );
-        }
-
-        ArrayList<ConselheiroSecreto> opcoes =new ArrayList<>();
-
-        for (String tipo : tipos) {
-            opcoes.add(new ConselheiroSecreto(obterEnum(tipo, TipoConselheiroSecreto.class) ));
-        }
-
-        Jogador jogador = new Jogador(opcoes, tabuleiroJogador);
+        Jogador jogador = new Jogador(tabuleiroJogador);
 
         // Recupera os dados básicos do jogador.
         String conselheiroSalvo = obter(dados, prefixo + "CONSELHEIRO");

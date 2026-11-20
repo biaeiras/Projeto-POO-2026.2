@@ -3,6 +3,8 @@ package model;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.io.File;
+import java.io.IOException;
 
 public class FachadaJogo implements ObservadoJogo {
 
@@ -705,4 +707,16 @@ public class FachadaJogo implements ObservadoJogo {
     public boolean podeSalvarPartida() {
 		return partida != null && !partida.isEncerrada() && partida.getTurnoAtual() == null && partida.todosEscolheramConselheiro(); 
 	}
+    
+    
+    public void carregarPartida(File arquivo) throws IOException {
+        PersistenciaPartida persistencia = new PersistenciaPartida();
+        Partida partidaCarregada = persistencia.carregarPartida(arquivo);
+        definirPartida(partidaCarregada);
+        notificarObservadores();
+    }
+    
+    public void salvarPartida(File arquivo) throws IOException {
+        PersistenciaPartida.salvarPartida(partida, arquivo);
+    }
 }

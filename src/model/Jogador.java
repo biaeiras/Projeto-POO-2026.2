@@ -67,6 +67,43 @@ class Jogador {
 
         this.conselheiroSecreto = null;
     }
+    
+    //construtor exclusivo para restauração 
+    
+    Jogador(TabuleiroJogador tabuleiroJogador) {
+
+        if (tabuleiroJogador == null) {
+            throw new IllegalArgumentException( "O tabuleiro do jogador deve ser informado." );
+        }
+
+        this.tributos = new HashMap<TipoTributo, Integer>();
+
+        for (TipoTributo tipo : TipoTributo.values()) {
+            this.tributos.put(tipo, 0);
+        }
+
+        this.tesouros = new HashMap<TipoTesouro, Integer>();
+
+        for (TipoTesouro tipo : TipoTesouro.values()) {
+            this.tesouros.put(tipo, 0);
+        }
+
+        this.yurtsDisponiveis = 12;
+        this.votos = 0;
+        this.tabuleiroJogador = tabuleiroJogador;
+
+        this.peoes = new ArrayList<>();
+
+        Personagem personagem = tabuleiroJogador.getPersonagem();
+        int quantidadePeoes = personagem.getQuantidadePeoesIniciais();
+
+        for (int i = 0; i < quantidadePeoes; i++) {
+            this.peoes.add(new Peao(this));
+        }
+
+        this.opcoesConselheiro = new ArrayList<>();
+        this.conselheiroSecreto = null;
+    }
 
     Peao getPeao(int indice) {
         return peoes.get(indice);
