@@ -18,6 +18,8 @@ public interface ObservadoJogo {
     boolean isTurnoEmAndamento();
     boolean possuiHabilidadeAtivavelJogadorAtual();
     boolean podeAtivarHabilidadeJogadorAtual();
+    boolean isSelecaoTesouroHabilidadePendente();
+    HashMap<CidadeID, Integer> getCidadesSelecionaveisHabilidade();
     boolean isEscolhaPeaoPendente();
     HashMap<Integer, ParadaID> getPeoesSelecionaveisJogadorAtual();
     boolean isPartidaEncerrada();

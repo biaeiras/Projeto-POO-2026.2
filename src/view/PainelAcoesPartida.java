@@ -73,11 +73,18 @@ public class PainelAcoesPartida extends JPanel implements ObservadorJogo {
 
     private void atualizarInterface(ObservadoJogo observado) {
         this.observado = observado;
-        botaoHabilidadeEspecial.setEnabled(observado.podeAtivarHabilidadeJogadorAtual());
+        boolean selecionando = observado.isSelecaoTesouroHabilidadePendente();
+        botaoHabilidadeEspecial.setText(selecionando
+                ? "Cancelar seleção de tesouro" : "Usar habilidade especial");
+        botaoHabilidadeEspecial.setToolTipText(selecionando
+                ? "Cancelar sem gastar moeda ou usar a habilidade."
+                : "Ativar a habilidade do personagem uma vez neste turno.");
+        botaoHabilidadeEspecial.setEnabled(selecionando || observado.podeAtivarHabilidadeJogadorAtual());
         boolean turno = observado.isTurnoEmAndamento() && !observado.isPartidaEncerrada();
-        botaoTerminarTurno.setEnabled(turno);
+        botaoTerminarTurno.setEnabled(turno && !selecionando);
         botaoEntregarTesouros.setEnabled(turno && !observado.getLocaisEntregaDisponiveis().isEmpty());
         mostrarInformacao(observado.isPartidaEncerrada() ? "Partida encerrada."
+                : selecionando ? "Clique em um tesouro de uma cidade com pelo menos dois tesouros ou cancele a seleção."
                 : turno ? "Use o mapa para mover, coletar e atacar."
                 : "Escolha uma coluna na tela do jogador.");
     }

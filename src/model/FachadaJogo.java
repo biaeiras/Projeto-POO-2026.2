@@ -44,6 +44,31 @@ public class FachadaJogo implements ObservadoJogo {
     }
 
     @Override
+    public boolean isSelecaoTesouroHabilidadePendente() {
+        return partida != null && partida.isSelecaoTesouroHabilidadePendente();
+    }
+
+    @Override
+    public HashMap<CidadeID, Integer> getCidadesSelecionaveisHabilidade() {
+        return partida == null ? new HashMap<CidadeID, Integer>()
+                : partida.getCidadesSelecionaveisHabilidade();
+    }
+
+    public boolean cancelarSelecaoTesouroHabilidade() {
+        verificarPartidaIniciada();
+        boolean cancelou = partida.cancelarSelecaoTesouroHabilidade();
+        if (cancelou) notificarObservadores();
+        return cancelou;
+    }
+
+    public boolean escolherTesouroHabilidade(CidadeID cidade, int indiceTesouro) {
+        verificarPartidaIniciada();
+        boolean escolheu = partida.escolherTesouroHabilidade(cidade, indiceTesouro);
+        if (escolheu) notificarObservadores();
+        return escolheu;
+    }
+
+    @Override
     public boolean isEscolhaPeaoPendente() {
         return partida != null && partida.isEscolhaPeaoPendente();
     }

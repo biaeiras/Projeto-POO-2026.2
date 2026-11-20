@@ -70,6 +70,10 @@ public class ControllerAPI {
         painel.getBotaoHabilidadeEspecial().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evento) {
+                if (fachada.isSelecaoTesouroHabilidadePendente()) {
+                    fachada.cancelarSelecaoTesouroHabilidade();
+                    return;
+                }
                 if (!fachada.ativarHabilidadeJogadorAtual()) {
                     painel.mostrarInformacao("Não foi possível usar a habilidade especial neste momento.");
                 }

@@ -98,7 +98,7 @@ class Partida  {
     }
 
     boolean podeAtivarHabilidadeJogadorAtual() {
-        if (encerrada || turnoAtual == null) {
+        if (encerrada || turnoAtual == null || isSelecaoAcaoPendente()) {
             return false;
         }
         Personagem personagem = turnoAtual.getJogador().getTabuleiroJogador().getPersonagem();
@@ -115,6 +115,50 @@ class Partida  {
             verificarConselheirosAbertos();
         }
         return ativou;
+    }
+
+    boolean isSelecaoAcaoPendente() {
+        return ativandoKhan != null || isSelecaoTesouroHabilidadePendente();
+    }
+
+    boolean isSelecaoTesouroHabilidadePendente() {
+        return !encerrada && turnoAtual != null && turnoAtual.isSelecaoTesouroHabilidadePendente();
+    }
+
+    boolean cancelarSelecaoTesouroHabilidade() {
+        return isSelecaoTesouroHabilidadePendente() && turnoAtual.cancelarSelecaoTesouroHabilidade();
+    }
+
+    HashMap<CidadeID, Integer> getCidadesSelecionaveisHabilidade() {
+        HashMap<CidadeID, Integer> cidades = new HashMap<>();
+        if (!isSelecaoTesouroHabilidadePendente()) return cidades;
+        for (CidadeID id : CidadeID.values()) {
+            Cidade cidade = tabuleiroPrincipal.getCidade(id);
+            if (id != CidadeID.KARAKORUM && cidade.getConquistador() == null
+                    && cidade.getContadorDeTesouros() >= 2) {
+                cidades.put(id, cidade.getContadorDeTesouros());
+            }
+        }
+        return cidades;
+    }
+
+    boolean escolherTesouroHabilidade(CidadeID id, int indiceTesouro) {
+        if (!getCidadesSelecionaveisHabilidade().containsKey(id)) return false;
+        Cidade cidade = tabuleiroPrincipal.getCidade(id);
+        if (indiceTesouro < 0 || indiceTesouro >= cidade.getContadorDeTesouros()) return false;
+        Jogador jogador = turnoAtual.getJogador();
+        boolean pagou;
+        if (turnoAtual.getQuantidadeRecursoVirtual(TipoMelhoria.MOEDA_VIRTUAL) > 0) {
+            pagou = turnoAtual.usarRecursoVirtual(TipoMelhoria.MOEDA_VIRTUAL);
+        } else {
+            pagou = jogador.gastarTributo(TipoTributo.MOEDA, 1);
+        }
+        if (!pagou) return false;
+        TipoTesouro tesouro = cidade.getTesouros().remove(indiceTesouro);
+        jogador.adicionarTesouro(tesouro);
+        turnoAtual.concluirSelecaoTesouroHabilidade();
+        verificarConselheirosAbertos();
+        return true;
     }
 
     int verificarConselheirosAbertos() {
@@ -348,7 +392,7 @@ class Partida  {
 	        return false;
 	    }
 
-	    if (isEscolhaPeaoPendente() || turnoAtual.isKhanPendente() || hasToMove) {
+	    if (isEscolhaPeaoPendente() || isSelecaoAcaoPendente() || turnoAtual.isKhanPendente() || hasToMove) {
 	        return false;
 	    }
 	    verificarConselheirosAbertos();
@@ -391,7 +435,7 @@ class Partida  {
     }
 
     boolean selecionarKhan(KhanID id) {
-        if (encerrada || turnoAtual == null || !getKhans().contains(id)) return false;
+        if (encerrada || turnoAtual == null || isSelecaoTesouroHabilidadePendente() || !getKhans().contains(id)) return false;
         ativandoKhan = id;
         selecaoKhan.clear();
         return id != KhanID.M || concluirAcaoKhan(id);
@@ -408,7 +452,7 @@ class Partida  {
     }
 
     boolean selecionarTributo(ProvinciaID id) {
-        if (encerrada || turnoAtual == null) return false;
+        if (encerrada || turnoAtual == null || isSelecaoTesouroHabilidadePendente()) return false;
         if (ativandoKhan == null) return pegarTributo(id);
         if (!tabuleiroPrincipal.getProvinicasKhan(ativandoKhan).contains(id)
                 || !selecaoKhan.add(id)) return false;
@@ -459,7 +503,7 @@ class Partida  {
 	boolean moverPeao(ParadaID id) {
 		Parada destino = tabuleiroPrincipal.getMapa().get(id);
 		//System.out.println(peaoAtivo.getJogador().getTabuleiroJogador().getPersonagem().getCor());
-        if (encerrada || turnoAtual == null || ativandoKhan != null || peaoAtivo == null || destino == null) {
+        if (encerrada || turnoAtual == null || isSelecaoAcaoPendente() || peaoAtivo == null || destino == null) {
 	        return false;
 	    }
 
@@ -496,7 +540,7 @@ class Partida  {
 	
 	boolean pegarTributo(ProvinciaID id) {
 		Provincia provincia = tabuleiroPrincipal.getProvincias().get(id);
-        if (encerrada || turnoAtual == null || ativandoKhan != null || provincia == null) {
+        if (encerrada || turnoAtual == null || isSelecaoAcaoPendente() || provincia == null) {
 	        return false;
 	    }
 
@@ -585,7 +629,7 @@ class Partida  {
 		int i = 0;
 		//System.out.println(i++);
 		Parada parada = tabuleiroPrincipal.getMapa().get(id);
-	    if (encerrada || turnoAtual == null || peaoAtivo == null || parada == null || !peaoPodeAgir(peaoAtivo)) {
+	    if (encerrada || turnoAtual == null || isSelecaoAcaoPendente() || peaoAtivo == null || parada == null || !peaoPodeAgir(peaoAtivo)) {
 	        return false;
 	    }
 	    //System.out.println(i++);
@@ -623,7 +667,7 @@ class Partida  {
 
     ArrayList<ParadaID> getLocaisEntregaDisponiveis() {
         ArrayList<ParadaID> locais = new ArrayList<>();
-        if (encerrada || turnoAtual == null || ativandoKhan != null || peaoAtivo == null
+        if (encerrada || turnoAtual == null || isSelecaoAcaoPendente() || peaoAtivo == null
                 || !peaoPodeAgir(peaoAtivo)) {
             return locais;
         }
@@ -713,7 +757,7 @@ class Partida  {
     }
 
     boolean atacarCidade(CidadeID id, int indiceTesouro) {
-        if (encerrada || turnoAtual == null || ativandoKhan != null || id == null) return false;
+        if (encerrada || turnoAtual == null || isSelecaoAcaoPendente() || id == null) return false;
         Cidade cidade = tabuleiroPrincipal.getCidade(id);
         if (cidade == null || id == CidadeID.KARAKORUM || indiceTesouro < 0
                 || indiceTesouro >= cidade.getTesouros().size()) return false;
@@ -721,7 +765,7 @@ class Partida  {
     }
 
 	boolean atacarCidade(Peao peao, Cidade cidade, TipoTesouro tesouro) {
-        if (encerrada || turnoAtual == null || ativandoKhan != null || cidade == null
+        if (encerrada || turnoAtual == null || isSelecaoAcaoPendente() || cidade == null
                 || cidade.getId() == CidadeID.KARAKORUM || tesouro == null || !peaoPodeAgir(peao)) {
 		    return false;
 		}
@@ -889,7 +933,7 @@ class Partida  {
 	
     HashSet<KhanID> getKhans() {
         HashSet<KhanID> destinos = new HashSet<>();
-        if (!encerrada && turnoAtual != null && !isEscolhaPeaoPendente() && turnoAtual.isKhanPendente()) {
+        if (!encerrada && turnoAtual != null && !isEscolhaPeaoPendente() && !isSelecaoTesouroHabilidadePendente() && turnoAtual.isKhanPendente()) {
             for (KhanID id : KhanID.values()) if (id != tabuleiroPrincipal.getKhan()) destinos.add(id);
         }
         return destinos;
@@ -913,7 +957,7 @@ class Partida  {
 
     HashMap<CidadeID, Integer> getCidadesAtacaveis() {
         HashMap<CidadeID, Integer> cidades = new HashMap<>();
-        if (encerrada || turnoAtual == null || ativandoKhan != null || peaoAtivo == null) return cidades;
+        if (encerrada || turnoAtual == null || isSelecaoAcaoPendente() || peaoAtivo == null) return cidades;
         HashSet<Parada> percorridas = paradasPercorridas.get(peaoAtivo);
         if (percorridas == null) return cidades;
         for (Parada parada : percorridas) {
@@ -958,7 +1002,7 @@ class Partida  {
 	
 	HashSet<ParadaID> getAlcancaveisTotais(){
 		HashSet<ParadaID> ret = new HashSet<ParadaID>();
-        if (turnoAtual == null || peaoAtivo == null || ativandoKhan != null || encerrada) return ret;
+        if (turnoAtual == null || peaoAtivo == null || isSelecaoAcaoPendente() || encerrada) return ret;
 		int passos = turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO);
 		for(Parada p: tabuleiroPrincipal.getMovimentosPossiveis(peaoAtivo, passos).keySet()) ret.add(p.getId());
 		return ret;
@@ -967,7 +1011,7 @@ class Partida  {
 	
     HashSet<ParadaID> getVizinhosPossiveis() {
         HashSet<ParadaID> destinos = new HashSet<>();
-        if (turnoAtual == null || peaoAtivo == null || ativandoKhan != null || encerrada) return destinos;
+        if (turnoAtual == null || peaoAtivo == null || isSelecaoAcaoPendente() || encerrada) return destinos;
         int movimentos = turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO);
         if (movimentos <= 0) return destinos;
         for (Parada parada : tabuleiroPrincipal.getMovimentosPossiveis(peaoAtivo, 1).keySet()) {
@@ -983,7 +1027,7 @@ class Partida  {
 
 	HashSet<ProvinciaID> getProvincias(){
 		HashSet<ProvinciaID> ret = new HashSet<ProvinciaID>();
-        if (turnoAtual == null || encerrada) return ret;
+        if (turnoAtual == null || encerrada || isSelecaoTesouroHabilidadePendente()) return ret;
         if (ativandoKhan != null) return new HashSet<>(selecaoKhan);
 		if(turnoAtual.getQuantidadeAcao(TipoAcao.PEGAR_TRIBUTO)<=0) return ret;
 		for(Provincia p: turnoAtual.getProvinciasVisitadas())
