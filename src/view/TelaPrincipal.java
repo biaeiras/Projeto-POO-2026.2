@@ -225,7 +225,11 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
 
         painelLateral.add(Box.createVerticalGlue());
 
-        JScrollPane rolagem = new JScrollPane(painelLateral);
+        // Reserva a largura da barra para estabilizar a altura das cartas,
+        // que é calculada a partir da largura do painel.
+        JScrollPane rolagem = new JScrollPane(painelLateral,
+                ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         rolagemLateral = rolagem;
         rolagem.setPreferredSize(new Dimension(larguraLateral(getWidth()), 0));
         rolagem.getVerticalScrollBar().setUnitIncrement(16);
@@ -241,9 +245,6 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         });
         rolagem.setBorder(null);
         rolagem.getViewport().setBackground(pergaminho);
-        rolagem.setHorizontalScrollBarPolicy(
-            ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
-        );
 
         add(rolagem, BorderLayout.EAST);
     }
