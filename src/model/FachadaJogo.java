@@ -469,6 +469,24 @@ public class FachadaJogo implements ObservadoJogo {
 	        && partida.getTurnoAtual() == null;
 	}
 
+    @Override
+    public int getMovimentosRestantesTurno() {
+        return !isTurnoEmAndamento() || isPartidaEncerrada() ? 0
+                : partida.getTurnoAtual().getQuantidadeAcao(TipoAcao.MOVIMENTO);
+    }
+
+    @Override
+    public int getColetasRestantesTurno() {
+        return !isTurnoEmAndamento() || isPartidaEncerrada() ? 0
+                : partida.getTurnoAtual().getQuantidadeAcao(TipoAcao.PEGAR_TRIBUTO);
+    }
+
+    @Override
+    public boolean isUsoKhanPendente() {
+        return isTurnoEmAndamento() && !isPartidaEncerrada()
+                && partida.getTurnoAtual().isKhanPendente();
+    }
+
 	public boolean isTurnoEmAndamento() {
 	    return partida != null && partida.getTurnoAtual() != null;
 	}
@@ -639,6 +657,17 @@ public class FachadaJogo implements ObservadoJogo {
             }
         }
         return placar;
+    }
+
+    @Override
+    public HashMap<Cor, Integer> getVotosPorCor() {
+        HashMap<Cor, Integer> votos = new HashMap<>();
+        if (partida != null) {
+            for (Jogador jogador : partida.getJogadores()) {
+                votos.put(jogador.getTabuleiroJogador().getPersonagem().getCor(), jogador.getVotos());
+            }
+        }
+        return votos;
     }
 
     @Override

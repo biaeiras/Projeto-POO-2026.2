@@ -73,6 +73,17 @@ public class TabuleiroJogadorTest {
         // Ativa a coluna branca
         assertNotNull(tabuleiro.ativarColunaBranca());
 
+        // Durante o turno branco, as fichas permanecem nas colunas.
+        assertEquals(1, tabuleiro.getFichasAtivacaoDisponiveis());
+        assertTrue(tabuleiro.colunaEstaAtivada(Regiao.RUSSIA));
+        assertTrue(tabuleiro.colunaEstaAtivada(Regiao.CHINA));
+        assertTrue(tabuleiro.colunaBrancaEstaAtivada());
+        assertNull(tabuleiro.ativarColunaBranca());
+
+        // A Partida solicita a recuperação somente ao encerrar o turno branco.
+        tabuleiro.recuperarFichasAtivacao();
+        assertFalse(tabuleiro.colunaBrancaEstaAtivada());
+
         // Todas as fichas são recuperadas
         assertEquals(4, tabuleiro.getFichasAtivacaoDisponiveis());
 

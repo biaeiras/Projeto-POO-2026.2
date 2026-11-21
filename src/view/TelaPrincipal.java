@@ -35,6 +35,7 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
     private JLabel jogadorAtual;
     private JLabel corJogador;
     private JLabel mensagemJogo;
+    private JLabel acoesRestantesTurno;
     
 
     private final Color vermelho = new Color(166, 45, 48);
@@ -400,6 +401,12 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         conteudo.add(titulo);
         conteudo.add(Box.createVerticalStrut(4));
         conteudo.add(mensagemJogo);
+        acoesRestantesTurno = new JLabel();
+        acoesRestantesTurno.setName("acoesRestantesTurno");
+        acoesRestantesTurno.setForeground(texto);
+        acoesRestantesTurno.setFont(new Font("SansSerif", Font.BOLD, 12));
+        acoesRestantesTurno.setVisible(false);
+        conteudo.add(acoesRestantesTurno);
 
         painelMensagens.add(conteudo, BorderLayout.CENTER);
 
@@ -456,6 +463,13 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
     }
 
     private void atualizarCartasEPlacar(ObservadoJogo observado) {
+        boolean mostrarAcoes = observado.isTurnoEmAndamento() && !observado.isPartidaEncerrada();
+        acoesRestantesTurno.setVisible(mostrarAcoes);
+        acoesRestantesTurno.setText(mostrarAcoes
+                ? "<html>Movimentos restantes: " + observado.getMovimentosRestantesTurno()
+                    + " | Pegar tributos restantes: " + observado.getColetasRestantesTurno()
+                    + (observado.isUsoKhanPendente() ? " | Khan: uso pendente" : "") + "</html>"
+                : "");
     	botaoSalvarPartida.setEnabled(observado.existePartida()&& controlador.podeSalvarPartida());
     	
         if (observado.existePartida()) {

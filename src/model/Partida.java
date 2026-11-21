@@ -493,6 +493,11 @@ class Partida  {
 	    verificarConselheirosAbertos();
 	    VerificaFimDisparado();
 
+        TabuleiroJogador tabuleiro = turnoAtual.getJogador().getTabuleiroJogador();
+        if (tabuleiro.colunaBrancaEstaAtivada()) {
+            tabuleiro.recuperarFichasAtivacao();
+        }
+
 	    turnoAtual = null;
 	    avancarJogador();
 

@@ -166,8 +166,6 @@ class TabuleiroJogador {
         HashMap<Enum<?>, Integer> resultado =
                 colunaBranca.getAcoesEMelhorias();
 
-        recuperarFichasAtivacao();
-
         return resultado;
     }
 

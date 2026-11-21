@@ -21,6 +21,9 @@ public interface ObservadoJogo {
     boolean isColunaJogadorAtualAtivada(int coluna);
     boolean podeEscolherColuna();
     boolean isTurnoEmAndamento();
+    int getMovimentosRestantesTurno();
+    int getColetasRestantesTurno();
+    boolean isUsoKhanPendente();
     boolean possuiHabilidadeAtivavelJogadorAtual();
     boolean podeAtivarHabilidadeJogadorAtual();
     boolean isSelecaoTesouroHabilidadePendente();
@@ -43,6 +46,7 @@ public interface ObservadoJogo {
     HashMap<String, Integer> getTesourosVirtuaisJogadorAtual();
     HashMap<String, Integer> getPlacarVotos();
     int getVotosFichaNeutra();
+    HashMap<Cor, Integer> getVotosPorCor();
     HashMap<ProvinciaID, Integer> getCargasProvincias();
     HashMap<ParadaID, ArrayList<Cor>> getYurts();
     HashMap<ParadaID, ArrayList<Cor>> getPosicoesPeoes();
