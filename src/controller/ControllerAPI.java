@@ -333,6 +333,25 @@ public class ControllerAPI {
         viewPrincipal.exibir();
         mostrarJanelaJogador();
     }
+    
+    public void iniciarNovaPartida() {
+        if (controladorJogador != null) {
+            controladorJogador.encerrar();
+            controladorJogador = null;
+        }
+
+        if (janelaJogador != null) {
+            janelaJogador.dispose();
+            janelaJogador = null;
+        }
+
+        if (viewPrincipal != null) {
+            viewPrincipal.encerrar();
+            viewPrincipal = null;
+        }
+
+        abrirPreparacao();
+    }
 
     private void mostrarJanelaJogador() {
         if (janelaJogador == null) {

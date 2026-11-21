@@ -510,6 +510,7 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         	resultadoExibido = true; 
         	mostrarResultadoFinal(observado);
         }
+        
     }
 
     public void definirMapa(JPanel mapa) {
@@ -537,7 +538,15 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
             mensagem = "EMPATE ENTRE: " + String.join(", ", vencedores);
         }
 
-        javax.swing.JOptionPane.showMessageDialog(this,mensagem,"Fim de jogo", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+        int resposta = JOptionPane.showConfirmDialog( this, mensagem + "\n\nDesejam iniciar uma nova partida?", "Fim de jogo", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+    
+        if (resposta == JOptionPane.YES_OPTION) {
+            controlador.iniciarNovaPartida();
+        } else {
+            System.exit(0);
+        }
+    
+    
     }
     
 }
