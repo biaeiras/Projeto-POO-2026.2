@@ -15,6 +15,7 @@ public class TelaMenuInicial extends JFrame {
     private final Color texto = new Color(75, 43, 25);
     
     private JButton iniciar;
+    private JButton carregar; 
 
     public TelaMenuInicial() {
         setTitle("Herdeiros do Khan");
@@ -51,11 +52,15 @@ public class TelaMenuInicial extends JFrame {
             new EmptyBorder(14, 28, 14, 28)
         ));
         moldura.setAlignmentX(Component.CENTER_ALIGNMENT);
-        moldura.setMaximumSize(new Dimension(330, 120));
+        moldura.setMaximumSize(new Dimension(330, 180));
 
         iniciar = criarBotao("INICIAR PARTIDA");
+        carregar = criarBotao("CARREGAR PARTIDA");
         
         moldura.add(iniciar);
+        moldura.add(Box.createVerticalStrut(10));  
+        moldura.add(carregar); 
+        
     
         areaBotoes.add(moldura);
         areaBotoes.add(Box.createVerticalStrut(25));
@@ -75,6 +80,10 @@ public class TelaMenuInicial extends JFrame {
     
     public JButton getBotaoIniciar() {
         return iniciar;
+    }
+    
+    public JButton getBotaoCarregar() {
+        return carregar;
     }
 
     private JButton criarBotao(String titulo) {

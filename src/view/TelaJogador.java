@@ -30,6 +30,10 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
     private PainelTabuleiroJogador painelTabuleiroJogador;
     private PainelPecasBonus painelPecasBonus;
     private JLabel informacaoTabuleiro;
+    private final ArrayList<model.TipoTesouro> opcoesTesouroBonus = new ArrayList<>();
+    private JPanel previaMelhoria;
+    private PainelCartaConselheiroSecreto imagemMelhoriaPendente;
+
     private final HashMap<String, JLabel[]> contadoresTesouros = new HashMap<>();
  
     
@@ -63,7 +67,9 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
     }
 
     private void criarConteudo() {
-        JPanel conteudo = new JPanel(new BorderLayout(6, 6));
+        JPanel conteudo = new ConteudoRolavel();
+        conteudo.setLayout(new BorderLayout(6, 6));
+        conteudo.setMinimumSize(new Dimension(920, 650));
         conteudo.setOpaque(false);
 
         // Tabuleiro individual
@@ -139,7 +145,12 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
         conteudo.add(tabuleiro, BorderLayout.CENTER);
         conteudo.add(inferior, BorderLayout.SOUTH);
 
-        add(conteudo, BorderLayout.CENTER);
+        JScrollPane rolagem = new JScrollPane(conteudo);
+        rolagem.setBorder(null);
+        rolagem.getViewport().setBackground(pergaminho);
+        rolagem.getVerticalScrollBar().setUnitIncrement(24);
+        rolagem.getHorizontalScrollBar().setUnitIncrement(24);
+        add(rolagem, BorderLayout.CENTER);
     }
 
 
@@ -156,6 +167,9 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
             new PainelTabuleiroJogador(null);
 
         cartela.add(criarMolduraTabuleiro(painelTabuleiroJogador), BorderLayout.CENTER);
+        previaMelhoria = criarPreviaMelhoria();
+        previaMelhoria.setVisible(false);
+        cartela.add(previaMelhoria, BorderLayout.EAST);
 
         informacaoTabuleiro = new JLabel(
             "Aguardando início da partida.",
@@ -167,6 +181,65 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
         return cartela;
     }
     
+    private JPanel criarPreviaMelhoria() {
+        JPanel painel = new JPanel(new BorderLayout(6, 10));
+        painel.setName("previaMelhoriaPendente");
+        painel.setBackground(new Color(250, 240, 216));
+        painel.setBorder(new CompoundBorder(new LineBorder(dourado),
+                new EmptyBorder(12, 10, 12, 10)));
+        painel.setPreferredSize(new Dimension(180, 180));
+        JLabel titulo = new JLabel("<html><center>MELHORIA A<br>POSICIONAR</center></html>", SwingConstants.CENTER);
+        titulo.setForeground(vermelho);
+        titulo.setFont(new Font("SansSerif", Font.BOLD, 12));
+        painel.add(titulo, BorderLayout.NORTH);
+        imagemMelhoriaPendente = new PainelCartaConselheiroSecreto();
+        imagemMelhoriaPendente.setName("imagemMelhoriaPendente");
+        imagemMelhoriaPendente.setPreferredSize(new Dimension(150, 100));
+        JPanel centro = new JPanel(new GridBagLayout());
+        centro.setOpaque(false);
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1;
+        centro.add(imagemMelhoriaPendente, c);
+        painel.add(centro, BorderLayout.CENTER);
+        JLabel instrucao = new JLabel("<html><center>Clique na coluna<br>de destino.</center></html>", SwingConstants.CENTER);
+        instrucao.setForeground(texto);
+        instrucao.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        painel.add(instrucao, BorderLayout.SOUTH);
+        return painel;
+    }
+
+    private static class ConteudoRolavel extends JPanel implements Scrollable {
+        @Override
+        public Dimension getPreferredSize() {
+            Dimension tamanho = super.getPreferredSize();
+            Dimension minimo = getMinimumSize();
+            return new Dimension(Math.max(tamanho.width, minimo.width),
+                    Math.max(tamanho.height, minimo.height));
+        }
+
+        @Override
+        public Dimension getPreferredScrollableViewportSize() { return getPreferredSize(); }
+
+        @Override
+        public int getScrollableUnitIncrement(Rectangle visivel, int orientacao, int direcao) { return 24; }
+
+        @Override
+        public int getScrollableBlockIncrement(Rectangle visivel, int orientacao, int direcao) {
+            return Math.max(24, (orientacao == SwingConstants.VERTICAL ? visivel.height : visivel.width) - 24);
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            return getParent() != null && getParent().getWidth() >= getMinimumSize().width;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportHeight() {
+            return getParent() != null && getParent().getHeight() >= getMinimumSize().height;
+        }
+    }
+
     static JPanel criarMolduraTabuleiro(final PainelTabuleiroJogador painel) {
         JPanel moldura = new JPanel(null) {
             @Override
@@ -349,6 +422,64 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
         }
     }
 
+    public PainelPecasBonus getPainelPecasBonus() { return painelPecasBonus; }
+
+    public int escolherTesouroBonus() {
+        if (opcoesTesouroBonus.size() != 3) return -1;
+        final int[] escolha = {-1};
+        final JDialog janela = new JDialog(SwingUtilities.getWindowAncestor(this),
+                "Escolha um tesouro", Dialog.ModalityType.APPLICATION_MODAL);
+        JPanel raiz = new JPanel(new BorderLayout(12, 12));
+        raiz.setBackground(pergaminho);
+        raiz.setBorder(new EmptyBorder(16, 16, 16, 16));
+        JLabel instrucao = new JLabel("Escolha um tesouro para manter. Os outros serão descartados.");
+        instrucao.setForeground(texto);
+        raiz.add(instrucao, BorderLayout.NORTH);
+        JPanel opcoes = new JPanel(new GridLayout(1, 3, 12, 0));
+        opcoes.setOpaque(false);
+        int[] arquivos = {1, 3, 4, 2, 5};
+        for (int i = 0; i < 3; i++) {
+            final int indice = i;
+            final java.awt.image.BufferedImage imagem;
+            try {
+                imagem = javax.imageio.ImageIO.read(getClass().getResource(
+                        "/fichas/cartoes7-" + arquivos[opcoesTesouroBonus.get(i).ordinal()] + ".jpg"));
+            } catch (java.io.IOException erro) {
+                throw new IllegalStateException("Não foi possível carregar o tesouro.", erro);
+            }
+            JButton botao = new JButton() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    Graphics2D desenho = (Graphics2D) g.create();
+                    desenho.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                    int lado = Math.max(0, Math.min(getWidth(), getHeight()) - 16);
+                    desenho.drawImage(imagem, (getWidth() - lado) / 2, (getHeight() - lado) / 2, lado, lado, this);
+                    desenho.dispose();
+                }
+            };
+            botao.setToolTipText(opcoesTesouroBonus.get(i).name());
+            botao.getAccessibleContext().setAccessibleName(opcoesTesouroBonus.get(i).name());
+            botao.setPreferredSize(new Dimension(130, 130));
+            botao.setBackground(new Color(250, 240, 216));
+            botao.setBorder(new LineBorder(dourado, 2));
+            botao.addActionListener(new java.awt.event.ActionListener() {
+                @Override
+                public void actionPerformed(java.awt.event.ActionEvent evento) {
+                    escolha[0] = indice;
+                    janela.dispose();
+                }
+            });
+            opcoes.add(botao);
+        }
+        raiz.add(opcoes, BorderLayout.CENTER);
+        janela.setContentPane(raiz);
+        janela.pack();
+        janela.setLocationRelativeTo(this);
+        janela.setVisible(true);
+        return escolha[0];
+    }
+
     public PainelTabuleiroJogador getPainelTabuleiroJogador() {
         return painelTabuleiroJogador;
     }
@@ -379,6 +510,20 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
     }
 
     private void atualizarInterface(ObservadoJogo observado) {
+        opcoesTesouroBonus.clear();
+        opcoesTesouroBonus.addAll(observado.getTesourosBonusPendentes());
+        boolean[] bonusDisponiveis = new boolean[7];
+        for (int i = 0; i < 7; i++) bonusDisponiveis[i] = observado.podeUsarPecaBonus(i);
+        painelPecasBonus.definirDisponiveis(bonusDisponiveis);
+        model.Melhoria melhoria = observado.getMelhoriaCompraPendente();
+        imagemMelhoriaPendente.definirCarta(melhoria == null ? null : ImagensMelhorias.loadImage(melhoria));
+        boolean mostrarPrevia = observado.isEscolhaColunaMelhoriaPendente() && melhoria != null;
+        if (previaMelhoria.isVisible() != mostrarPrevia) {
+            previaMelhoria.setVisible(mostrarPrevia);
+            revalidate();
+            repaint();
+        }
+        painelTabuleiroJogador.definirDestinosMelhoria(observado.getColunasDisponiveisMelhoria());
         atualizarTesouros(observado);
        
         if (!observado.existePartida()) {
@@ -455,6 +600,12 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
 
         if (observado.isPartidaEncerrada()) {
             situacao = "Partida encerrada.";
+        } else if (observado.isEscolhaTesouroBonusPendente()) {
+            situacao = "Clique novamente na peça de baús para concluir a escolha do tesouro.";
+        } else if (observado.isEscolhaColunaMelhoriaPendente()) {
+            situacao = "Posicione a melhoria ao lado: clique no retângulo inferior de uma coluna disponível.";
+        } else if (observado.isEscolhaPeaoPendente()) {
+            situacao = "Clique no mapa no peão da Altani que deseja usar neste turno.";
         } else if (turnoAberto) {
             situacao = "Turno em andamento.";
         } else if (observado.podeEscolherColuna()) {

@@ -30,10 +30,12 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
     private JLabel votosFichaNeutra;
     private final ControllerAPI controlador;
     private JButton botaoJogador;
+    private JButton botaoSalvarPartida; 
     private PainelAcoesPartida painelAcoes;
     private JLabel jogadorAtual;
     private JLabel corJogador;
     private JLabel mensagemJogo;
+    private JLabel acoesRestantesTurno;
     
 
     private final Color vermelho = new Color(166, 45, 48);
@@ -64,6 +66,31 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         criarPainelLateral();
         criarMensagens();
         controlador.configurarAcoes(painelAcoes);
+        
+        botaoSalvarPartida.addActionListener(evento -> {
+            JFileChooser seletor = new JFileChooser();
+            seletor.setDialogTitle("Salvar partida");
+
+            int resultado = seletor.showSaveDialog(this);
+
+            if (resultado == JFileChooser.APPROVE_OPTION) {
+                java.io.File arquivo = seletor.getSelectedFile();
+
+                if (!arquivo.getName().toLowerCase().endsWith(".txt")) {
+                    arquivo = new java.io.File( arquivo.getParentFile(),arquivo.getName() + ".txt" );
+                }
+
+                try {
+                    controlador.salvarPartida(arquivo);
+
+                    JOptionPane.showMessageDialog( this,"Partida salva com sucesso!");
+
+                } catch (java.io.IOException e) {
+                    JOptionPane.showMessageDialog( this,"Erro ao salvar a partida: " + e.getMessage(),"Erro",JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        });
 
         atualizar(controlador.registrarObservador(this));
         addWindowListener(new WindowAdapter() {
@@ -125,9 +152,7 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
 
     private void criarPainelLateral() {
         painelLateral = criarPainelLateralRolavel();
-        painelLateral.setLayout(new BoxLayout(
-            painelLateral, BoxLayout.Y_AXIS
-        ));
+        painelLateral.setLayout(new BoxLayout(painelLateral, BoxLayout.Y_AXIS ));
         painelLateral.setBackground(pergaminho);
         painelLateral.setBorder(new EmptyBorder(8, 4, 8, 8));
 
@@ -165,6 +190,15 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         vez.add(corJogador);
 
         adicionarSecao(vez);
+        
+        botaoSalvarPartida = criarBotao("Salvar partida", vermelho);
+        botaoSalvarPartida.setEnabled(false);
+        botaoSalvarPartida.setAlignmentX(Component.CENTER_ALIGNMENT);
+        botaoSalvarPartida.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+
+        painelLateral.add(botaoSalvarPartida);
+        painelLateral.add(Box.createVerticalStrut(8));
+        
         painelAcoes = new PainelAcoesPartida();
         adicionarSecao(painelAcoes);
         
@@ -367,6 +401,12 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         conteudo.add(titulo);
         conteudo.add(Box.createVerticalStrut(4));
         conteudo.add(mensagemJogo);
+        acoesRestantesTurno = new JLabel();
+        acoesRestantesTurno.setName("acoesRestantesTurno");
+        acoesRestantesTurno.setForeground(texto);
+        acoesRestantesTurno.setFont(new Font("SansSerif", Font.BOLD, 12));
+        acoesRestantesTurno.setVisible(false);
+        conteudo.add(acoesRestantesTurno);
 
         painelMensagens.add(conteudo, BorderLayout.CENTER);
 
@@ -423,6 +463,15 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
     }
 
     private void atualizarCartasEPlacar(ObservadoJogo observado) {
+        boolean mostrarAcoes = observado.isTurnoEmAndamento() && !observado.isPartidaEncerrada();
+        acoesRestantesTurno.setVisible(mostrarAcoes);
+        acoesRestantesTurno.setText(mostrarAcoes
+                ? "<html>Movimentos restantes: " + observado.getMovimentosRestantesTurno()
+                    + " | Pegar tributos restantes: " + observado.getColetasRestantesTurno()
+                    + (observado.isUsoKhanPendente() ? " | Khan: uso pendente" : "") + "</html>"
+                : "");
+    	botaoSalvarPartida.setEnabled(observado.existePartida()&& controlador.podeSalvarPartida());
+    	
         if (observado.existePartida()) {
             jogadorAtual.setText("● " + observado.getNomePersonagemAtual());
             corJogador.setText("Cor: " + observado.getCorJogadorAtual().name());
@@ -430,6 +479,12 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
 
             if (observado.isPartidaEncerrada()) {
                 mensagemJogo.setText("Partida encerrada.");
+            } else if (observado.isEscolhaColunaMelhoriaPendente()) {
+                mensagemJogo.setText("Jochi: abra Jogador e clique na coluna que receberá a melhoria comprada.");
+            } else if (observado.isSelecaoTesouroHabilidadePendente()) {
+                mensagemJogo.setText("Ogedei: clique em um tesouro de uma cidade com pelo menos dois tesouros. Para desistir, use Cancelar seleção de tesouro.");
+            } else if (observado.isEscolhaPeaoPendente()) {
+                mensagemJogo.setText("Clique no mapa no peão da Altani que deseja usar neste turno.");
             } else if (observado.isTurnoEmAndamento()) {
                 mensagemJogo.setText("Turno de " + observado.getNomePersonagemAtual()
                     + ": clique no mapa para executar as ações disponíveis.");
@@ -475,6 +530,7 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         	resultadoExibido = true; 
         	mostrarResultadoFinal(observado);
         }
+        
     }
 
     public void definirMapa(JPanel mapa) {
@@ -502,7 +558,15 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
             mensagem = "EMPATE ENTRE: " + String.join(", ", vencedores);
         }
 
-        javax.swing.JOptionPane.showMessageDialog(this,mensagem,"Fim de jogo", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+        int resposta = JOptionPane.showConfirmDialog( this, mensagem + "\n\nDesejam iniciar uma nova partida?", "Fim de jogo", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+    
+        if (resposta == JOptionPane.YES_OPTION) {
+            controlador.iniciarNovaPartida();
+        } else {
+            System.exit(0);
+        }
+    
+    
     }
     
 }

@@ -27,16 +27,25 @@ class Partida  {
 	private final HashMap<Cidade, Integer> tesourosTomadosNoTurno = new HashMap<>();
 	private Peao peaoAtivo; 
 	private boolean acaoRestritaFeita; 
+    private final ArrayList<TipoTesouro> tesourosBonusPendentes = new ArrayList<>();
+    private Melhoria melhoriaCompraPendente;
+    private int origemMelhoriaCompra = -1;
 	private int melhoriasGratisPendentes; 
-	private boolean skipped = false;
+    private final HashMap<Jogador, ArrayList<Melhoria>> melhoriasIniciais = new HashMap<>();
 	private boolean hasToMove = false;
     private KhanID ativandoKhan;
     private final HashSet<ProvinciaID> selecaoKhan = new HashSet<>();
     private final HashMap<Integer, ConselheiroAberto> conselheirosAbertos = new HashMap<>();
 	
+ // Construtor usado exclusivamente na restauração de uma partida salva.
+    Partida() {
+        this.jogadores = new ArrayList<>();
+    }
+    
 	Partida(ArrayList<Cor> coresEscolhidas) {
         this(coresEscolhidas, sortearConselheirosAbertos());
     }
+
 
     // Também permite preparar uma partida determinística nos testes do Model.
     Partida(ArrayList<Cor> coresEscolhidas, List<TipoConselheiroAberto> cartasAbertas) {
@@ -69,9 +78,47 @@ class Partida  {
 	    criarJogadores(coresEscolhidas);
 	    distribuirMoedasInicias();
 	    criarTabuleiroPrincipal(); 
+        colocarYurtsIniciais();
+        sortearMelhoriasIniciais();
 	    
 	    
 	}
+
+    private void sortearMelhoriasIniciais() {
+        for (Jogador jogador : jogadores) {
+            int quantidade = jogador.getTabuleiroJogador().getPersonagem().getQuantidadeOpcoesMelhoriaInicial();
+            if (quantidade == 0) continue;
+            ArrayList<Melhoria> opcoes = new ArrayList<>();
+            for (int i = 0; i < quantidade; i++) {
+                Melhoria melhoria = tabuleiroPrincipal.comprarMelhoriaDaPilha();
+                if (melhoria == null) throw new IllegalStateException("Faltam melhorias para a preparação.");
+                opcoes.add(melhoria);
+            }
+            melhoriasIniciais.put(jogador, opcoes);
+        }
+    }
+
+    boolean isEscolhaMelhoriaInicialPendente() {
+        Jogador jogador = getJogadorAtual();
+        return !encerrada && turnoAtual == null && melhoriasIniciais.containsKey(jogador)
+                && jogador.jaEscolheuConselheiro();
+    }
+
+    ArrayList<Melhoria> getOpcoesMelhoriaInicial() {
+        return isEscolhaMelhoriaInicialPendente()
+                ? new ArrayList<>(melhoriasIniciais.get(getJogadorAtual())) : new ArrayList<Melhoria>();
+    }
+
+    boolean escolherMelhoriaInicial(int indice) {
+        ArrayList<Melhoria> opcoes = getOpcoesMelhoriaInicial();
+        if (indice < 0 || indice >= opcoes.size()) return false;
+        if (!getJogadorAtual().getTabuleiroJogador().adicionarMelhoriaBranca(opcoes.get(indice))) return false;
+        for (int i = 0; i < opcoes.size(); i++) {
+            if (i != indice) tabuleiroPrincipal.devolverMelhoriaAPilha(opcoes.get(i));
+        }
+        melhoriasIniciais.remove(getJogadorAtual());
+        return true;
+    }
 
     private static ArrayList<TipoConselheiroAberto> sortearConselheirosAbertos() {
         ArrayList<TipoConselheiroAberto> baralho = new ArrayList<>();
@@ -92,6 +139,76 @@ class Partida  {
         return votosFichaNeutra;
     }
 
+    boolean possuiHabilidadeAtivavelJogadorAtual() {
+        Jogador jogador = getJogadorAtual();
+        return jogador != null && jogador.getTabuleiroJogador().getPersonagem().possuiHabilidadeAtivavel();
+    }
+
+    boolean podeAtivarHabilidadeJogadorAtual() {
+        if (encerrada || turnoAtual == null || isSelecaoAcaoPendente()) {
+            return false;
+        }
+        Personagem personagem = turnoAtual.getJogador().getTabuleiroJogador().getPersonagem();
+        return personagem.podeAtivarHabilidade(turnoAtual);
+    }
+
+    boolean ativarHabilidadeJogadorAtual() {
+        if (!podeAtivarHabilidadeJogadorAtual()) {
+            return false;
+        }
+        Personagem personagem = turnoAtual.getJogador().getTabuleiroJogador().getPersonagem();
+        boolean ativou = personagem.ativarHabilidade(turnoAtual);
+        if (ativou) {
+            verificarConselheirosAbertos();
+        }
+        return ativou;
+    }
+
+    boolean isSelecaoAcaoPendente() {
+        return ativandoKhan != null || isSelecaoTesouroHabilidadePendente()
+                || isEscolhaColunaMelhoriaPendente() || isEscolhaTesouroBonusPendente();
+    }
+
+    boolean isSelecaoTesouroHabilidadePendente() {
+        return !encerrada && turnoAtual != null && turnoAtual.isSelecaoTesouroHabilidadePendente();
+    }
+
+    boolean cancelarSelecaoTesouroHabilidade() {
+        return isSelecaoTesouroHabilidadePendente() && turnoAtual.cancelarSelecaoTesouroHabilidade();
+    }
+
+    HashMap<CidadeID, Integer> getCidadesSelecionaveisHabilidade() {
+        HashMap<CidadeID, Integer> cidades = new HashMap<>();
+        if (!isSelecaoTesouroHabilidadePendente()) return cidades;
+        for (CidadeID id : CidadeID.values()) {
+            Cidade cidade = tabuleiroPrincipal.getCidade(id);
+            if (id != CidadeID.KARAKORUM && cidade.getConquistador() == null
+                    && cidade.getContadorDeTesouros() >= 2) {
+                cidades.put(id, cidade.getContadorDeTesouros());
+            }
+        }
+        return cidades;
+    }
+
+    boolean escolherTesouroHabilidade(CidadeID id, int indiceTesouro) {
+        if (!getCidadesSelecionaveisHabilidade().containsKey(id)) return false;
+        Cidade cidade = tabuleiroPrincipal.getCidade(id);
+        if (indiceTesouro < 0 || indiceTesouro >= cidade.getContadorDeTesouros()) return false;
+        Jogador jogador = turnoAtual.getJogador();
+        boolean pagou;
+        if (turnoAtual.getQuantidadeRecursoVirtual(TipoMelhoria.MOEDA_VIRTUAL) > 0) {
+            pagou = turnoAtual.usarRecursoVirtual(TipoMelhoria.MOEDA_VIRTUAL);
+        } else {
+            pagou = jogador.gastarTributo(TipoTributo.MOEDA, 1);
+        }
+        if (!pagou) return false;
+        TipoTesouro tesouro = cidade.getTesouros().remove(indiceTesouro);
+        jogador.adicionarTesouro(tesouro);
+        turnoAtual.concluirSelecaoTesouroHabilidade();
+        verificarConselheirosAbertos();
+        return true;
+    }
+
     int verificarConselheirosAbertos() {
         if (encerrada || turnoAtual == null) {
             return 0;
@@ -109,6 +226,52 @@ class Partida  {
     }
 
     // Ponto de integração para a entrega de tesouros que concede uma peça bônus.
+    boolean isEscolhaTesouroBonusPendente() {
+        return !tesourosBonusPendentes.isEmpty();
+    }
+
+    ArrayList<TipoTesouro> getTesourosBonusPendentes() {
+        return new ArrayList<>(tesourosBonusPendentes);
+    }
+
+    boolean podeUsarPecaBonus(int indice) {
+        if (encerrada || turnoAtual == null || isEscolhaPeaoPendente() || isSelecaoAcaoPendente()) return false;
+        ArrayList<TipoBonus> ordem = getJogadorAtual().getOrdemPecasBonus();
+        if (indice < 0 || indice >= ordem.size()) return false;
+        TipoBonus tipo = ordem.get(indice);
+        return tipo != TipoBonus.VOTO_EXTRA && !getJogadorAtual().isPecaBonusUsada(tipo);
+    }
+
+    boolean usarPecaBonus(int indice) {
+        if (!podeUsarPecaBonus(indice)) return false;
+        Jogador jogador = getJogadorAtual();
+        TipoBonus tipo = jogador.getOrdemPecasBonus().get(indice);
+        switch (tipo) {
+            case DUAS_ESPADAS: jogador.adicionarTributo(TipoTributo.ESPADA, 2); break;
+            case DUAS_MOEDAS: jogador.adicionarTributo(TipoTributo.MOEDA, 2); break;
+            case DOIS_YURTS: jogador.adicionarTributo(TipoTributo.YURT, 2); break;
+            case MOVIMENTOS_EXTRAS: turnoAtual.adicionarAcoesBonus(3, 1); break;
+            case PEGAR_TRIBUTOS_EXTRAS: turnoAtual.adicionarAcoesBonus(0, 2); break;
+            case ESCOLHER_TESOURO:
+                ArrayList<TipoTesouro> opcoes = tabuleiroPrincipal.retirarTesourosBonus();
+                if (opcoes.size() != 3) return false;
+                tesourosBonusPendentes.addAll(opcoes);
+                break;
+            default: return false;
+        }
+        jogador.getPecasBonus().get(tipo).usar();
+        verificarConselheirosAbertos();
+        return true;
+    }
+
+    boolean escolherTesouroBonus(int indice) {
+        if (encerrada || turnoAtual == null || indice < 0 || indice >= tesourosBonusPendentes.size()) return false;
+        getJogadorAtual().adicionarTesouro(tesourosBonusPendentes.get(indice));
+        tesourosBonusPendentes.clear();
+        verificarConselheirosAbertos();
+        return true;
+    }
+
     boolean receberPecaBonus(PecaBonus peca) {
         if (encerrada || turnoAtual == null
                 || !turnoAtual.getJogador().adicionarPecaBonus(peca)) {
@@ -191,6 +354,16 @@ class Partida  {
 
 	}
 	
+    private void colocarYurtsIniciais() {
+        for (Jogador jogador : jogadores) {
+            Personagem personagem = jogador.getTabuleiroJogador().getPersonagem();
+            if (personagem.getPosicaoYurtInicial() != null
+                    && !tabuleiroPrincipal.colocarYurtInicial(jogador)) {
+                throw new IllegalStateException("Não foi possível colocar o yurt inicial de " + personagem.getNome());
+            }
+        }
+    }
+
 	private  void distribuirMoedasInicias() {
 	    for (int i = 0; i < jogadores.size(); i++) {
 	        int moedasIniciais = (i < 2) ? 1 : 2;
@@ -244,6 +417,7 @@ class Partida  {
 	}
 	
 	boolean todosEscolheramConselheiro() {
+        if (!melhoriasIniciais.isEmpty()) return false;
 	    for (Jogador jogador : jogadores) {
 	        if (!jogador.jaEscolheuConselheiro()) {
 	            return false;
@@ -296,20 +470,11 @@ class Partida  {
 	    tesourosTomadosNoTurno.clear();
 	    acaoRestritaFeita = false;
 	    melhoriasGratisPendentes = 0;
-	    peaoAtivo = jogador.getPeao(0);
-	
-	    for (int i = 0; i < jogador.getQuantidadePeoes(); i++) {
-	        Peao peao = jogador.getPeao(i);
-	        HashSet<Parada> paradas = new HashSet<>();
-	        Parada posicao = peao.getPosicao();
-	
-	        if (posicao != null) {
-	            paradas.add(posicao);
-	            turnoAtual.adicionarProvinciasVisitadas(new HashSet<Provincia>(posicao.getProvincias().values()));
-	        }
-	
-	        paradasPercorridas.put(peao, paradas);
-	    }
+	    peaoAtivo = null;
+        if (!(jogador.getTabuleiroJogador().getPersonagem() instanceof Altani)) {
+            peaoAtivo = jogador.getPeao(0);
+            registrarPosicaoInicialPeaoAtivo();
+        }
 
 	    //System.out.println("turno aberto");
 	    verificarConselheirosAbertos();
@@ -322,11 +487,16 @@ class Partida  {
 	        return false;
 	    }
 
-	    if (turnoAtual.isKhanPendente() || hasToMove) {
+	    if (isEscolhaPeaoPendente() || isSelecaoAcaoPendente() || turnoAtual.isKhanPendente() || hasToMove) {
 	        return false;
 	    }
 	    verificarConselheirosAbertos();
 	    VerificaFimDisparado();
+
+        TabuleiroJogador tabuleiro = turnoAtual.getJogador().getTabuleiroJogador();
+        if (tabuleiro.colunaBrancaEstaAtivada()) {
+            tabuleiro.recuperarFichasAtivacao();
+        }
 
 	    turnoAtual = null;
 	    avancarJogador();
@@ -365,7 +535,7 @@ class Partida  {
     }
 
     boolean selecionarKhan(KhanID id) {
-        if (encerrada || turnoAtual == null || !getKhans().contains(id)) return false;
+        if (encerrada || turnoAtual == null || isSelecaoTesouroHabilidadePendente() || isEscolhaColunaMelhoriaPendente() || isEscolhaTesouroBonusPendente() || !getKhans().contains(id)) return false;
         ativandoKhan = id;
         selecaoKhan.clear();
         return id != KhanID.M || concluirAcaoKhan(id);
@@ -373,7 +543,7 @@ class Partida  {
 
     private boolean concluirAcaoKhan(KhanID id) {
         if (encerrada || turnoAtual == null || !turnoAtual.isKhanPendente()
-                || !tabuleiroPrincipal.ativarKhan(id, new HashSet<>(selecaoKhan))) return false;
+                || !tabuleiroPrincipal.ativarKhan(id, new HashSet<>(selecaoKhan), turnoAtual.getJogador())) return false;
         turnoAtual.concluirAcaoKhan();
         ativandoKhan = null;
         selecaoKhan.clear();
@@ -382,7 +552,7 @@ class Partida  {
     }
 
     boolean selecionarTributo(ProvinciaID id) {
-        if (encerrada || turnoAtual == null) return false;
+        if (encerrada || turnoAtual == null || isSelecaoTesouroHabilidadePendente() || isEscolhaColunaMelhoriaPendente() || isEscolhaTesouroBonusPendente()) return false;
         if (ativandoKhan == null) return pegarTributo(id);
         if (!tabuleiroPrincipal.getProvinicasKhan(ativandoKhan).contains(id)
                 || !selecaoKhan.add(id)) return false;
@@ -433,7 +603,7 @@ class Partida  {
 	boolean moverPeao(ParadaID id) {
 		Parada destino = tabuleiroPrincipal.getMapa().get(id);
 		//System.out.println(peaoAtivo.getJogador().getTabuleiroJogador().getPersonagem().getCor());
-        if (encerrada || turnoAtual == null || ativandoKhan != null || peaoAtivo == null || destino == null) {
+        if (encerrada || turnoAtual == null || isSelecaoAcaoPendente() || peaoAtivo == null || destino == null) {
 	        return false;
 	    }
 
@@ -445,30 +615,22 @@ class Partida  {
 	    
 	    Parada origem = peaoAtivo.getPosicao();
 
-	    if (origem == null || !origem.getVizinhos().containsValue(destino)) {
-	        return false;
-	    }
-	    //System.out.println(turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO));
-
-	    if (turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO) <= 0) {
-	        return false;
-	    }
-
-	    
-	    if (!destino.isMoveble()) {
-	    	if(tabuleiroPrincipal.getMovimentosPossiveis(peaoAtivo, turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO)-1).isEmpty())
-	    		return false;
-	    	else hasToMove = true;
-	    }else hasToMove = false;
-
-	    HashSet<Provincia> provinciasVisitadas =
-	            tabuleiroPrincipal.moverPeao(peaoAtivo, destino);
-	    //System.out.println(peaoAtivo.getPosicao().getId());
-	    if(skipped || !destino.getYurt().contains(peaoAtivo.getJogador())) {
-	    	skipped = false;
-	    	if(!turnoAtual.usarAcao(TipoAcao.MOVIMENTO)) return false;
-	    }
-	    else skipped = true;
+        if (origem == null || turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO) <= 0) {
+            return false;
+        }
+        ArrayList<Parada> caminho = tabuleiroPrincipal.getCaminhoDeUmMovimento(peaoAtivo, destino);
+        if (caminho.isEmpty()) return false;
+        boolean ocupado = !destino.isMoveble();
+        if (ocupado) {
+            int restantes = turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO) - 1;
+            if (tabuleiroPrincipal.getMovimentosPossiveis(peaoAtivo, destino, restantes).isEmpty()) {
+                return false;
+            }
+        }
+        if (!turnoAtual.usarAcao(TipoAcao.MOVIMENTO)) return false;
+        HashSet<Provincia> provinciasVisitadas = tabuleiroPrincipal.moverPeao(peaoAtivo, destino);
+        hasToMove = ocupado;
+        // As paradas com yurts puladas no caminho não são registradas como visitadas.
 
 	    turnoAtual.adicionarProvinciasVisitadas(provinciasVisitadas);
 	    paradasPercorridas.get(peaoAtivo).add(destino);
@@ -478,7 +640,7 @@ class Partida  {
 	
 	boolean pegarTributo(ProvinciaID id) {
 		Provincia provincia = tabuleiroPrincipal.getProvincias().get(id);
-        if (encerrada || turnoAtual == null || ativandoKhan != null || provincia == null) {
+        if (encerrada || turnoAtual == null || isSelecaoAcaoPendente() || provincia == null) {
 	        return false;
 	    }
 
@@ -523,19 +685,51 @@ class Partida  {
 	
 	//escolher qual peao do Altani usar 
 	boolean escolherPeaoAtivo(Peao peao) {
-		if(encerrada || turnoAtual == null || acaoRestritaFeita || peao == null || peao.getJogador() != turnoAtual.getJogador()) {
+		if (!isEscolhaPeaoPendente() || peao == null || peao.getPosicao() == null
+                || peao.getJogador() != turnoAtual.getJogador()) {
 			return false; 
 		}
-		peaoAtivo = peao; 
-		return true; 
+        Jogador jogador = turnoAtual.getJogador();
+        for (int i = 0; i < jogador.getQuantidadePeoes(); i++) {
+            if (jogador.getPeao(i) == peao) {
+                peaoAtivo = peao;
+                registrarPosicaoInicialPeaoAtivo();
+                return true;
+            }
+        }
+        return false;
 	
 	}
+
+    boolean isEscolhaPeaoPendente() {
+        return !encerrada && turnoAtual != null && peaoAtivo == null
+                && turnoAtual.getJogador().getTabuleiroJogador().getPersonagem() instanceof Altani;
+    }
+
+    private void registrarPosicaoInicialPeaoAtivo() {
+        HashSet<Parada> paradas = new HashSet<>();
+        Parada posicao = peaoAtivo.getPosicao();
+        if (posicao != null) {
+            paradas.add(posicao);
+            turnoAtual.adicionarProvinciasVisitadas(new HashSet<Provincia>(posicao.getProvincias().values()));
+        }
+        paradasPercorridas.put(peaoAtivo, paradas);
+    }
 	
+    private boolean podeConstruirYurtAdjacente(Parada destino) {
+        if (peaoAtivo == null || peaoAtivo.getPosicao() == null || destino == null) {
+            return false;
+        }
+        Personagem personagem = peaoAtivo.getJogador().getTabuleiroJogador().getPersonagem();
+        return personagem.permiteConstruirYurtAdjacente()
+                && peaoAtivo.getPosicao().getVizinhos().containsValue(destino);
+    }
+
 	boolean construirYurt(ParadaID id) {
 		int i = 0;
 		//System.out.println(i++);
 		Parada parada = tabuleiroPrincipal.getMapa().get(id);
-	    if (encerrada || turnoAtual == null || peaoAtivo == null || parada == null || !peaoPodeAgir(peaoAtivo)) {
+	    if (encerrada || turnoAtual == null || isSelecaoAcaoPendente() || peaoAtivo == null || parada == null || !peaoPodeAgir(peaoAtivo)) {
 	        return false;
 	    }
 	    //System.out.println(i++);
@@ -546,7 +740,8 @@ class Partida  {
 
 	    HashSet<Parada> percorridas = paradasPercorridas.get(peaoAtivo);
 
-	    if (percorridas == null || !percorridas.contains(parada)) {
+	    if ((percorridas == null || !percorridas.contains(parada))
+                && !podeConstruirYurtAdjacente(parada)) {
 	        return false;
 	    }
 
@@ -572,7 +767,7 @@ class Partida  {
 
     ArrayList<ParadaID> getLocaisEntregaDisponiveis() {
         ArrayList<ParadaID> locais = new ArrayList<>();
-        if (encerrada || turnoAtual == null || ativandoKhan != null || peaoAtivo == null
+        if (encerrada || turnoAtual == null || isSelecaoAcaoPendente() || peaoAtivo == null
                 || !peaoPodeAgir(peaoAtivo)) {
             return locais;
         }
@@ -662,7 +857,7 @@ class Partida  {
     }
 
     boolean atacarCidade(CidadeID id, int indiceTesouro) {
-        if (encerrada || turnoAtual == null || ativandoKhan != null || id == null) return false;
+        if (encerrada || turnoAtual == null || isSelecaoAcaoPendente() || id == null) return false;
         Cidade cidade = tabuleiroPrincipal.getCidade(id);
         if (cidade == null || id == CidadeID.KARAKORUM || indiceTesouro < 0
                 || indiceTesouro >= cidade.getTesouros().size()) return false;
@@ -670,7 +865,7 @@ class Partida  {
     }
 
 	boolean atacarCidade(Peao peao, Cidade cidade, TipoTesouro tesouro) {
-        if (encerrada || turnoAtual == null || ativandoKhan != null || cidade == null
+        if (encerrada || turnoAtual == null || isSelecaoAcaoPendente() || cidade == null
                 || cidade.getId() == CidadeID.KARAKORUM || tesouro == null || !peaoPodeAgir(peao)) {
 		    return false;
 		}
@@ -737,7 +932,58 @@ class Partida  {
 	    verificarConselheirosAbertos();
 	    return true;
 	}
-	
+
+    boolean isEscolhaColunaMelhoriaPendente() {
+        return melhoriaCompraPendente != null;
+    }
+
+    ArrayList<Integer> getColunasDisponiveisMelhoria() {
+        ArrayList<Integer> colunas = new ArrayList<>();
+        if (!isEscolhaColunaMelhoriaPendente()) return colunas;
+        for (int i = 0; i < 4; i++) {
+            if (getJogadorAtual().getTabuleiroJogador().podeReceberMelhoriaComprada(regiaoColunaMelhoria(i))) colunas.add(i);
+        }
+        return colunas;
+    }
+
+    private Regiao regiaoColunaMelhoria(int coluna) {
+        return coluna == 0 ? Regiao.CHINA : coluna == 1 ? Regiao.PERSIA : coluna == 2 ? Regiao.RUSSIA : null;
+    }
+
+    Melhoria getMelhoriaCompraPendente() {
+        return melhoriaCompraPendente;
+    }
+
+    boolean escolherColunaMelhoria(int coluna) {
+        if (!getColunasDisponiveisMelhoria().contains(coluna)) return false;
+        if (!getJogadorAtual().getTabuleiroJogador().adicionarMelhoriaComprada(regiaoColunaMelhoria(coluna), melhoriaCompraPendente)) return false;
+        if (origemMelhoriaCompra < 0) tabuleiroPrincipal.comprarMelhoriaDaPilha();
+        else tabuleiroPrincipal.comprarMelhoria(origemMelhoriaCompra);
+        pagarMelhoria();
+        melhoriaCompraPendente = null;
+        origemMelhoriaCompra = -1;
+        verificarConselheirosAbertos();
+        return true;
+    }
+
+    private boolean iniciarEscolhaColunaMelhoria(Melhoria melhoria, int origem) {
+        if (!getJogadorAtual().getTabuleiroJogador().getPersonagem().ignoraCorMelhoria()) return false;
+        melhoriaCompraPendente = melhoria;
+        origemMelhoriaCompra = origem;
+        return true;
+    }
+
+    boolean comprarMelhoriaTabuleiro(int index) {
+        Melhoria melhoria = tabuleiroPrincipal.consultarMelhoria(index);
+        if (!podeComprarMelhoria(melhoria)) return false;
+        if (iniciarEscolhaColunaMelhoria(melhoria, index)) return true;
+        if (!getJogadorAtual().getTabuleiroJogador().adicionarMelhoria(melhoria)) return false;
+        tabuleiroPrincipal.comprarMelhoria(index);
+        pagarMelhoria();
+        verificarConselheirosAbertos();
+        return true;
+    }
+
 	//FIM DA PARTIDA
 	
     // Votos finais não avançam a ficha neutra nem disparam novos turnos.
@@ -838,7 +1084,7 @@ class Partida  {
 	
     HashSet<KhanID> getKhans() {
         HashSet<KhanID> destinos = new HashSet<>();
-        if (!encerrada && turnoAtual != null && turnoAtual.isKhanPendente()) {
+        if (!encerrada && turnoAtual != null && !isEscolhaPeaoPendente() && !isSelecaoTesouroHabilidadePendente() && !isEscolhaColunaMelhoriaPendente() && !isEscolhaTesouroBonusPendente() && turnoAtual.isKhanPendente()) {
             for (KhanID id : KhanID.values()) if (id != tabuleiroPrincipal.getKhan()) destinos.add(id);
         }
         return destinos;
@@ -862,7 +1108,7 @@ class Partida  {
 
     HashMap<CidadeID, Integer> getCidadesAtacaveis() {
         HashMap<CidadeID, Integer> cidades = new HashMap<>();
-        if (encerrada || turnoAtual == null || ativandoKhan != null || peaoAtivo == null) return cidades;
+        if (encerrada || turnoAtual == null || isSelecaoAcaoPendente() || peaoAtivo == null) return cidades;
         HashSet<Parada> percorridas = paradasPercorridas.get(peaoAtivo);
         if (percorridas == null) return cidades;
         for (Parada parada : percorridas) {
@@ -907,31 +1153,189 @@ class Partida  {
 	
 	HashSet<ParadaID> getAlcancaveisTotais(){
 		HashSet<ParadaID> ret = new HashSet<ParadaID>();
-        if (turnoAtual == null || ativandoKhan != null || encerrada) return ret;
+        if (turnoAtual == null || peaoAtivo == null || isSelecaoAcaoPendente() || encerrada) return ret;
 		int passos = turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO);
-		if(skipped) passos--;
 		for(Parada p: tabuleiroPrincipal.getMovimentosPossiveis(peaoAtivo, passos).keySet()) ret.add(p.getId());
 		return ret;
 		
 	}
 	
-	HashSet<ParadaID> getVizinhosPossiveis(){
-		HashSet<ParadaID> ret = new HashSet<ParadaID>();
-        if (turnoAtual == null || ativandoKhan != null || encerrada) return ret;
-		if(turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO)<=0) return ret;
-		for(Parada viz: peaoAtivo.getPosicao().getVizinhos().values()) {
-			if(!tabuleiroPrincipal.getMovimentosPossiveis(peaoAtivo, viz, turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO)-1).isEmpty()) ret.add(viz.getId());
-		}
-		return ret;
-	}
-	
+    HashSet<ParadaID> getVizinhosPossiveis() {
+        HashSet<ParadaID> destinos = new HashSet<>();
+        if (turnoAtual == null || peaoAtivo == null || isSelecaoAcaoPendente() || encerrada) return destinos;
+        int movimentos = turnoAtual.getQuantidadeAcao(TipoAcao.MOVIMENTO);
+        if (movimentos <= 0) return destinos;
+        for (Parada parada : tabuleiroPrincipal.getMovimentosPossiveis(peaoAtivo, 1).keySet()) {
+            destinos.add(parada.getId());
+        }
+        // Uma parada ocupada só pode ser atravessada se ainda houver como continuar.
+        for (Parada vizinha : peaoAtivo.getPosicao().getVizinhos().values()) {
+            if (!vizinha.isMoveble() && !tabuleiroPrincipal.getMovimentosPossiveis(
+                    peaoAtivo, vizinha, movimentos - 1).isEmpty()) destinos.add(vizinha.getId());
+        }
+        return destinos;
+    }
+
 	HashSet<ProvinciaID> getProvincias(){
+
 		HashSet<ProvinciaID> ret = new HashSet<ProvinciaID>();
-        if (turnoAtual == null || encerrada) return ret;
+        if (turnoAtual == null || encerrada || isSelecaoTesouroHabilidadePendente() || isEscolhaColunaMelhoriaPendente() || isEscolhaTesouroBonusPendente()) return ret;
         if (ativandoKhan != null) return new HashSet<>(selecaoKhan);
 		if(turnoAtual.getQuantidadeAcao(TipoAcao.PEGAR_TRIBUTO)<=0) return ret;
 		for(Provincia p: turnoAtual.getProvinciasVisitadas())
 			ret.add(p.getId());
 		return ret;
 	}
+	
+    boolean comprarMelhoriaDaPilha() {
+        Melhoria melhoria = tabuleiroPrincipal.consultarMelhoriaDaPilha();
+        if (!podeComprarMelhoria(melhoria)) return false;
+        if (iniciarEscolhaColunaMelhoria(melhoria, -1)) return true;
+        if (!getJogadorAtual().getTabuleiroJogador().adicionarMelhoria(melhoria)) return false;
+        tabuleiroPrincipal.comprarMelhoriaDaPilha();
+        pagarMelhoria();
+        verificarConselheirosAbertos();
+        return true;
+    }
+
+    private boolean podePagarMelhoria() {
+        return !encerrada && turnoAtual != null && !isEscolhaPeaoPendente()
+                && !isSelecaoAcaoPendente()
+                && getJogadorAtual().getQuantidadeTributo(TipoTributo.MOEDA)
+                    + turnoAtual.getQuantidadeRecursoVirtual(TipoMelhoria.MOEDA_VIRTUAL) >= 2;
+    }
+
+    private boolean podeComprarMelhoria(Melhoria melhoria) {
+        if (!podePagarMelhoria() || melhoria == null) return false;
+        TabuleiroJogador tabuleiro = getJogadorAtual().getTabuleiroJogador();
+        if (!tabuleiro.getPersonagem().ignoraCorMelhoria()) {
+            return tabuleiro.getQuantidadeMelhorias(melhoria.getRegiao()) < 5;
+        }
+        for (int i = 0; i < 4; i++) {
+            if (tabuleiro.podeReceberMelhoriaComprada(regiaoColunaMelhoria(i))) return true;
+        }
+        return false;
+    }
+
+    private void pagarMelhoria() {
+        int virtuais = Math.min(2, turnoAtual.getQuantidadeRecursoVirtual(TipoMelhoria.MOEDA_VIRTUAL));
+        for (int i = 0; i < virtuais; i++) turnoAtual.usarRecursoVirtual(TipoMelhoria.MOEDA_VIRTUAL);
+        if (virtuais < 2) getJogadorAtual().gastarTributo(TipoTributo.MOEDA, 2 - virtuais);
+    }
+
+    boolean isCompravel() {
+        return podeComprarMelhoria(tabuleiroPrincipal.consultarMelhoriaDaPilha());
+    }
+
+	ArrayList<Melhoria> getMelhorias(){
+		return tabuleiroPrincipal.getMelhorias();
+	}
+	
+	
+	void adicionarJogador(Jogador jogador) {
+	    jogadores.add(jogador);
+	}
+	
+
+	TabuleiroPrincipal getTabuleiroPrincipal() {
+	    return tabuleiroPrincipal;
+	}
+
+	int getIndiceJogadorAtual() {
+	    return indiceJogadorAtual;
+	}
+
+	int getLimiteVotos() {
+	    return limiteVotos;
+	}
+
+
+	int getRodadasExtras() {
+	    return rodadasExtras;
+	}
+
+	int getTurnosRestantesAposFim() {
+	    return turnosRestantesAposFim;
+	}
+
+	boolean isPontuacaoFinalCalculada() {
+	    return pontuacaoFinalCalculada;
+	}
+	
+	void restaurarEstadoGeral(
+	        int indiceJogador,
+	        int votos,
+	        boolean partidaEncerrada,
+	        boolean fimDisparado,
+	        int rodadasExtras,
+	        int turnosRestantes,
+	        boolean pontuacaoCalculada) {
+
+	    if (indiceJogador < 0 || indiceJogador >= jogadores.size()|| votos < 0 || rodadasExtras < 0 || turnosRestantes < 0) {
+	        throw new IllegalArgumentException("Estado da partida inválido.");
+	    }
+
+	    this.indiceJogadorAtual = indiceJogador;
+	    this.votosFichaNeutra = votos;
+	    this.encerrada = partidaEncerrada;
+	    this.fimDisparado = fimDisparado;
+	    this.rodadasExtras = rodadasExtras;
+	    this.turnosRestantesAposFim = turnosRestantes;
+	    this.pontuacaoFinalCalculada = pontuacaoCalculada;
+	}
+	
+	void restaurarLimiteVotos(int limite) {
+	    if (limite <= 0) {
+	        throw new IllegalArgumentException("Limite de votos inválido.");
+	    }
+	    this.limiteVotos = limite;
+	}
+	
+	void restaurarTabuleiroPrincipal(TabuleiroPrincipal tabuleiro) {
+	    if (tabuleiro == null) {
+	        throw new IllegalArgumentException("Tabuleiro inválido.");
+	    }
+
+	    this.tabuleiroPrincipal = tabuleiro;
+	}
+	
+	void restaurarConselheirosAbertos( ArrayList<TipoConselheiroAberto> tipos, ArrayList<Jogador> cumpridosPor) {
+
+	    if (tipos == null || cumpridosPor == null
+	            || tipos.size() != 4 || cumpridosPor.size() != 4) {
+	        throw new IllegalArgumentException("Dados dos conselheiros abertos inválidos.");
+	    }
+
+	    for (int i = 0; i < 4; i++) {
+	        TipoConselheiroAberto tipo = tipos.get(i);
+	        Jogador jogador = cumpridosPor.get(i);
+
+	        if (tipo == null || tipos.indexOf(tipo) != i) {
+	            throw new IllegalArgumentException("Conselheiro aberto inválido ou repetido.");
+	        }
+
+	        if (jogador != null && !jogadores.contains(jogador)) {
+	            throw new IllegalArgumentException("Jogador do conselheiro não pertence à partida.");
+	        }
+	    }
+
+	    conselheirosAbertos.clear();
+
+	    for (int i = 0; i < 4; i++) {
+	        ConselheiroAberto carta = new ConselheiroAberto(tipos.get(i));
+
+	        if (cumpridosPor.get(i) != null) {
+	            carta.restaurarCumprimento(cumpridosPor.get(i));
+	        }
+
+	        conselheirosAbertos.put(i, carta);
+	    }
+	}
+	
+	// Disponibiliza a criação do personagem para a restauração,
+	// sem expor diretamente o método interno da partida.
+	Personagem criarPersonagemParaRestauracao(Cor cor) {
+	    return criarPersonagem(cor);
+	}
+	
 }

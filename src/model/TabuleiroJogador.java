@@ -75,6 +75,24 @@ class TabuleiroJogador {
 	        return new ArrayList<>(melhorias);
 	    }
 	    
+	    void restaurarMelhorias(ArrayList<Melhoria> melhoriasSalvas) {
+	        if (melhoriasSalvas == null || melhoriasSalvas.size() > 5) {
+	            throw new IllegalArgumentException("Melhorias salvas inválidas.");
+	        }
+
+	        melhorias.clear();
+
+	        for (Melhoria melhoria : melhoriasSalvas) {
+	            if (melhoria == null || (regiao != null && melhoria.getRegiao() != regiao)) {
+	                throw new IllegalArgumentException(
+	                    "Melhoria incompatível com a coluna."
+	                );
+	            }
+
+	            melhorias.add(melhoria);
+	        }
+	    }
+	    
 	}
 
     private Personagem personagem;
@@ -148,8 +166,6 @@ class TabuleiroJogador {
         HashMap<Enum<?>, Integer> resultado =
                 colunaBranca.getAcoesEMelhorias();
 
-        recuperarFichasAtivacao();
-
         return resultado;
     }
 
@@ -177,6 +193,7 @@ class TabuleiroJogador {
         return colunaBranca.estaAtivada();
     }
 
+    
     boolean adicionarMelhoria(Regiao regiao, Melhoria melhoria) {
         Coluna coluna = colunasRegiao.get(regiao);
 
@@ -185,6 +202,24 @@ class TabuleiroJogador {
         }
 
         return coluna.adicionarMelhoria(melhoria);
+    }
+    boolean adicionarMelhoria(Melhoria melhoria) {
+    	return adicionarMelhoria(melhoria.getRegiao(), melhoria);
+    }
+
+    boolean podeReceberMelhoriaComprada(Regiao regiao) {
+        if (regiao != null) return colunasRegiao.get(regiao).getQuantidadeMelhorias() < 5;
+        int bonusInicial = personagem.getQuantidadeOpcoesMelhoriaInicial() > 0 ? 1 : 0;
+        int quantidade = colunaBranca.getQuantidadeMelhorias();
+        return quantidade < 5 && quantidade - bonusInicial < getQuantidadeLinhasCompletas();
+    }
+
+    boolean adicionarMelhoriaComprada(Regiao regiao, Melhoria melhoria) {
+        if (melhoria == null || !podeReceberMelhoriaComprada(regiao)) return false;
+        if (regiao == null) return colunaBranca.adicionarMelhoria(melhoria);
+        if (!personagem.ignoraCorMelhoria()) return adicionarMelhoria(regiao, melhoria);
+        colunasRegiao.get(regiao).melhorias.add(melhoria);
+        return true;
     }
 
     boolean adicionarMelhoriaBranca(Melhoria melhoria) {
@@ -235,4 +270,69 @@ class TabuleiroJogador {
     ArrayList<Melhoria> getMelhoriasColunaBranca() {
         return colunaBranca.getMelhorias();
     }
+    
+    HashMap<Regiao, ArrayList<Melhoria>> exportarMelhoriasRegiao() {
+        HashMap<Regiao, ArrayList<Melhoria>> resultado = new HashMap<>();
+
+        for (Regiao regiao : Regiao.values()) {
+            resultado.put(regiao, colunasRegiao.get(regiao).getMelhorias());
+        }
+
+        return resultado;
+    }
+
+    ArrayList<Melhoria> exportarMelhoriasBrancas() {
+        return colunaBranca.getMelhorias();
+    }
+    
+    void restaurarMelhorias( HashMap<Regiao, ArrayList<Melhoria>> melhoriasRegiao, ArrayList<Melhoria> melhoriasBrancas) {
+
+        if (melhoriasRegiao == null || melhoriasBrancas == null) {
+            throw new IllegalArgumentException( "Melhorias salvas inválidas."  );
+        }
+
+        for (Regiao regiao : Regiao.values()) {
+            ArrayList<Melhoria> melhorias = melhoriasRegiao.get(regiao);
+
+            if (melhorias == null) {
+                throw new IllegalArgumentException( "Melhorias ausentes para " + regiao );
+            }
+
+            colunasRegiao.get(regiao).restaurarMelhorias(melhorias);
+        }
+
+        colunaBranca.restaurarMelhorias(melhoriasBrancas);
+    }
+
+    void restaurarAtivacoes(int fichasDisponiveis, HashMap<Regiao, Boolean> colunasAtivadas,
+            boolean colunaBrancaAtivada) {
+
+        if (fichasDisponiveis < 0 || fichasDisponiveis > TOTAL_FICHAS_ATIVACAO || colunasAtivadas == null) {
+            throw new IllegalArgumentException("Estado de ativação inválido.");
+        }
+
+        for (Regiao regiao : Regiao.values()) {
+            Boolean ativada = colunasAtivadas.get(regiao);
+
+            if (ativada == null) {
+                throw new IllegalArgumentException("Ativação ausente para " + regiao);
+            }
+
+            if (ativada) {
+                colunasRegiao.get(regiao).ativar();
+            } else {
+                colunasRegiao.get(regiao).desativar();
+            }
+        }
+
+        if (colunaBrancaAtivada) {
+            colunaBranca.ativar();
+        } else {
+            colunaBranca.desativar();
+        }
+
+        this.fichasAtivacaoDisponiveis = fichasDisponiveis;
+    }
+    
+    
 }

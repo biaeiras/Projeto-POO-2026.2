@@ -27,6 +27,29 @@ class MouseTabuleiro extends MouseAdapter {
             return;
         }
 
+        if (fachada.isEscolhaColunaMelhoriaPendente() || fachada.isEscolhaTesouroBonusPendente()) return;
+
+        if (fachada.isEscolhaPeaoPendente()) {
+            if (evento.getButton() == MouseEvent.BUTTON1) {
+                int indice = viewAPI.getClickPeaoSelecionavel(evento.getX(), evento.getY());
+                if (indice >= 0) fachada.escolherPeaoJogadorAtual(indice);
+            }
+            return;
+        }
+
+        if (fachada.isSelecaoTesouroHabilidadePendente()) {
+            if (evento.getButton() == MouseEvent.BUTTON1) {
+                for (Map.Entry<CidadeID, Integer> entry : fachada.getCidadesSelecionaveisHabilidade().entrySet()) {
+                    int indice = viewAPI.getClickTesouro(evento.getX(), evento.getY(), entry.getKey(), entry.getValue());
+                    if (indice >= 0) {
+                        fachada.escolherTesouroHabilidade(entry.getKey(), indice);
+                        return;
+                    }
+                }
+            }
+            return;
+        }
+
         if (evento.getButton() == MouseEvent.BUTTON2) {
             fachada.terminarTurnoJogadorAtual();
             return;
@@ -46,9 +69,9 @@ class MouseTabuleiro extends MouseAdapter {
                 return;
             }
             for (Map.Entry<CidadeID, Integer> entry : fachada.getCidadesAtacaveis().entrySet()) {
-                int indice = viewAPI.getClickTesouro(evento.getX(), evento.getY(), entry.getKey(), entry.getValue());
-                if (indice >= 0) {
-                    fachada.atacarCidade(entry.getKey(), indice);
+                int indiceTesouro = viewAPI.getClickTesouro(evento.getX(), evento.getY(), entry.getKey(), entry.getValue());
+                if (indiceTesouro >= 0) {
+                    fachada.atacarCidade(entry.getKey(), indiceTesouro);
                     return;
                 }
             }
@@ -59,6 +82,9 @@ class MouseTabuleiro extends MouseAdapter {
             }
             ProvinciaID provincia = viewAPI.getClickProvinciaID(evento.getX(), evento.getY());
             if (provincia != null) fachada.selecionarTributo(provincia);
+            
+            int indiceMelhoria = viewAPI.getClickMelhorias(evento.getX(), evento.getY());
+            if(indiceMelhoria>=0) fachada.comprarMelhoria(indiceMelhoria);
         } else if (evento.getButton() == MouseEvent.BUTTON3) {
             ParadaID parada = viewAPI.getClickParadaID(evento.getX(), evento.getY());
             if (parada != null) fachada.construirYurt(parada);

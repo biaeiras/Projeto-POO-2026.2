@@ -2,31 +2,33 @@ package view;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
-import java.awt.geom.Path2D;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
-import javax.swing.JPanel;
-import javax.swing.JLabel;
 import javax.swing.Icon;
-import java.awt.Component;
-import java.awt.Font;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
 import model.CidadeID;
 import model.Cor;
 import model.KhanID;
+import model.Melhoria;
 import model.ObservadoJogo;
 import model.ObservadorJogo;
 import model.ParadaID;
@@ -51,9 +53,14 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
 	private static final double ESPACAMENTO_YURT = 0.005;
     private static final double BONUS_WIDTH = 0.5332-0.4677;
     private static final double BONUS_HEIGHT = 0.5112-0.4483;
+    private static final Point2D.Double POSICAO_MELHORIAS = new Point2D.Double(0.0665,0.9394);
+    private static final double ESPACAMENTO_MELHORIAS = 0.0903;
+    private static final double MELHORIAS_WIDTH = 0.1440-0.0665;
+    private static final double MELHORIAS_HEIGHT = 0.9787-0.9394;
 	
 	
 	private Image imagemTabuleiro;
+	private ArrayList<Melhoria> melhorias = new ArrayList<Melhoria>();
 	private HashMap<ParadaID, Point2D.Double> posicoesParadas = new HashMap<ParadaID, Point2D.Double>();
 	private HashMap<ProvinciaID, Point2D.Double> posicoesProvincias = new HashMap<ProvinciaID, Point2D.Double>();
     private HashMap<KhanID, Point2D.Double> posicoesKhan = new HashMap<KhanID, Point2D.Double>();
@@ -62,6 +69,8 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
     private HashMap<ProvinciaID, Integer> cargas = new HashMap<>();
     private HashMap<ParadaID, ArrayList<Cor>> yurts = new HashMap<>();
     private HashMap<ParadaID, ArrayList<Cor>> peoes = new HashMap<>();
+    private HashMap<Integer, ParadaID> peoesSelecionaveis = new HashMap<>();
+    private Cor corJogadorAtual;
     private HashSet<ParadaID> vizinhos = new HashSet<>();
     private HashSet<ParadaID> alcancaveis = new HashSet<>();
     private HashSet<ProvinciaID> provinciasDisponiveis = new HashSet<>();
@@ -75,6 +84,66 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
     private HashMap<TipoBonus, Image> imagensBonus = new HashMap<>();
     private final HashMap<Cor, BufferedImage> imagensPeoes = new HashMap<>();
     private final BufferedImage imagemPeaoKhan = criarImagemPeao(Color.WHITE);
+    private HashMap<Cor, Integer> votosPorCor = new HashMap<>();
+    private int votosNeutros;
+    private boolean mostrarFichasVotos;
+    private final HashMap<Cor, BufferedImage> imagensVotos = new HashMap<>();
+    private final BufferedImage imagemVotoNeutro = criarFichaVoto(Color.WHITE);
+
+    private static BufferedImage criarFichaVoto(Color cor) {
+        BufferedImage imagem = new BufferedImage(48, 48, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = imagem.createGraphics();
+        try {
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g.setColor(new Color(30, 20, 10, 90));
+            g.fillOval(5, 7, 40, 39);
+            g.setColor(cor);
+            g.fillOval(3, 3, 40, 39);
+            g.setColor(new Color(65, 45, 25));
+            g.setStroke(new BasicStroke(2));
+            g.drawOval(3, 3, 40, 39);
+        } finally { g.dispose(); }
+        return imagem;
+    }
+
+    private Point2D.Double getPosicaoVoto(int votos) {
+        int casa = Math.max(0, Math.min(17, votos));
+        return casa <= 9
+                ? new Point2D.Double(0.391 + casa * 0.064, 0.901)
+                : new Point2D.Double(0.967 - (casa - 10) * 0.060, 0.958);
+    }
+
+    private void drawVotos(Graphics2D g) {
+        if (!mostrarFichasVotos) return;
+        HashMap<Integer, Integer> ocupacoes = new HashMap<>();
+        for (Cor cor : Cor.values()) {
+            if (!votosPorCor.containsKey(cor)) continue;
+            int votos = votosPorCor.get(cor);
+            if (!imagensVotos.containsKey(cor)) imagensVotos.put(cor, criarFichaVoto(ViewAPI.getColor(cor)));
+            drawFichaVoto(g, imagensVotos.get(cor), votos, ocupacoes);
+        }
+        drawFichaVoto(g, imagemVotoNeutro, votosNeutros, ocupacoes);
+    }
+
+    private void drawFichaVoto(Graphics2D g, BufferedImage imagem, int votos,
+            HashMap<Integer, Integer> ocupacoes) {
+        int casa = Math.max(0, Math.min(17, votos));
+        int lugar = ocupacoes.getOrDefault(casa, 0);
+        ocupacoes.put(casa, lugar + 1);
+        Point2D.Double p = getPosicaoVoto(votos);
+        int largura = Math.max(8, (int) (getWidth() * 0.018));
+        int altura = Math.max(8, (int) (getHeight() * 0.018));
+        int x = (int) (p.x * getWidth()) + (lugar % 3 - 1) * largura;
+        int y = (int) (p.y * getHeight()) + (lugar / 3 - 1) * altura;
+        g.drawImage(imagem, x, y, largura, altura, this);
+        if (votos > 17) {
+            g.setColor(Color.BLACK);
+            g.setFont(new java.awt.Font("SansSerif", java.awt.Font.BOLD, Math.max(8, altura / 2)));
+            g.drawString(String.valueOf(votos), x, y + altura / 2);
+        }
+    }
+    
+    
 
 
     private Image loadImage(String path) {
@@ -310,6 +379,19 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
  		}
  	}
  	
+ 	private void drawMelhorias(Graphics2D g) {
+ 		for(int i = 0; i<melhorias.size(); ++i) {
+ 			Melhoria temp = melhorias.get(i);
+ 			if(temp == null) continue;
+ 			
+ 			int x = (int)((POSICAO_MELHORIAS.getX()+ESPACAMENTO_MELHORIAS*i)*getWidth());
+			int y = (int)(POSICAO_MELHORIAS.getY()*getHeight());
+			int w = (int) (MELHORIAS_WIDTH*getWidth());
+			int h = (int) (MELHORIAS_HEIGHT*getHeight());
+			g.drawImage(ImagensMelhorias.loadImage(temp), x, y, w, h, this);
+ 		}
+ 	}
+ 	
     static JPanel criarLegenda() {
         JPanel legenda = new JPanel();
         legenda.setLayout(new javax.swing.BoxLayout(legenda, javax.swing.BoxLayout.Y_AXIS));
@@ -384,9 +466,14 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
     }
 
     private void carregarEstado(ObservadoJogo observado) {
+        votosPorCor = observado.getVotosPorCor();
+        votosNeutros = observado.getVotosFichaNeutra();
+        mostrarFichasVotos = observado.existePartida();
         cargas = observado.getCargasProvincias();
         yurts = observado.getYurts();
         peoes = observado.getPosicoesPeoes();
+        peoesSelecionaveis = observado.getPeoesSelecionaveisJogadorAtual();
+        corJogadorAtual = observado.existePartida() ? observado.getCorJogadorAtual() : null;
         vizinhos = observado.getVizinhosPossiveis();
         alcancaveis = observado.getAlcancaveisTotais();
         provinciasDisponiveis = observado.getProvincias();
@@ -396,6 +483,7 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         cidades = observado.getCidades();
         cidadesConquistadas = observado.getCidadesConquistadas();
         bonus = observado.getBonus();
+        melhorias = observado.getMelhorias();
         repaint();
     }
 
@@ -447,7 +535,7 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
 		int h = (int) (2*(RAIO_YURT + ESPACAMENTO_YURT*i)*getHeight());
 		g.setStroke(new BasicStroke((float)(ESPACAMENTO_YURT*(getWidth() + getHeight())/4)));
 		g.setColor(ViewAPI.getColor(cor));
-		g.drawOval(x, y, w, h);
+		g.fillOval(x, y, w, h);
 	}
 	
 	private void drawPeoes(Graphics2D g, HashMap<ParadaID, ArrayList<Cor>> cores) {
@@ -459,7 +547,7 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
 
 	private void drawYurts(Graphics2D g, HashMap<ParadaID, ArrayList<Cor>> cores) {
 		for(Map.Entry<ParadaID, ArrayList<Cor>> entry: cores.entrySet()) {
-			for(int i = 0; i<entry.getValue().size(); ++i) drawYurt(g, entry.getKey(), entry.getValue().get(i), i);
+			for(int i = entry.getValue().size() - 1; i >= 0; --i) drawYurt(g, entry.getKey(), entry.getValue().get(i), i);
 		}
 	}
 	
@@ -476,13 +564,44 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
             drawKhan(g2d, khans);
             drawCidades(g2d, cidades, cidadesConquistadas);
             drawBonus(g2d, bonus);
+            drawMelhorias(g2d);
+            drawVotos(g2d);
         } finally {
             g2d.dispose();
         }
     }
 
+    int getCollisionPeaoSelecionavel(int x, int y) {
+        if (getWidth() <= 0 || getHeight() <= 0 || peoesSelecionaveis.isEmpty()) return -1;
+        for (Map.Entry<ParadaID, ArrayList<Cor>> entrada : peoes.entrySet()) {
+            Point2D.Double posicao = posicoesParadas.get(entrada.getKey());
+            ArrayList<Cor> cores = entrada.getValue();
+            // O último peão desenhado fica por cima quando as áreas se sobrepõem.
+            for (int lugar = cores.size() - 1; lugar >= 0; lugar--) {
+                int esquerda = (int) ((posicao.x - RAIO_PEAO) * getWidth());
+                int topo = (int) ((posicao.y - RAIO_PEAO - ESPACAMENTO_PEAO * lugar) * getHeight());
+                Ellipse2D area = new Ellipse2D.Double(esquerda, topo,
+                        (int) (2 * RAIO_PEAO * getWidth()), (int) (2 * RAIO_PEAO * getHeight()));
+                if (!area.contains(x, y)) continue;
+                if (cores.get(lugar) != corJogadorAtual) return -1;
+                int ordem = 0;
+                for (int anterior = 0; anterior < lugar; anterior++) {
+                    if (cores.get(anterior) == corJogadorAtual) ordem++;
+                }
+                ArrayList<Integer> indices = new ArrayList<>();
+                for (Map.Entry<Integer, ParadaID> peao : peoesSelecionaveis.entrySet()) {
+                    if (peao.getValue() == entrada.getKey()) indices.add(peao.getKey());
+                }
+                java.util.Collections.sort(indices);
+                return ordem < indices.size() ? indices.get(ordem) : -1;
+            }
+        }
+        return -1;
+    }
+
 	ParadaID getCollisionParada(int x, int y) {
         if (getWidth() <= 0 || getHeight() <= 0) return null;
+        System.out.printf(Locale.US, "%.4f,%.4f\n", (double) x/getWidth(), (double) y/getHeight());
 		for(ParadaID p: posicoesParadas.keySet()) {
 			Point2D.Double pp = posicoesParadas.get(p);
 			double x0 = (double) x / getWidth();
@@ -533,6 +652,19 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         return -1;
     }
 
+    int getCollisionMelhoria(int x, int y) {
+    	for(int i = 0; i<melhorias.size(); ++i) {
+    		double x0 = (double) x / getWidth();
+			double y0 = (double) y / getHeight();
+			double px = POSICAO_MELHORIAS.getX() + i*ESPACAMENTO_MELHORIAS;
+			double py = POSICAO_MELHORIAS.getY();
+			if(px<=x0 && x0<px+MELHORIAS_WIDTH
+					&& py<y0 && y0<py+MELHORIAS_HEIGHT) return i;
+			
+    	}
+    	return -1;
+    }
+    
     KhanID getCollisionKhan(int x, int y) {
         if (getWidth() <= 0 || getHeight() <= 0) return null;
         for(KhanID p: posicoesKhan.keySet()) {

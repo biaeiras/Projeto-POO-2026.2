@@ -71,6 +71,28 @@ public class PainelPecasBonus extends JPanel {
         repaint();
     }
 
+    private final boolean[] disponiveis = new boolean[7];
+
+    public void definirDisponiveis(boolean[] valores) {
+        System.arraycopy(valores, 0, disponiveis, 0, 7);
+    }
+
+    public int getPecaNoPonto(int x, int y) {
+        int largura = (getWidth() - 6 - 12 - 42) / 4;
+        int altura = (getHeight() - 6 - 4) / 2;
+        for (int i = 0; i < 7; i++) {
+            Rectangle area = new Rectangle(3 + (i % 4) * (largura + 4),
+                    3 + (i / 4) * (altura + 4), largura, altura);
+            if (indicesImagens[i] >= 0 && area.contains(x, y)) return i;
+        }
+        return -1;
+    }
+
+    public boolean podeUsarNoPonto(int x, int y) {
+        int indice = getPecaNoPonto(x, y);
+        return indice >= 0 && disponiveis[indice];
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);

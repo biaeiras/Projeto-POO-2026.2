@@ -51,6 +51,17 @@ class Cidade {
     CidadeID getId() {
         return id;
     }
+    
+    void restaurarEstado(ArrayList<TipoTesouro> tesourosSalvos,
+            Jogador conquistadorSalvo) {
+        if (tesourosSalvos == null) {
+            throw new IllegalArgumentException("Tesouros salvos inválidos.");
+        }
+
+        tesouros.clear();
+        tesouros.addAll(tesourosSalvos);
+        conquistador = conquistadorSalvo;
+    }
 
 
 }

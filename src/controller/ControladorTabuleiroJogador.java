@@ -39,6 +39,13 @@ public class ControladorTabuleiroJogador {
                     return;
                 }
 
+                if (fachada.isEscolhaColunaMelhoriaPendente()) {
+                    int destino = painel.getColunaMelhoriaNoPonto(evento.getX(), evento.getY());
+                    if (destino >= 0) fachada.escolherColunaMelhoria(destino);
+                    atualizarCursor(evento);
+                    return;
+                }
+
                 int coluna = painel.getColunaDisponivelNoPonto(
                     evento.getX(), evento.getY()
                 );
@@ -70,9 +77,9 @@ public class ControladorTabuleiroJogador {
             }
 
             private void atualizarCursor(MouseEvent evento) {
-                int coluna = painel.getColunaDisponivelNoPonto(
-                    evento.getX(), evento.getY()
-                );
+                int coluna = fachada.isEscolhaColunaMelhoriaPendente()
+                    ? painel.getColunaMelhoriaNoPonto(evento.getX(), evento.getY())
+                    : painel.getColunaDisponivelNoPonto(evento.getX(), evento.getY());
 
                 painel.setCursor(Cursor.getPredefinedCursor(
                     coluna >= 0 ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR
@@ -83,6 +90,31 @@ public class ControladorTabuleiroJogador {
         painel.addMouseListener(mouseColunas);
         painel.addMouseMotionListener(mouseColunas);
 
+        final view.PainelPecasBonus pecas = tela.getPainelPecasBonus();
+        MouseAdapter mouseBonus = new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent evento) {
+                if (evento.getButton() != MouseEvent.BUTTON1 || evento.getClickCount() != 1) return;
+                int indice = pecas.getPecaNoPonto(evento.getX(), evento.getY());
+                if (indice < 0) return;
+                if (!fachada.isEscolhaTesouroBonusPendente() && !fachada.usarPecaBonus(indice)) return;
+                if (fachada.isEscolhaTesouroBonusPendente()) {
+                    int escolha = ControladorTabuleiroJogador.this.tela.escolherTesouroBonus();
+                    if (escolha >= 0) fachada.escolherTesouroBonus(escolha);
+                }
+            }
+
+            @Override
+            public void mouseMoved(MouseEvent evento) {
+                pecas.setCursor(Cursor.getPredefinedCursor(pecas.podeUsarNoPonto(evento.getX(), evento.getY())
+                        || fachada.isEscolhaTesouroBonusPendente() ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent evento) { pecas.setCursor(Cursor.getDefaultCursor()); }
+        };
+        pecas.addMouseListener(mouseBonus);
+        pecas.addMouseMotionListener(mouseBonus);
         ObservadoJogo observado = registrarObservador(tela);
 
         // A View consulta o observado para carregar seu estado inicial.

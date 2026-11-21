@@ -9,6 +9,29 @@ class Ogedei extends Personagem {
     }
 
     @Override
+    boolean possuiHabilidadeAtivavel() {
+        return true;
+    }
+
+    @Override
+    boolean podeAtivarHabilidade(Turno turno) {
+        if (turno == null || turno.getJogador().getTabuleiroJogador().getPersonagem() != this
+                || turno.isHabilidadeEspecialUsada() || turno.isSelecaoTesouroHabilidadePendente()) {
+            return false;
+        }
+        return turno.getJogador().getQuantidadeTributo(TipoTributo.MOEDA) > 0
+                || turno.getQuantidadeRecursoVirtual(TipoMelhoria.MOEDA_VIRTUAL) > 0;
+    }
+
+    @Override
+    boolean ativarHabilidade(Turno turno) {
+        if (!podeAtivarHabilidade(turno)) {
+            return false;
+        }
+        return turno.iniciarSelecaoTesouroHabilidade();
+    }
+
+    @Override
     HashMap<Enum<?>, Integer> getAcoesBase(Regiao regiao) {
         if (regiao == null) {
             return criarAcoesBase(2, 1, true, false);

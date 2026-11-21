@@ -1,25 +1,28 @@
 package model;
 
-class Melhoria {
+import java.util.Objects;
+import java.util.Set;
+
+public class Melhoria {
 
     private TipoMelhoria tipo;
 	private Regiao regiao;
-
-    Melhoria(TipoMelhoria tipo, Regiao regiao) {
+	
+    public Melhoria(TipoMelhoria tipo, Regiao regiao) {
         this.tipo = tipo;
         this.regiao = regiao;
     }
 
-    Regiao getRegiao() {
+    public Regiao getRegiao() {
         return regiao;
     }
     
-    TipoMelhoria getTipo() {
+    public TipoMelhoria getTipo() {
 		return tipo;
 	}
 
 
-    TipoAcao getTipoAcao() {
+    public TipoAcao getTipoAcao() {
         switch (tipo) {
             case MOVIMENTO_EXTRA:
                 return TipoAcao.MOVIMENTO;
@@ -31,4 +34,20 @@ class Melhoria {
                 return null;
         }
     }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Melhoria outra = (Melhoria) o;
+        return tipo == outra.tipo
+                && regiao == outra.regiao;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tipo, regiao);
+    }
+    
 }

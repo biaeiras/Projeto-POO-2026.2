@@ -14,7 +14,9 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JFileChooser;
 
 import java.util.HashMap;
 import model.ParadaID;
@@ -56,6 +58,14 @@ public class ControllerAPI {
     public void removerObservador(ObservadorJogo observador) {
         fachada.removerObservador(observador);
     }
+    
+    public boolean podeSalvarPartida() {
+    	return fachada.podeSalvarPartida(); 
+    }
+    
+    public void salvarPartida(java.io.File arquivo) throws java.io.IOException {
+        fachada.salvarPartida(arquivo);
+    }
 
     public ControllerAPI(ViewAPI viewAPI, FachadaJogo fachada) {
         this.fachada = fachada;
@@ -67,6 +77,18 @@ public class ControllerAPI {
     }
 
     public void configurarAcoes(final PainelAcoesPartida painel) {
+        painel.getBotaoHabilidadeEspecial().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evento) {
+                if (fachada.isSelecaoTesouroHabilidadePendente()) {
+                    fachada.cancelarSelecaoTesouroHabilidade();
+                    return;
+                }
+                if (!fachada.ativarHabilidadeJogadorAtual()) {
+                    painel.mostrarInformacao("Não foi possível usar a habilidade especial neste momento.");
+                }
+            }
+        });
         painel.getBotaoTerminarTurno().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evento) {
@@ -87,6 +109,12 @@ public class ControllerAPI {
                         : "Não foi possível entregar. Confira os tesouros exigidos e a posição atual do peão.");
             }
         });
+        painel.getBotaoComprarMelhoria().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evento) {
+                fachada.comprarMelhoriaDaPilha();
+            }
+        });
         painel.atualizar(registrarObservador(painel));
     }
 
@@ -101,12 +129,38 @@ public class ControllerAPI {
                 }
             }
         );
+        
+        menu.getBotaoCarregar().addActionListener(
+        	    new ActionListener() {
+        	        @Override
+        	        public void actionPerformed(ActionEvent evento) {
+        	            JFileChooser seletor = new JFileChooser();
+        	            seletor.setDialogTitle("Selecionar partida salva");
+
+        	            int resultado = seletor.showOpenDialog(menu);
+
+        	            if (resultado == JFileChooser.APPROVE_OPTION) {
+        	                try {
+        	                	fachada.carregarPartida(seletor.getSelectedFile()); 
+        	                	
+        	                	menu.dispose(); 
+        	                	abrirJanelasDaPartida(); 
+        	                	
+        	                } catch (java.io.IOException e) {
+        	                    JOptionPane.showMessageDialog(menu,"Erro ao carregar a partida: " + e.getMessage(),"Erro",JOptionPane.ERROR_MESSAGE);
+        	            }
+        	        }
+        	     }
+        	        
+        	    }
+        	);
 
         menu.setVisible(true);
     }
 
     private void abrirPreparacao() {
         preparacao = new TelaPreparacaoPartida();
+        preparacao.atualizar(registrarObservador(preparacao));
 
         for (Cor cor : Cor.values()) {
             final Cor escolhida = cor;
@@ -235,6 +289,10 @@ public class ControllerAPI {
     }
 
     private void escolherConselheiro(int indice) {
+        if (fachada.isEscolhaMelhoriaInicialPendente()) {
+            if (fachada.escolherMelhoriaInicial(indice)) avancarPreparacao();
+            return;
+        }
         boolean escolheu =
             fachada.escolherConselheiroJogadorAtual(indice);
 
@@ -246,6 +304,11 @@ public class ControllerAPI {
             return;
         }
 
+        if (fachada.isEscolhaMelhoriaInicialPendente()) return;
+        avancarPreparacao();
+    }
+
+    private void avancarPreparacao() {
         // Também avança depois da última escolha.
         // Assim, o primeiro jogador volta a ser o atual.
         fachada.avancarJogadorNaPreparacao();
@@ -286,9 +349,31 @@ public class ControllerAPI {
             }
         });
 
-        preparacao.dispose();
+        if (preparacao != null) {
+            removerObservador(preparacao);
+            preparacao.dispose();
+        }
         viewPrincipal.exibir();
         mostrarJanelaJogador();
+    }
+    
+    public void iniciarNovaPartida() {
+        if (controladorJogador != null) {
+            controladorJogador.encerrar();
+            controladorJogador = null;
+        }
+
+        if (janelaJogador != null) {
+            janelaJogador.dispose();
+            janelaJogador = null;
+        }
+
+        if (viewPrincipal != null) {
+            viewPrincipal.encerrar();
+            viewPrincipal = null;
+        }
+
+        abrirPreparacao();
     }
 
     private void mostrarJanelaJogador() {

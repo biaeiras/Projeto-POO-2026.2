@@ -116,6 +116,10 @@ public class ViewAPI {
         return painel.getCollisionParada(x, y);
     }
 
+    public int getClickPeaoSelecionavel(int x, int y) {
+        return painel.getCollisionPeaoSelecionavel(x, y);
+    }
+
     public ProvinciaID getClickProvinciaID(int x, int y) {
         return painel.getCollisionProvincia(x, y);
     }
@@ -125,6 +129,10 @@ public class ViewAPI {
     }
     public int getClickTesouro(int x, int y, CidadeID id, int n) {
         return painel.getCollisionCidade(x, y, id, n);
+    }
+    
+    public int getClickMelhorias(int x, int y) {
+    	return painel.getCollisionMelhoria(x, y);
     }
 
     public JPanel getTabulerioPanel() {
@@ -140,4 +148,6 @@ public class ViewAPI {
         controlador.removerObservador(janela);
         janela.dispose();
     }
+    
+    
 }

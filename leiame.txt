@@ -1,0 +1,18 @@
+IDENTIFICAÇÃO DO PROJETO
+
+Projeto: Herdeiros de Khan
+
+INTEGRANTES DO GRUPO:
+
+Nome: Giovana Nogueira
+Matrícula: 2220373
+
+Nome: Bianca Eiras
+Matrícula: 2320351
+
+Nome: Igor
+Matrícula: 2211315
+
+CLASSE QUE CONTÉM O MÉTODO MAIN:
+
+Main.java

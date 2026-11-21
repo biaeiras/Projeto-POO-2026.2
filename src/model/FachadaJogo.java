@@ -3,6 +3,8 @@ package model;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.io.File;
+import java.io.IOException;
 
 public class FachadaJogo implements ObservadoJogo {
 
@@ -23,6 +25,84 @@ public class FachadaJogo implements ObservadoJogo {
 
     // Partida gerenciada pela fachada
     private Partida partida;
+
+    @Override
+    public boolean possuiHabilidadeAtivavelJogadorAtual() {
+        return partida != null && partida.possuiHabilidadeAtivavelJogadorAtual();
+    }
+
+    @Override
+    public boolean podeAtivarHabilidadeJogadorAtual() {
+        return partida != null && partida.podeAtivarHabilidadeJogadorAtual();
+    }
+
+    public boolean ativarHabilidadeJogadorAtual() {
+        verificarPartidaIniciada();
+        boolean ativou = partida.ativarHabilidadeJogadorAtual();
+        if (ativou) {
+            notificarObservadores();
+        }
+        return ativou;
+    }
+
+    @Override
+    public boolean isSelecaoTesouroHabilidadePendente() {
+        return partida != null && partida.isSelecaoTesouroHabilidadePendente();
+    }
+
+    @Override
+    public HashMap<CidadeID, Integer> getCidadesSelecionaveisHabilidade() {
+        return partida == null ? new HashMap<CidadeID, Integer>()
+                : partida.getCidadesSelecionaveisHabilidade();
+    }
+
+    public boolean cancelarSelecaoTesouroHabilidade() {
+        verificarPartidaIniciada();
+        boolean cancelou = partida.cancelarSelecaoTesouroHabilidade();
+        if (cancelou) notificarObservadores();
+        return cancelou;
+    }
+
+    public boolean escolherTesouroHabilidade(CidadeID cidade, int indiceTesouro) {
+        verificarPartidaIniciada();
+        boolean escolheu = partida.escolherTesouroHabilidade(cidade, indiceTesouro);
+        if (escolheu) notificarObservadores();
+        return escolheu;
+    }
+
+    @Override
+    public boolean isEscolhaPeaoPendente() {
+        return partida != null && partida.isEscolhaPeaoPendente();
+    }
+
+    @Override
+    public HashMap<Integer, ParadaID> getPeoesSelecionaveisJogadorAtual() {
+        HashMap<Integer, ParadaID> peoes = new HashMap<>();
+        if (!isEscolhaPeaoPendente()) {
+            return peoes;
+        }
+        Jogador jogador = partida.getJogadorAtual();
+        for (int indice = 0; indice < jogador.getQuantidadePeoes(); indice++) {
+            Parada posicao = jogador.getPeao(indice).getPosicao();
+            if (posicao != null) {
+                peoes.put(indice, posicao.getId());
+            }
+        }
+        return peoes;
+    }
+
+    public boolean escolherPeaoJogadorAtual(int indice) {
+        verificarPartidaIniciada();
+        Jogador jogador = partida.getJogadorAtual();
+        if (jogador == null || indice < 0 || indice >= jogador.getQuantidadePeoes()) {
+            return false;
+        }
+        boolean escolheu = partida.escolherPeaoAtivo(jogador.getPeao(indice));
+        if (escolheu) {
+            notificarObservadores();
+        }
+        return escolheu;
+    }
 
     
     // Inicia uma partida com as cores escolhidas
@@ -45,10 +125,28 @@ public class FachadaJogo implements ObservadoJogo {
         return escolheu;
     }
 
+    @Override
+    public boolean isEscolhaMelhoriaInicialPendente() {
+        return partida != null && partida.isEscolhaMelhoriaInicialPendente();
+    }
+
+    @Override
+    public ArrayList<Melhoria> getOpcoesMelhoriaInicial() {
+        return partida == null ? new ArrayList<Melhoria>() : partida.getOpcoesMelhoriaInicial();
+    }
+
+    public boolean escolherMelhoriaInicial(int indice) {
+        verificarPartidaIniciada();
+        boolean escolheu = partida.escolherMelhoriaInicial(indice);
+        if (escolheu) notificarObservadores();
+        return escolheu;
+    }
+
     public void avancarJogadorNaPreparacao() {
         verificarPartidaIniciada();
 
-        if (partida.isEncerrada() || partida.getTurnoAtual() != null) {
+        if (partida.isEncerrada() || partida.getTurnoAtual() != null
+                || partida.isEscolhaMelhoriaInicialPendente()) {
             throw new IllegalStateException(
                 "Não é possível avançar na preparação neste momento."
             );
@@ -371,6 +469,24 @@ public class FachadaJogo implements ObservadoJogo {
 	        && partida.getTurnoAtual() == null;
 	}
 
+    @Override
+    public int getMovimentosRestantesTurno() {
+        return !isTurnoEmAndamento() || isPartidaEncerrada() ? 0
+                : partida.getTurnoAtual().getQuantidadeAcao(TipoAcao.MOVIMENTO);
+    }
+
+    @Override
+    public int getColetasRestantesTurno() {
+        return !isTurnoEmAndamento() || isPartidaEncerrada() ? 0
+                : partida.getTurnoAtual().getQuantidadeAcao(TipoAcao.PEGAR_TRIBUTO);
+    }
+
+    @Override
+    public boolean isUsoKhanPendente() {
+        return isTurnoEmAndamento() && !isPartidaEncerrada()
+                && partida.getTurnoAtual().isKhanPendente();
+    }
+
 	public boolean isTurnoEmAndamento() {
 	    return partida != null && partida.getTurnoAtual() != null;
 	}
@@ -544,6 +660,17 @@ public class FachadaJogo implements ObservadoJogo {
     }
 
     @Override
+    public HashMap<Cor, Integer> getVotosPorCor() {
+        HashMap<Cor, Integer> votos = new HashMap<>();
+        if (partida != null) {
+            for (Jogador jogador : partida.getJogadores()) {
+                votos.put(jogador.getTabuleiroJogador().getPersonagem().getCor(), jogador.getVotos());
+            }
+        }
+        return votos;
+    }
+
+    @Override
     public int getVotosFichaNeutra() {
         return partida == null ? 0 : partida.getVotosFichaNeutra();
     }
@@ -684,4 +811,88 @@ public class FachadaJogo implements ObservadoJogo {
         return partida == null ? new HashMap<>() : partida.getBonus();
     }
 
+    public ArrayList<Melhoria> getMelhorias(){
+    	return partida.getMelhorias();
+    }
+    
+    public void comprarMelhoria(int i) {
+    	
+    	if(partida.comprarMelhoriaTabuleiro(i)) notificarObservadores();
+    }
+    
+    public void comprarMelhoriaDaPilha() {
+    	partida.comprarMelhoriaDaPilha();
+    	notificarObservadores();
+    }
+    
+    @Override
+    public boolean isEscolhaColunaMelhoriaPendente() {
+        return partida != null && partida.isEscolhaColunaMelhoriaPendente();
+    }
+
+    @Override
+    public ArrayList<Integer> getColunasDisponiveisMelhoria() {
+        return partida == null ? new ArrayList<Integer>() : partida.getColunasDisponiveisMelhoria();
+    }
+
+    @Override
+    public Melhoria getMelhoriaCompraPendente() {
+        return partida == null ? null : partida.getMelhoriaCompraPendente();
+    }
+
+    public boolean escolherColunaMelhoria(int coluna) {
+        verificarPartidaIniciada();
+        boolean escolheu = partida.escolherColunaMelhoria(coluna);
+        if (escolheu) notificarObservadores();
+        return escolheu;
+    }
+
+    @Override
+    public boolean podeUsarPecaBonus(int indice) {
+        return partida != null && partida.podeUsarPecaBonus(indice);
+    }
+
+    @Override
+    public boolean isEscolhaTesouroBonusPendente() {
+        return partida != null && partida.isEscolhaTesouroBonusPendente();
+    }
+
+    @Override
+    public ArrayList<TipoTesouro> getTesourosBonusPendentes() {
+        return partida == null ? new ArrayList<TipoTesouro>() : partida.getTesourosBonusPendentes();
+    }
+
+    public boolean usarPecaBonus(int indice) {
+        verificarPartidaIniciada();
+        boolean usou = partida.usarPecaBonus(indice);
+        if (usou) notificarObservadores();
+        return usou;
+    }
+
+    public boolean escolherTesouroBonus(int indice) {
+        verificarPartidaIniciada();
+        boolean escolheu = partida.escolherTesouroBonus(indice);
+        if (escolheu) notificarObservadores();
+        return escolheu;
+    }
+
+    public boolean isCompravel() {
+    	return partida.isCompravel();
+    }
+    
+    public boolean podeSalvarPartida() {
+		return partida != null && !partida.isEncerrada() && partida.getTurnoAtual() == null && partida.todosEscolheramConselheiro(); 
+	}
+    
+    
+    public void carregarPartida(File arquivo) throws IOException {
+        PersistenciaPartida persistencia = new PersistenciaPartida();
+        Partida partidaCarregada = persistencia.carregarPartida(arquivo);
+        definirPartida(partidaCarregada);
+        notificarObservadores();
+    }
+    
+    public void salvarPartida(File arquivo) throws IOException {
+        PersistenciaPartida.salvarPartida(partida, arquivo);
+    }
 }
