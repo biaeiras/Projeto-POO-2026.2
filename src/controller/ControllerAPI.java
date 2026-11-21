@@ -13,12 +13,16 @@ import java.awt.event.KeyEvent;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JFileChooser;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import model.ParadaID;
 import model.Cor;
 import model.FachadaJogo;
@@ -63,8 +67,27 @@ public class ControllerAPI {
     	return fachada.podeSalvarPartida(); 
     }
     
-    public void salvarPartida(java.io.File arquivo) throws java.io.IOException {
-        fachada.salvarPartida(arquivo);
+    public void configurarSalvamento(final JFrame janela, JButton botao) {
+        botao.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evento) {
+                JFileChooser seletor = new JFileChooser();
+                seletor.setDialogTitle("Salvar partida");
+                if (seletor.showSaveDialog(janela) != JFileChooser.APPROVE_OPTION) return;
+
+                File arquivo = seletor.getSelectedFile();
+                if (!arquivo.getName().toLowerCase(Locale.ROOT).endsWith(".txt")) {
+                    arquivo = new File(arquivo.getParentFile(), arquivo.getName() + ".txt");
+                }
+
+                try {
+                    fachada.salvarPartida(arquivo);
+                } catch (IOException e) {
+                    JOptionPane.showMessageDialog(janela, "Erro ao salvar a partida: " + e.getMessage(),
+                            "Erro", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
     }
 
     public ControllerAPI(ViewAPI viewAPI, FachadaJogo fachada) {

@@ -41,10 +41,11 @@ public class TelaPreparacaoPartida extends JFrame implements model.ObservadorJog
     private static final Color PAPEL = new Color(250, 240, 216);
     private static final Color TEXTO = new Color(75, 51, 30);
 
+    private final ArrayList<Cor> ordemPersonagens = new ArrayList<>();
     private final HashMap<Cor, CartelaPersonagem> personagens = new HashMap<>();
     private final JPanel conteudo = new JPanel(new BorderLayout());
     private final JPanel acoesRodape = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-    private final JLabel mensagem = new JLabel("Selecione de 2 a 5 personagens.");
+    private final JLabel mensagem = new JLabel("Selecione de 2 a 5 personagens na ordem dos turnos, começando por quem joga primeiro.");
     private final JLabel detalhe = new JLabel("0 de 5 personagens selecionados");
     private final JLabel titulo = new JLabel("ESCOLHA SEUS HERDEIROS");
     private final JLabel etapaPersonagens = new JLabel("01  PERSONAGENS");
@@ -176,26 +177,18 @@ public class TelaPreparacaoPartida extends JFrame implements model.ObservadorJog
     }
 
     public void alternarPersonagem(Cor cor) {
-        CartelaPersonagem cartela = personagens.get(cor);
-        cartela.selecionada = !cartela.selecionada;
-        cartela.repaint();
-        int quantidade = getCoresEscolhidas().size();
+        if (!ordemPersonagens.remove(cor)) ordemPersonagens.add(cor);
+        for (CartelaPersonagem cartela : personagens.values()) {
+            cartela.ordem = ordemPersonagens.indexOf(cartela.cor) + 1;
+            cartela.repaint();
+        }
+        int quantidade = ordemPersonagens.size();
         confirmarPersonagens.setEnabled(quantidade >= 2);
-        mensagem.setForeground(TEXTO);
-        mensagem.setText(quantidade >= 2
-            ? "Seu grupo está pronto. Confirme para escolher os conselheiros."
-            : "Selecione pelo menos 2 personagens para continuar.");
         detalhe.setText(quantidade + " de 5 personagens selecionados");
     }
 
     public ArrayList<Cor> getCoresEscolhidas() {
-        ArrayList<Cor> cores = new ArrayList<>();
-        for (Cor cor : Cor.values()) {
-            if (personagens.get(cor).selecionada) {
-                cores.add(cor);
-            }
-        }
-        return cores;
+        return new ArrayList<>(ordemPersonagens);
     }
 
     private void prepararEtapaConselheiros(String textoTitulo) {
@@ -349,7 +342,7 @@ public class TelaPreparacaoPartida extends JFrame implements model.ObservadorJog
         private final String nome;
         private final String nomeCor;
         private final BufferedImage imagem;
-        private boolean selecionada;
+        private int ordem;
         private boolean focoPorTeclado;
 
         CartelaPersonagem(Cor cor, String nome, String nomeCor) {
@@ -373,10 +366,10 @@ public class TelaPreparacaoPartida extends JFrame implements model.ObservadorJog
             try {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                g2.setColor(selecionada ? new Color(255, 245, 214) : PAPEL);
+                g2.setColor(ordem > 0 ? new Color(255, 245, 214) : PAPEL);
                 g2.fillRoundRect(2, 2, getWidth() - 5, getHeight() - 5, 12, 12);
-                g2.setColor(selecionada ? VERMELHO : DOURADO);
-                g2.setStroke(new BasicStroke(selecionada ? 3 : 1));
+                g2.setColor(ordem > 0 ? VERMELHO : DOURADO);
+                g2.setStroke(new BasicStroke(ordem > 0 ? 3 : 1));
                 g2.drawRoundRect(2, 2, getWidth() - 5, getHeight() - 5, 12, 12);
                 if (focoPorTeclado && hasFocus()) {
                     g2.setColor(DOURADO);
@@ -393,8 +386,8 @@ public class TelaPreparacaoPartida extends JFrame implements model.ObservadorJog
                 g2.setFont(new Font("SansSerif", Font.BOLD, 11));
                 g2.setColor(TEXTO);
                 g2.drawString(nomeCor.toUpperCase(Locale.ROOT), 16, getHeight() - 17);
-                String estado = selecionada ? "SELECIONADO" : "CLIQUE PARA ESCOLHER";
-                g2.setColor(selecionada ? VERMELHO : TEXTO);
+                String estado = ordem > 0 ? ordem + "º A JOGAR" : "CLIQUE PARA ESCOLHER";
+                g2.setColor(ordem > 0 ? VERMELHO : TEXTO);
                 g2.drawString(estado, getWidth() - g2.getFontMetrics().stringWidth(estado) - 16,
                     getHeight() - 17);
             } finally {

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 class TabuleiroJogador {
+    private static final int MAX_MELHORIAS_POR_COLUNA = 4;
 	
 	private static class Coluna {
 
@@ -33,7 +34,7 @@ class TabuleiroJogador {
 
 	    boolean adicionarMelhoria(Melhoria melhoria) {
 
-	        if (melhoria == null || melhorias.size() >= 5) {
+	        if (melhoria == null || melhorias.size() >= MAX_MELHORIAS_POR_COLUNA) {
 	            return false;
 	        }
 
@@ -75,7 +76,7 @@ class TabuleiroJogador {
 	        return new ArrayList<>(melhorias);
 	    }
 	    
-	    void restaurarMelhorias(ArrayList<Melhoria> melhoriasSalvas) {
+	    void restaurarMelhorias(ArrayList<Melhoria> melhoriasSalvas, boolean ignoraCor) {
 	        if (melhoriasSalvas == null || melhoriasSalvas.size() > 5) {
 	            throw new IllegalArgumentException("Melhorias salvas inválidas.");
 	        }
@@ -83,7 +84,7 @@ class TabuleiroJogador {
 	        melhorias.clear();
 
 	        for (Melhoria melhoria : melhoriasSalvas) {
-	            if (melhoria == null || (regiao != null && melhoria.getRegiao() != regiao)) {
+	            if (melhoria == null || (!ignoraCor && regiao != null && melhoria.getRegiao() != regiao)) {
 	                throw new IllegalArgumentException(
 	                    "Melhoria incompatível com a coluna."
 	                );
@@ -208,18 +209,19 @@ class TabuleiroJogador {
     }
 
     boolean podeReceberMelhoriaComprada(Regiao regiao) {
-        if (regiao != null) return colunasRegiao.get(regiao).getQuantidadeMelhorias() < 5;
-        int bonusInicial = personagem.getQuantidadeOpcoesMelhoriaInicial() > 0 ? 1 : 0;
-        int quantidade = colunaBranca.getQuantidadeMelhorias();
-        return quantidade < 5 && quantidade - bonusInicial < getQuantidadeLinhasCompletas();
+        return regiao != null
+                && colunasRegiao.get(regiao).getQuantidadeMelhorias() < MAX_MELHORIAS_POR_COLUNA;
     }
 
     boolean adicionarMelhoriaComprada(Regiao regiao, Melhoria melhoria) {
         if (melhoria == null || !podeReceberMelhoriaComprada(regiao)) return false;
-        if (regiao == null) return colunaBranca.adicionarMelhoria(melhoria);
         if (!personagem.ignoraCorMelhoria()) return adicionarMelhoria(regiao, melhoria);
         colunasRegiao.get(regiao).melhorias.add(melhoria);
         return true;
+    }
+
+    boolean podeReceberMelhoriaBranca() {
+        return colunaBranca.getQuantidadeMelhorias() < MAX_MELHORIAS_POR_COLUNA;
     }
 
     boolean adicionarMelhoriaBranca(Melhoria melhoria) {
@@ -298,10 +300,10 @@ class TabuleiroJogador {
                 throw new IllegalArgumentException( "Melhorias ausentes para " + regiao );
             }
 
-            colunasRegiao.get(regiao).restaurarMelhorias(melhorias);
+            colunasRegiao.get(regiao).restaurarMelhorias(melhorias, personagem.ignoraCorMelhoria());
         }
 
-        colunaBranca.restaurarMelhorias(melhoriasBrancas);
+        colunaBranca.restaurarMelhorias(melhoriasBrancas, true);
     }
 
     void restaurarAtivacoes(int fichasDisponiveis, HashMap<Regiao, Boolean> colunasAtivadas,

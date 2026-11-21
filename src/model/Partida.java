@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Set;
 
 class Partida  {
+    private static final int[] VOTOS_PRIMEIRO = {1, 1, 2, 2, 3};
+    private static final int[] VOTOS_SEGUNDO = {0, 1, 1, 2, 2};
 	private ArrayList<Jogador> jogadores;
 	private TabuleiroPrincipal tabuleiroPrincipal;
 	
@@ -30,11 +32,9 @@ class Partida  {
     private final ArrayList<TipoTesouro> tesourosBonusPendentes = new ArrayList<>();
     private Melhoria melhoriaCompraPendente;
     private int origemMelhoriaCompra = -1;
-	private int melhoriasGratisPendentes; 
+    private boolean melhoriaGratisPendente;
     private final HashMap<Jogador, ArrayList<Melhoria>> melhoriasIniciais = new HashMap<>();
 	private boolean hasToMove = false;
-    private KhanID ativandoKhan;
-    private final HashSet<ProvinciaID> selecaoKhan = new HashSet<>();
     private final HashMap<Integer, ConselheiroAberto> conselheirosAbertos = new HashMap<>();
 	
  // Construtor usado exclusivamente na restauração de uma partida salva.
@@ -165,7 +165,7 @@ class Partida  {
     }
 
     boolean isSelecaoAcaoPendente() {
-        return ativandoKhan != null || isSelecaoTesouroHabilidadePendente()
+        return melhoriaGratisPendente || isSelecaoTesouroHabilidadePendente()
                 || isEscolhaColunaMelhoriaPendente() || isEscolhaTesouroBonusPendente();
     }
 
@@ -463,13 +463,11 @@ class Partida  {
 	    }
 	
 	    turnoAtual = new Turno(jogador, resultadoColuna);
-        ativandoKhan = null;
-        selecaoKhan.clear();
 	
 	    paradasPercorridas.clear();
 	    tesourosTomadosNoTurno.clear();
 	    acaoRestritaFeita = false;
-	    melhoriasGratisPendentes = 0;
+	    melhoriaGratisPendente = false;
 	    peaoAtivo = null;
         if (!(jogador.getTabuleiroJogador().getPersonagem() instanceof Altani)) {
             peaoAtivo = jogador.getPeao(0);
@@ -520,43 +518,12 @@ class Partida  {
 	    return true;
 	}
 	
-    // Mantém as entradas do Model existentes, delegando à seleção validada.
-    boolean concluirAcaoKhan(ProvinciaKhanID provincia, TipoTributo tributo1, TipoTributo tributo2) {
-        if (provincia == null || tributo1 == null || tributo2 == null
-                || tributo1 == TipoTributo.VAZIO || tributo2 == TipoTributo.VAZIO || tributo1 == tributo2) return false;
-        KhanID destino = KhanID.valueOf(provincia.name());
-        if (!selecionarKhan(destino)) return false;
-        return selecionarTributo(ProvinciaID.valueOf(provincia.name() + "_" + tributo1.name()))
-                && selecionarTributo(ProvinciaID.valueOf(provincia.name() + "_" + tributo2.name()));
-    }
-
-    boolean concluirAcaoKhanMelhorias() {
-        return selecionarKhan(KhanID.M);
-    }
-
     boolean selecionarKhan(KhanID id) {
-        if (encerrada || turnoAtual == null || isSelecaoTesouroHabilidadePendente() || isEscolhaColunaMelhoriaPendente() || isEscolhaTesouroBonusPendente() || !getKhans().contains(id)) return false;
-        ativandoKhan = id;
-        selecaoKhan.clear();
-        return id != KhanID.M || concluirAcaoKhan(id);
-    }
-
-    private boolean concluirAcaoKhan(KhanID id) {
-        if (encerrada || turnoAtual == null || !turnoAtual.isKhanPendente()
-                || !tabuleiroPrincipal.ativarKhan(id, new HashSet<>(selecaoKhan), turnoAtual.getJogador())) return false;
+        if (!getKhans().contains(id) || !tabuleiroPrincipal.ativarKhan(id, turnoAtual.getJogador())) {
+            return false;
+        }
         turnoAtual.concluirAcaoKhan();
-        ativandoKhan = null;
-        selecaoKhan.clear();
         verificarConselheirosAbertos();
-        return true;
-    }
-
-    boolean selecionarTributo(ProvinciaID id) {
-        if (encerrada || turnoAtual == null || isSelecaoTesouroHabilidadePendente() || isEscolhaColunaMelhoriaPendente() || isEscolhaTesouroBonusPendente()) return false;
-        if (ativandoKhan == null) return pegarTributo(id);
-        if (!tabuleiroPrincipal.getProvinicasKhan(ativandoKhan).contains(id)
-                || !selecaoKhan.add(id)) return false;
-        if (selecaoKhan.size() == 2) return concluirAcaoKhan(ativandoKhan);
         return true;
     }
 
@@ -940,7 +907,7 @@ class Partida  {
     ArrayList<Integer> getColunasDisponiveisMelhoria() {
         ArrayList<Integer> colunas = new ArrayList<>();
         if (!isEscolhaColunaMelhoriaPendente()) return colunas;
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 3; i++) {
             if (getJogadorAtual().getTabuleiroJogador().podeReceberMelhoriaComprada(regiaoColunaMelhoria(i))) colunas.add(i);
         }
         return colunas;
@@ -956,12 +923,14 @@ class Partida  {
 
     boolean escolherColunaMelhoria(int coluna) {
         if (!getColunasDisponiveisMelhoria().contains(coluna)) return false;
-        if (!getJogadorAtual().getTabuleiroJogador().adicionarMelhoriaComprada(regiaoColunaMelhoria(coluna), melhoriaCompraPendente)) return false;
-        if (origemMelhoriaCompra < 0) tabuleiroPrincipal.comprarMelhoriaDaPilha();
-        else tabuleiroPrincipal.comprarMelhoria(origemMelhoriaCompra);
+        TabuleiroJogador tabuleiro = getJogadorAtual().getTabuleiroJogador();
+        int linhasAntes = tabuleiro.getQuantidadeLinhasCompletas();
+        if (!tabuleiro.adicionarMelhoriaComprada(regiaoColunaMelhoria(coluna), melhoriaCompraPendente)) return false;
+        retirarMelhoria(origemMelhoriaCompra);
         pagarMelhoria();
         melhoriaCompraPendente = null;
         origemMelhoriaCompra = -1;
+        verificarRecompensaPorLinha(tabuleiro, linhasAntes);
         verificarConselheirosAbertos();
         return true;
     }
@@ -973,15 +942,46 @@ class Partida  {
         return true;
     }
 
-    boolean comprarMelhoriaTabuleiro(int index) {
-        Melhoria melhoria = tabuleiroPrincipal.consultarMelhoria(index);
-        if (!podeComprarMelhoria(melhoria)) return false;
-        if (iniciarEscolhaColunaMelhoria(melhoria, index)) return true;
-        if (!getJogadorAtual().getTabuleiroJogador().adicionarMelhoria(melhoria)) return false;
-        tabuleiroPrincipal.comprarMelhoria(index);
-        pagarMelhoria();
+    boolean isMelhoriaGratisPendente() {
+        return melhoriaGratisPendente;
+    }
+
+    private void verificarRecompensaPorLinha(TabuleiroJogador tabuleiro, int linhasAntes) {
+        int linhas = tabuleiro.getQuantidadeLinhasCompletas();
+        int linhasSemRecompensa = tabuleiro.getPersonagem().getQuantidadeOpcoesMelhoriaInicial() > 0 ? 1 : 0;
+        melhoriaGratisPendente = linhas > linhasAntes && linhas > linhasSemRecompensa
+                && tabuleiro.podeReceberMelhoriaBranca()
+                && (tabuleiroPrincipal.consultarMelhoriaDaPilha() != null
+                    || tabuleiroPrincipal.temMelhoriaDisponivel());
+    }
+
+    boolean comprarMelhoriaTabuleiro(int indice) {
+        return adquirirMelhoria(tabuleiroPrincipal.consultarMelhoria(indice), indice);
+    }
+
+    private boolean adquirirMelhoria(Melhoria melhoria, int origem) {
+        if (melhoria == null) return false;
+        TabuleiroJogador tabuleiro = getJogadorAtual().getTabuleiroJogador();
+        if (melhoriaGratisPendente) {
+            if (!tabuleiro.adicionarMelhoriaBranca(melhoria)) return false;
+            retirarMelhoria(origem);
+            melhoriaGratisPendente = false;
+        } else {
+            if (!podeComprarMelhoria(melhoria)) return false;
+            if (iniciarEscolhaColunaMelhoria(melhoria, origem)) return true;
+            int linhasAntes = tabuleiro.getQuantidadeLinhasCompletas();
+            if (!tabuleiro.adicionarMelhoria(melhoria)) return false;
+            retirarMelhoria(origem);
+            pagarMelhoria();
+            verificarRecompensaPorLinha(tabuleiro, linhasAntes);
+        }
         verificarConselheirosAbertos();
         return true;
+    }
+
+    private void retirarMelhoria(int origem) {
+        if (origem < 0) tabuleiroPrincipal.comprarMelhoriaDaPilha();
+        else tabuleiroPrincipal.comprarMelhoria(origem);
     }
 
 	//FIM DA PARTIDA
@@ -996,7 +996,7 @@ class Partida  {
             int primeiro = 0;
             int segundo = 0;
             for (Jogador jogador : jogadores) {
-                int quantidade = tabuleiroPrincipal.getQuantidadeYurts(jogador, regiao);
+                int quantidade = tabuleiroPrincipal.getQuantidadeYurtsIncluindoConquistas(jogador, regiao);
                 yurts.put(jogador, quantidade);
                 if (quantidade > primeiro) {
                     segundo = primeiro;
@@ -1013,9 +1013,9 @@ class Partida  {
                 int melhorias = Math.min(4, jogador.getTabuleiroJogador().getQuantidadeMelhorias(regiao));
                 int votos = 0;
                 if (quantidade == primeiro) {
-                    votos = Math.max(1, melhorias);
+                    votos = VOTOS_PRIMEIRO[melhorias];
                 } else if (empatadosPrimeiro == 1 && quantidade == segundo) {
-                    votos = (melhorias + 1) / 2;
+                    votos = VOTOS_SEGUNDO[melhorias];
                 }
                 pontos.put(jogador, pontos.get(jogador) + votos);
             }
@@ -1084,16 +1084,13 @@ class Partida  {
 	
     HashSet<KhanID> getKhans() {
         HashSet<KhanID> destinos = new HashSet<>();
-        if (!encerrada && turnoAtual != null && !isEscolhaPeaoPendente() && !isSelecaoTesouroHabilidadePendente() && !isEscolhaColunaMelhoriaPendente() && !isEscolhaTesouroBonusPendente() && turnoAtual.isKhanPendente()) {
+        if (!encerrada && turnoAtual != null && !isEscolhaPeaoPendente() && !isSelecaoAcaoPendente() && turnoAtual.isKhanPendente()) {
             for (KhanID id : KhanID.values()) if (id != tabuleiroPrincipal.getKhan()) destinos.add(id);
         }
         return destinos;
     }
 
     KhanID getKhan() { return tabuleiroPrincipal.getKhan(); }
-
-    boolean getAtivacaoKhan() { return ativandoKhan != null; }
-    KhanID getKhanSelecionado() { return ativandoKhan; }
 
     HashMap<CidadeID, ArrayList<TipoTesouro>> getCidades() {
         HashMap<CidadeID, ArrayList<TipoTesouro>> cidades = new HashMap<>();
@@ -1142,15 +1139,10 @@ class Partida  {
 		return jogadores;
 	}
 	
-	HashMap<ProvinciaID, Integer> getCargasProvincias(){
-        if (ativandoKhan == null) return tabuleiroPrincipal.getCargasProvincias();
-        HashMap<ProvinciaID, Integer> cargas = new HashMap<>();
-        for (ProvinciaID id : ProvinciaID.values()) {
-            cargas.put(id, tabuleiroPrincipal.getProvinicasKhan(ativandoKhan).contains(id) ? 1 : 0);
-        }
-        return cargas;
-	}
-	
+    HashMap<ProvinciaID, Integer> getCargasProvincias() {
+        return tabuleiroPrincipal.getCargasProvincias();
+    }
+
 	HashSet<ParadaID> getAlcancaveisTotais(){
 		HashSet<ParadaID> ret = new HashSet<ParadaID>();
         if (turnoAtual == null || peaoAtivo == null || isSelecaoAcaoPendente() || encerrada) return ret;
@@ -1179,8 +1171,7 @@ class Partida  {
 	HashSet<ProvinciaID> getProvincias(){
 
 		HashSet<ProvinciaID> ret = new HashSet<ProvinciaID>();
-        if (turnoAtual == null || encerrada || isSelecaoTesouroHabilidadePendente() || isEscolhaColunaMelhoriaPendente() || isEscolhaTesouroBonusPendente()) return ret;
-        if (ativandoKhan != null) return new HashSet<>(selecaoKhan);
+        if (turnoAtual == null || encerrada || isSelecaoAcaoPendente()) return ret;
 		if(turnoAtual.getQuantidadeAcao(TipoAcao.PEGAR_TRIBUTO)<=0) return ret;
 		for(Provincia p: turnoAtual.getProvinciasVisitadas())
 			ret.add(p.getId());
@@ -1188,14 +1179,7 @@ class Partida  {
 	}
 	
     boolean comprarMelhoriaDaPilha() {
-        Melhoria melhoria = tabuleiroPrincipal.consultarMelhoriaDaPilha();
-        if (!podeComprarMelhoria(melhoria)) return false;
-        if (iniciarEscolhaColunaMelhoria(melhoria, -1)) return true;
-        if (!getJogadorAtual().getTabuleiroJogador().adicionarMelhoria(melhoria)) return false;
-        tabuleiroPrincipal.comprarMelhoriaDaPilha();
-        pagarMelhoria();
-        verificarConselheirosAbertos();
-        return true;
+        return adquirirMelhoria(tabuleiroPrincipal.consultarMelhoriaDaPilha(), -1);
     }
 
     private boolean podePagarMelhoria() {
@@ -1209,9 +1193,9 @@ class Partida  {
         if (!podePagarMelhoria() || melhoria == null) return false;
         TabuleiroJogador tabuleiro = getJogadorAtual().getTabuleiroJogador();
         if (!tabuleiro.getPersonagem().ignoraCorMelhoria()) {
-            return tabuleiro.getQuantidadeMelhorias(melhoria.getRegiao()) < 5;
+            return tabuleiro.podeReceberMelhoriaComprada(melhoria.getRegiao());
         }
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 3; i++) {
             if (tabuleiro.podeReceberMelhoriaComprada(regiaoColunaMelhoria(i))) return true;
         }
         return false;
@@ -1224,7 +1208,8 @@ class Partida  {
     }
 
     boolean isCompravel() {
-        return podeComprarMelhoria(tabuleiroPrincipal.consultarMelhoriaDaPilha());
+        Melhoria topo = tabuleiroPrincipal.consultarMelhoriaDaPilha();
+        return topo != null && (melhoriaGratisPendente || podeComprarMelhoria(topo));
     }
 
 	ArrayList<Melhoria> getMelhorias(){

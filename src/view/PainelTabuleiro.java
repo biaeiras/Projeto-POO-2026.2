@@ -42,7 +42,6 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
     private static final Color COR_ALCANCAVEL = Color.WHITE;
     private static final Color COR_TRIBUTO = Color.CYAN;
     private static final Color COR_TRIBUTO_SELECIONADO = Color.RED;
-    private static final Color COR_KHAN_SELECIONADO = Color.GREEN;
     private static final Color COR_KHAN = Color.WHITE;
 	private static final double RAIO_PARADA = 0.021;
 	private static final double RAIO_PEAO = 0.015;
@@ -76,7 +75,6 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
     private HashSet<ProvinciaID> provinciasDisponiveis = new HashSet<>();
     private HashSet<KhanID> khans = new HashSet<>();
     private HashMap<ParadaID, TipoBonus> bonus = new HashMap<>();
-    private KhanID khanSelecionado = null;
     private KhanID khan = null;
     private HashMap<CidadeID, ArrayList<TipoTesouro>> cidades = new HashMap<>();
     private HashMap<CidadeID, Cor> cidadesConquistadas = new HashMap<>();
@@ -281,8 +279,7 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         if (khan != null) marcacoes.add(khan);
         for (KhanID id : marcacoes) {
             Point2D.Double p = posicoesKhan.get(id);
-            if(id == khanSelecionado) g.setColor(COR_KHAN_SELECIONADO);
-            else g.setColor(COR_KHAN);
+            g.setColor(COR_KHAN);
             int x = (int)((p.getX()-(RAIO_PARADA+ESPACAMENTO_YURT))*getWidth());
             int y = (int)((p.getY()-(RAIO_PARADA+ESPACAMENTO_YURT))*getHeight());
             int w = (int) (2*(RAIO_PARADA+ESPACAMENTO_YURT)*getWidth());
@@ -398,10 +395,9 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         legenda.setOpaque(false);
         adicionarLegenda(legenda, COR_MOVIMENTO, false, "Movimento imediato:<br>clique esquerdo.");
         adicionarLegenda(legenda, COR_ALCANCAVEL, false, "Parada alcançável com<br>os movimentos restantes.");
-        adicionarLegenda(legenda, COR_TRIBUTO_SELECIONADO, false, "Coleta disponível / tributo<br>selecionado no Khan.");
+        adicionarLegenda(legenda, COR_TRIBUTO_SELECIONADO, false, "Coleta de tributo disponível.");
         adicionarLegenda(legenda, COR_TRIBUTO, false, "Peças de tributo presentes no mapa.");
         adicionarLegenda(legenda, COR_KHAN, false, "Destino disponível<br>para mover o Khan.");
-        adicionarLegenda(legenda, COR_KHAN_SELECIONADO, false, "Região selecionada<br>para o Khan.");
         JLabel controles = new JLabel("<html>Tesouro: clique esquerdo para atacar.<br>"
                 + "Parada: clique direito para construir yurt.<br>Peões e yurts usam a cor do jogador.</html>");
         controles.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -479,7 +475,6 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         provinciasDisponiveis = observado.getProvincias();
         khans = observado.getKhans();
         khan = observado.getKhan();
-        khanSelecionado = observado.getKhanSelecionado();
         cidades = observado.getCidades();
         cidadesConquistadas = observado.getCidadesConquistadas();
         bonus = observado.getBonus();

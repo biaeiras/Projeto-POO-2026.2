@@ -42,7 +42,7 @@ class ConselheiroSecreto extends CartaConselheiro {
             case GOVERNADOR:
                 int regioes = 0;
                 for (Regiao regiao : Regiao.values()) {
-                    if (mapa.getQuantidadeYurtsGovernador(jogador, regiao) >= 2
+                    if (mapa.getQuantidadeYurtsIncluindoConquistas(jogador, regiao) >= 2
                             && cartela.getQuantidadeMelhorias(regiao) >= 2) regioes++;
                 }
                 return votosPorPatamares(regioes, 1, 2, 3);
