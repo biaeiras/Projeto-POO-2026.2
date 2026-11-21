@@ -22,6 +22,7 @@ class Parada {
 	int getNumPeoes() {
 		return peoes.size();
 	}
+	
  	void insertVizinhos(ParadaID id, Parada parada) {
 		this.vizinhos.put(id, parada);
 		return;

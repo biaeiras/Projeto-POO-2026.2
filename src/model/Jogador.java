@@ -67,6 +67,43 @@ class Jogador {
 
         this.conselheiroSecreto = null;
     }
+    
+    //construtor exclusivo para restauração 
+    
+    Jogador(TabuleiroJogador tabuleiroJogador) {
+
+        if (tabuleiroJogador == null) {
+            throw new IllegalArgumentException( "O tabuleiro do jogador deve ser informado." );
+        }
+
+        this.tributos = new HashMap<TipoTributo, Integer>();
+
+        for (TipoTributo tipo : TipoTributo.values()) {
+            this.tributos.put(tipo, 0);
+        }
+
+        this.tesouros = new HashMap<TipoTesouro, Integer>();
+
+        for (TipoTesouro tipo : TipoTesouro.values()) {
+            this.tesouros.put(tipo, 0);
+        }
+
+        this.yurtsDisponiveis = 12;
+        this.votos = 0;
+        this.tabuleiroJogador = tabuleiroJogador;
+
+        this.peoes = new ArrayList<>();
+
+        Personagem personagem = tabuleiroJogador.getPersonagem();
+        int quantidadePeoes = personagem.getQuantidadePeoesIniciais();
+
+        for (int i = 0; i < quantidadePeoes; i++) {
+            this.peoes.add(new Peao(this));
+        }
+
+        this.opcoesConselheiro = new ArrayList<>();
+        this.conselheiroSecreto = null;
+    }
 
     Peao getPeao(int indice) {
         return peoes.get(indice);
@@ -74,6 +111,29 @@ class Jogador {
 
     int getQuantidadePeoes() {
         return peoes.size();
+    }
+    
+ // Retorna uma cópia da lista de peões do jogador.
+    ArrayList<Peao> getPeoes() {
+        return new ArrayList<>(peoes);
+    }
+
+    // Restaura a posição de um peão.
+    void restaurarPosicaoPeao(int indice, Parada posicao) {
+        if (indice < 0 || indice >= peoes.size() || posicao == null) {
+            throw new IllegalArgumentException("Posição do peão inválida.");
+        }
+
+        Peao peao = peoes.get(indice);
+
+        Parada posicaoAnterior = peao.getPosicao();
+
+        if (posicaoAnterior != null) {
+            posicaoAnterior.removePeao(peao);
+        }
+
+        peao.setPosicao(posicao);
+        posicao.insertPeao(peao);
     }
 
     boolean possuiPeao(Peao peao) {
@@ -293,6 +353,102 @@ class Jogador {
     HashMap<TipoBonus, PecaBonus> getPecasBonus(){
     	return new HashMap<>(pecasBonus); 
     }
+    
+    void restaurarEstado(int yurtsDisponiveis,int votos,TipoConselheiroSecreto tipoConselheiro) {
+        this.yurtsDisponiveis = yurtsDisponiveis;
+        
+        this.votos = votos;
+
+        if (tipoConselheiro != null) {
+            this.conselheiroSecreto =
+                    new ConselheiroSecreto(tipoConselheiro);
+        }
+    }
+    
+ // Retorna cópias dos inventários para a persistência.
+    HashMap<TipoTributo, Integer> getTributos() {
+        return new HashMap<>(tributos);
+    }
+
+    HashMap<TipoTesouro, Integer> getTesouros() {
+        return new HashMap<>(tesouros);
+    }
+
+    ArrayList<ConselheiroSecreto> getOpcoesConselheiro() {
+        return new ArrayList<>(opcoesConselheiro);
+    }
+
+    // Restaura os inventários do jogador.
+    void restaurarInventarios(HashMap<TipoTributo, Integer> tributosSalvos, HashMap<TipoTesouro, Integer> tesourosSalvos) {
+
+        if (tributosSalvos == null || tesourosSalvos == null) {
+            throw new IllegalArgumentException("Inventário salvo inválido.");
+        }
+
+        for (TipoTributo tipo : TipoTributo.values()) {
+            Integer quantidade = tributosSalvos.get(tipo);
+
+            if (quantidade == null || quantidade < 0) {
+                throw new IllegalArgumentException(
+                        "Quantidade de tributo inválida: " + tipo
+                );
+            }
+        }
+
+        for (TipoTesouro tipo : TipoTesouro.values()) {
+            Integer quantidade = tesourosSalvos.get(tipo);
+
+            if (quantidade == null || quantidade < 0) {
+                throw new IllegalArgumentException(
+                        "Quantidade de tesouro inválida: " + tipo
+                );
+            }
+        }
+
+        tributos.clear();
+        tributos.putAll(tributosSalvos);
+
+        tesouros.clear();
+        tesouros.putAll(tesourosSalvos);
+    }
+    
+    void restaurarPecasBonus(ArrayList<TipoBonus> tipos, ArrayList<Boolean> usadas) {
+
+		if (tipos == null || usadas == null || tipos.size() != usadas.size()) {
+			throw new IllegalArgumentException("Dados das peças bônus inválidos.");
+		}
+		
+		// Verifica os dados antes de alterar o estado atual
+		for (int i = 0; i < tipos.size(); i++) {
+			
+			if (tipos.get(i) == null || usadas.get(i) == null) {
+				throw new IllegalArgumentException("Peça bônus inválida.");
+			}
+			
+			if (tipos.indexOf(tipos.get(i)) != i) {
+				throw new IllegalArgumentException("Peça bônus duplicada.");
+			}
+		}
+		
+		pecasBonus.clear();
+		ordemPecasBonus.clear();
+		
+		for (int i = 0; i < tipos.size(); i++) {
+			
+			TipoBonus tipo = tipos.get(i);
+			
+			PecaBonus peca = new PecaBonus(tipo);
+			
+			if (usadas.get(i)) {
+				peca.usar();
+			}
+			
+			pecasBonus.put(tipo, peca);
+			ordemPecasBonus.add(tipo);
+		}
+}
+    
+    
     
     
 }

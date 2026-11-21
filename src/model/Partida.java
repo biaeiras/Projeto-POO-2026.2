@@ -36,9 +36,15 @@ class Partida  {
     private final HashSet<ProvinciaID> selecaoKhan = new HashSet<>();
     private final HashMap<Integer, ConselheiroAberto> conselheirosAbertos = new HashMap<>();
 	
+ // Construtor usado exclusivamente na restauração de uma partida salva.
+    Partida() {
+        this.jogadores = new ArrayList<>();
+    }
+    
 	Partida(ArrayList<Cor> coresEscolhidas) {
         this(coresEscolhidas, sortearConselheirosAbertos());
     }
+
 
     // Também permite preparar uma partida determinística nos testes do Model.
     Partida(ArrayList<Cor> coresEscolhidas, List<TipoConselheiroAberto> cartasAbertas) {
@@ -1172,4 +1178,112 @@ class Partida  {
 	ArrayList<Melhoria> getMelhorias(){
 		return tabuleiroPrincipal.getMelhorias();
 	}
+	
+	
+	void adicionarJogador(Jogador jogador) {
+	    jogadores.add(jogador);
+	}
+	
+
+	TabuleiroPrincipal getTabuleiroPrincipal() {
+	    return tabuleiroPrincipal;
+	}
+
+	int getIndiceJogadorAtual() {
+	    return indiceJogadorAtual;
+	}
+
+	int getLimiteVotos() {
+	    return limiteVotos;
+	}
+
+
+	int getRodadasExtras() {
+	    return rodadasExtras;
+	}
+
+	int getTurnosRestantesAposFim() {
+	    return turnosRestantesAposFim;
+	}
+
+	boolean isPontuacaoFinalCalculada() {
+	    return pontuacaoFinalCalculada;
+	}
+	
+	void restaurarEstadoGeral(
+	        int indiceJogador,
+	        int votos,
+	        boolean partidaEncerrada,
+	        boolean fimDisparado,
+	        int rodadasExtras,
+	        int turnosRestantes,
+	        boolean pontuacaoCalculada) {
+
+	    if (indiceJogador < 0 || indiceJogador >= jogadores.size()|| votos < 0 || rodadasExtras < 0 || turnosRestantes < 0) {
+	        throw new IllegalArgumentException("Estado da partida inválido.");
+	    }
+
+	    this.indiceJogadorAtual = indiceJogador;
+	    this.votosFichaNeutra = votos;
+	    this.encerrada = partidaEncerrada;
+	    this.fimDisparado = fimDisparado;
+	    this.rodadasExtras = rodadasExtras;
+	    this.turnosRestantesAposFim = turnosRestantes;
+	    this.pontuacaoFinalCalculada = pontuacaoCalculada;
+	}
+	
+	void restaurarLimiteVotos(int limite) {
+	    if (limite <= 0) {
+	        throw new IllegalArgumentException("Limite de votos inválido.");
+	    }
+	    this.limiteVotos = limite;
+	}
+	
+	void restaurarTabuleiroPrincipal(TabuleiroPrincipal tabuleiro) {
+	    if (tabuleiro == null) {
+	        throw new IllegalArgumentException("Tabuleiro inválido.");
+	    }
+
+	    this.tabuleiroPrincipal = tabuleiro;
+	}
+	
+	void restaurarConselheirosAbertos( ArrayList<TipoConselheiroAberto> tipos, ArrayList<Jogador> cumpridosPor) {
+
+	    if (tipos == null || cumpridosPor == null
+	            || tipos.size() != 4 || cumpridosPor.size() != 4) {
+	        throw new IllegalArgumentException("Dados dos conselheiros abertos inválidos.");
+	    }
+
+	    for (int i = 0; i < 4; i++) {
+	        TipoConselheiroAberto tipo = tipos.get(i);
+	        Jogador jogador = cumpridosPor.get(i);
+
+	        if (tipo == null || tipos.indexOf(tipo) != i) {
+	            throw new IllegalArgumentException("Conselheiro aberto inválido ou repetido.");
+	        }
+
+	        if (jogador != null && !jogadores.contains(jogador)) {
+	            throw new IllegalArgumentException("Jogador do conselheiro não pertence à partida.");
+	        }
+	    }
+
+	    conselheirosAbertos.clear();
+
+	    for (int i = 0; i < 4; i++) {
+	        ConselheiroAberto carta = new ConselheiroAberto(tipos.get(i));
+
+	        if (cumpridosPor.get(i) != null) {
+	            carta.restaurarCumprimento(cumpridosPor.get(i));
+	        }
+
+	        conselheirosAbertos.put(i, carta);
+	    }
+	}
+	
+	// Disponibiliza a criação do personagem para a restauração,
+	// sem expor diretamente o método interno da partida.
+	Personagem criarPersonagemParaRestauracao(Cor cor) {
+	    return criarPersonagem(cor);
+	}
+	
 }

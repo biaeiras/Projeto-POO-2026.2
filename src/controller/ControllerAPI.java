@@ -14,7 +14,9 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JFileChooser;
 
 import java.util.HashMap;
 import model.ParadaID;
@@ -55,6 +57,14 @@ public class ControllerAPI {
 
     public void removerObservador(ObservadorJogo observador) {
         fachada.removerObservador(observador);
+    }
+    
+    public boolean podeSalvarPartida() {
+    	return fachada.podeSalvarPartida(); 
+    }
+    
+    public void salvarPartida(java.io.File arquivo) throws java.io.IOException {
+        fachada.salvarPartida(arquivo);
     }
 
     public ControllerAPI(ViewAPI viewAPI, FachadaJogo fachada) {
@@ -119,6 +129,31 @@ public class ControllerAPI {
                 }
             }
         );
+        
+        menu.getBotaoCarregar().addActionListener(
+        	    new ActionListener() {
+        	        @Override
+        	        public void actionPerformed(ActionEvent evento) {
+        	            JFileChooser seletor = new JFileChooser();
+        	            seletor.setDialogTitle("Selecionar partida salva");
+
+        	            int resultado = seletor.showOpenDialog(menu);
+
+        	            if (resultado == JFileChooser.APPROVE_OPTION) {
+        	                try {
+        	                	fachada.carregarPartida(seletor.getSelectedFile()); 
+        	                	
+        	                	menu.dispose(); 
+        	                	abrirJanelasDaPartida(); 
+        	                	
+        	                } catch (java.io.IOException e) {
+        	                    JOptionPane.showMessageDialog(menu,"Erro ao carregar a partida: " + e.getMessage(),"Erro",JOptionPane.ERROR_MESSAGE);
+        	            }
+        	        }
+        	     }
+        	        
+        	    }
+        	);
 
         menu.setVisible(true);
     }
@@ -314,10 +349,31 @@ public class ControllerAPI {
             }
         });
 
-        removerObservador(preparacao);
-        preparacao.dispose();
+        if (preparacao != null) {
+            removerObservador(preparacao);
+            preparacao.dispose();
+        }
         viewPrincipal.exibir();
         mostrarJanelaJogador();
+    }
+    
+    public void iniciarNovaPartida() {
+        if (controladorJogador != null) {
+            controladorJogador.encerrar();
+            controladorJogador = null;
+        }
+
+        if (janelaJogador != null) {
+            janelaJogador.dispose();
+            janelaJogador = null;
+        }
+
+        if (viewPrincipal != null) {
+            viewPrincipal.encerrar();
+            viewPrincipal = null;
+        }
+
+        abrirPreparacao();
     }
 
     private void mostrarJanelaJogador() {

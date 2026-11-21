@@ -75,6 +75,24 @@ class TabuleiroJogador {
 	        return new ArrayList<>(melhorias);
 	    }
 	    
+	    void restaurarMelhorias(ArrayList<Melhoria> melhoriasSalvas) {
+	        if (melhoriasSalvas == null || melhoriasSalvas.size() > 5) {
+	            throw new IllegalArgumentException("Melhorias salvas inválidas.");
+	        }
+
+	        melhorias.clear();
+
+	        for (Melhoria melhoria : melhoriasSalvas) {
+	            if (melhoria == null || (regiao != null && melhoria.getRegiao() != regiao)) {
+	                throw new IllegalArgumentException(
+	                    "Melhoria incompatível com a coluna."
+	                );
+	            }
+
+	            melhorias.add(melhoria);
+	        }
+	    }
+	    
 	}
 
     private Personagem personagem;
@@ -254,4 +272,69 @@ class TabuleiroJogador {
     ArrayList<Melhoria> getMelhoriasColunaBranca() {
         return colunaBranca.getMelhorias();
     }
+    
+    HashMap<Regiao, ArrayList<Melhoria>> exportarMelhoriasRegiao() {
+        HashMap<Regiao, ArrayList<Melhoria>> resultado = new HashMap<>();
+
+        for (Regiao regiao : Regiao.values()) {
+            resultado.put(regiao, colunasRegiao.get(regiao).getMelhorias());
+        }
+
+        return resultado;
+    }
+
+    ArrayList<Melhoria> exportarMelhoriasBrancas() {
+        return colunaBranca.getMelhorias();
+    }
+    
+    void restaurarMelhorias( HashMap<Regiao, ArrayList<Melhoria>> melhoriasRegiao, ArrayList<Melhoria> melhoriasBrancas) {
+
+        if (melhoriasRegiao == null || melhoriasBrancas == null) {
+            throw new IllegalArgumentException( "Melhorias salvas inválidas."  );
+        }
+
+        for (Regiao regiao : Regiao.values()) {
+            ArrayList<Melhoria> melhorias = melhoriasRegiao.get(regiao);
+
+            if (melhorias == null) {
+                throw new IllegalArgumentException( "Melhorias ausentes para " + regiao );
+            }
+
+            colunasRegiao.get(regiao).restaurarMelhorias(melhorias);
+        }
+
+        colunaBranca.restaurarMelhorias(melhoriasBrancas);
+    }
+
+    void restaurarAtivacoes(int fichasDisponiveis, HashMap<Regiao, Boolean> colunasAtivadas,
+            boolean colunaBrancaAtivada) {
+
+        if (fichasDisponiveis < 0 || fichasDisponiveis > TOTAL_FICHAS_ATIVACAO || colunasAtivadas == null) {
+            throw new IllegalArgumentException("Estado de ativação inválido.");
+        }
+
+        for (Regiao regiao : Regiao.values()) {
+            Boolean ativada = colunasAtivadas.get(regiao);
+
+            if (ativada == null) {
+                throw new IllegalArgumentException("Ativação ausente para " + regiao);
+            }
+
+            if (ativada) {
+                colunasRegiao.get(regiao).ativar();
+            } else {
+                colunasRegiao.get(regiao).desativar();
+            }
+        }
+
+        if (colunaBrancaAtivada) {
+            colunaBranca.ativar();
+        } else {
+            colunaBranca.desativar();
+        }
+
+        this.fichasAtivacaoDisponiveis = fichasDisponiveis;
+    }
+    
+    
 }

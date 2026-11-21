@@ -31,5 +31,12 @@ class Provincia {
 	int getCargas() {
 		return this.cargas;
 	}
+	
+	void restaurarCargas(int cargas) {
+	    if (cargas < 0) {
+	        throw new IllegalArgumentException("Quantidade de cargas inválida.");
+	    }
+	    this.cargas = cargas;
+	}
 
 }
