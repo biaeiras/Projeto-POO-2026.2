@@ -127,6 +127,11 @@ class Turno {
 	    acoesDisponiveis.put(tipo, atual + quantidade);
 	}
 	
+    void adicionarAcoesBonus(int movimentos, int coletas) {
+        if (movimentos > 0) adicionarAcao(TipoAcao.MOVIMENTO, movimentos);
+        if (coletas > 0) adicionarAcao(TipoAcao.PEGAR_TRIBUTO, coletas);
+    }
+
 	int getQuantidadeAcao(TipoAcao tipo) {
 	    return acoesDisponiveis.getOrDefault(tipo, 0);
 	}

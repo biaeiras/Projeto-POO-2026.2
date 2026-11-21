@@ -27,7 +27,7 @@ class MouseTabuleiro extends MouseAdapter {
             return;
         }
 
-        if (fachada.isEscolhaColunaMelhoriaPendente()) return;
+        if (fachada.isEscolhaColunaMelhoriaPendente() || fachada.isEscolhaTesouroBonusPendente()) return;
 
         if (fachada.isEscolhaPeaoPendente()) {
             if (evento.getButton() == MouseEvent.BUTTON1) {

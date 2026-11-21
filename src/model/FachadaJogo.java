@@ -818,6 +818,35 @@ public class FachadaJogo implements ObservadoJogo {
         return escolheu;
     }
 
+    @Override
+    public boolean podeUsarPecaBonus(int indice) {
+        return partida != null && partida.podeUsarPecaBonus(indice);
+    }
+
+    @Override
+    public boolean isEscolhaTesouroBonusPendente() {
+        return partida != null && partida.isEscolhaTesouroBonusPendente();
+    }
+
+    @Override
+    public ArrayList<TipoTesouro> getTesourosBonusPendentes() {
+        return partida == null ? new ArrayList<TipoTesouro>() : partida.getTesourosBonusPendentes();
+    }
+
+    public boolean usarPecaBonus(int indice) {
+        verificarPartidaIniciada();
+        boolean usou = partida.usarPecaBonus(indice);
+        if (usou) notificarObservadores();
+        return usou;
+    }
+
+    public boolean escolherTesouroBonus(int indice) {
+        verificarPartidaIniciada();
+        boolean escolheu = partida.escolherTesouroBonus(indice);
+        if (escolheu) notificarObservadores();
+        return escolheu;
+    }
+
     public boolean isCompravel() {
     	return partida.isCompravel();
     }

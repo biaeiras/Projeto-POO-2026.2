@@ -934,6 +934,13 @@ class TabuleiroPrincipal {
     	return ret;
     }
     
+    ArrayList<TipoTesouro> retirarTesourosBonus() {
+        ArrayList<TipoTesouro> tesouros = new ArrayList<>();
+        if (pilhaTesouros.size() < 3) return tesouros;
+        for (int i = 0; i < 3; i++) tesouros.add(pilhaTesouros.pop());
+        return tesouros;
+    }
+
     void devolverMelhoriaAPilha(Melhoria melhoria) {
         if (melhoria != null) pilhaMelhorias.insertElementAt(melhoria, 0);
     }

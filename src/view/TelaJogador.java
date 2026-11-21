@@ -30,6 +30,7 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
     private PainelTabuleiroJogador painelTabuleiroJogador;
     private PainelPecasBonus painelPecasBonus;
     private JLabel informacaoTabuleiro;
+    private final ArrayList<model.TipoTesouro> opcoesTesouroBonus = new ArrayList<>();
     private JPanel previaMelhoria;
     private PainelCartaConselheiroSecreto imagemMelhoriaPendente;
 
@@ -421,6 +422,64 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
         }
     }
 
+    public PainelPecasBonus getPainelPecasBonus() { return painelPecasBonus; }
+
+    public int escolherTesouroBonus() {
+        if (opcoesTesouroBonus.size() != 3) return -1;
+        final int[] escolha = {-1};
+        final JDialog janela = new JDialog(SwingUtilities.getWindowAncestor(this),
+                "Escolha um tesouro", Dialog.ModalityType.APPLICATION_MODAL);
+        JPanel raiz = new JPanel(new BorderLayout(12, 12));
+        raiz.setBackground(pergaminho);
+        raiz.setBorder(new EmptyBorder(16, 16, 16, 16));
+        JLabel instrucao = new JLabel("Escolha um tesouro para manter. Os outros serão descartados.");
+        instrucao.setForeground(texto);
+        raiz.add(instrucao, BorderLayout.NORTH);
+        JPanel opcoes = new JPanel(new GridLayout(1, 3, 12, 0));
+        opcoes.setOpaque(false);
+        int[] arquivos = {1, 3, 4, 2, 5};
+        for (int i = 0; i < 3; i++) {
+            final int indice = i;
+            final java.awt.image.BufferedImage imagem;
+            try {
+                imagem = javax.imageio.ImageIO.read(getClass().getResource(
+                        "/fichas/cartoes7-" + arquivos[opcoesTesouroBonus.get(i).ordinal()] + ".jpg"));
+            } catch (java.io.IOException erro) {
+                throw new IllegalStateException("Não foi possível carregar o tesouro.", erro);
+            }
+            JButton botao = new JButton() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    Graphics2D desenho = (Graphics2D) g.create();
+                    desenho.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                    int lado = Math.max(0, Math.min(getWidth(), getHeight()) - 16);
+                    desenho.drawImage(imagem, (getWidth() - lado) / 2, (getHeight() - lado) / 2, lado, lado, this);
+                    desenho.dispose();
+                }
+            };
+            botao.setToolTipText(opcoesTesouroBonus.get(i).name());
+            botao.getAccessibleContext().setAccessibleName(opcoesTesouroBonus.get(i).name());
+            botao.setPreferredSize(new Dimension(130, 130));
+            botao.setBackground(new Color(250, 240, 216));
+            botao.setBorder(new LineBorder(dourado, 2));
+            botao.addActionListener(new java.awt.event.ActionListener() {
+                @Override
+                public void actionPerformed(java.awt.event.ActionEvent evento) {
+                    escolha[0] = indice;
+                    janela.dispose();
+                }
+            });
+            opcoes.add(botao);
+        }
+        raiz.add(opcoes, BorderLayout.CENTER);
+        janela.setContentPane(raiz);
+        janela.pack();
+        janela.setLocationRelativeTo(this);
+        janela.setVisible(true);
+        return escolha[0];
+    }
+
     public PainelTabuleiroJogador getPainelTabuleiroJogador() {
         return painelTabuleiroJogador;
     }
@@ -451,6 +510,11 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
     }
 
     private void atualizarInterface(ObservadoJogo observado) {
+        opcoesTesouroBonus.clear();
+        opcoesTesouroBonus.addAll(observado.getTesourosBonusPendentes());
+        boolean[] bonusDisponiveis = new boolean[7];
+        for (int i = 0; i < 7; i++) bonusDisponiveis[i] = observado.podeUsarPecaBonus(i);
+        painelPecasBonus.definirDisponiveis(bonusDisponiveis);
         model.Melhoria melhoria = observado.getMelhoriaCompraPendente();
         imagemMelhoriaPendente.definirCarta(melhoria == null ? null : ImagensMelhorias.loadImage(melhoria));
         boolean mostrarPrevia = observado.isEscolhaColunaMelhoriaPendente() && melhoria != null;
@@ -536,6 +600,8 @@ public class TelaJogador extends JPanel implements ObservadorJogo {
 
         if (observado.isPartidaEncerrada()) {
             situacao = "Partida encerrada.";
+        } else if (observado.isEscolhaTesouroBonusPendente()) {
+            situacao = "Clique novamente na peça de baús para concluir a escolha do tesouro.";
         } else if (observado.isEscolhaColunaMelhoriaPendente()) {
             situacao = "Posicione a melhoria ao lado: clique no retângulo inferior de uma coluna disponível.";
         } else if (observado.isEscolhaPeaoPendente()) {

@@ -10,6 +10,9 @@ public interface ObservadoJogo {
 
     boolean isEscolhaMelhoriaInicialPendente();
     ArrayList<Melhoria> getOpcoesMelhoriaInicial();
+    boolean podeUsarPecaBonus(int indice);
+    boolean isEscolhaTesouroBonusPendente();
+    ArrayList<TipoTesouro> getTesourosBonusPendentes();
     boolean existePartida();
     String getNomePersonagemAtual();
     String getNomeConselheiroSecretoJogadorAtual();

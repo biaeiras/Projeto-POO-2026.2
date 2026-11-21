@@ -27,6 +27,7 @@ class Partida  {
 	private final HashMap<Cidade, Integer> tesourosTomadosNoTurno = new HashMap<>();
 	private Peao peaoAtivo; 
 	private boolean acaoRestritaFeita; 
+    private final ArrayList<TipoTesouro> tesourosBonusPendentes = new ArrayList<>();
     private Melhoria melhoriaCompraPendente;
     private int origemMelhoriaCompra = -1;
 	private int melhoriasGratisPendentes; 
@@ -165,7 +166,7 @@ class Partida  {
 
     boolean isSelecaoAcaoPendente() {
         return ativandoKhan != null || isSelecaoTesouroHabilidadePendente()
-                || isEscolhaColunaMelhoriaPendente();
+                || isEscolhaColunaMelhoriaPendente() || isEscolhaTesouroBonusPendente();
     }
 
     boolean isSelecaoTesouroHabilidadePendente() {
@@ -225,6 +226,52 @@ class Partida  {
     }
 
     // Ponto de integração para a entrega de tesouros que concede uma peça bônus.
+    boolean isEscolhaTesouroBonusPendente() {
+        return !tesourosBonusPendentes.isEmpty();
+    }
+
+    ArrayList<TipoTesouro> getTesourosBonusPendentes() {
+        return new ArrayList<>(tesourosBonusPendentes);
+    }
+
+    boolean podeUsarPecaBonus(int indice) {
+        if (encerrada || turnoAtual == null || isEscolhaPeaoPendente() || isSelecaoAcaoPendente()) return false;
+        ArrayList<TipoBonus> ordem = getJogadorAtual().getOrdemPecasBonus();
+        if (indice < 0 || indice >= ordem.size()) return false;
+        TipoBonus tipo = ordem.get(indice);
+        return tipo != TipoBonus.VOTO_EXTRA && !getJogadorAtual().isPecaBonusUsada(tipo);
+    }
+
+    boolean usarPecaBonus(int indice) {
+        if (!podeUsarPecaBonus(indice)) return false;
+        Jogador jogador = getJogadorAtual();
+        TipoBonus tipo = jogador.getOrdemPecasBonus().get(indice);
+        switch (tipo) {
+            case DUAS_ESPADAS: jogador.adicionarTributo(TipoTributo.ESPADA, 2); break;
+            case DUAS_MOEDAS: jogador.adicionarTributo(TipoTributo.MOEDA, 2); break;
+            case DOIS_YURTS: jogador.adicionarTributo(TipoTributo.YURT, 2); break;
+            case MOVIMENTOS_EXTRAS: turnoAtual.adicionarAcoesBonus(3, 1); break;
+            case PEGAR_TRIBUTOS_EXTRAS: turnoAtual.adicionarAcoesBonus(0, 2); break;
+            case ESCOLHER_TESOURO:
+                ArrayList<TipoTesouro> opcoes = tabuleiroPrincipal.retirarTesourosBonus();
+                if (opcoes.size() != 3) return false;
+                tesourosBonusPendentes.addAll(opcoes);
+                break;
+            default: return false;
+        }
+        jogador.getPecasBonus().get(tipo).usar();
+        verificarConselheirosAbertos();
+        return true;
+    }
+
+    boolean escolherTesouroBonus(int indice) {
+        if (encerrada || turnoAtual == null || indice < 0 || indice >= tesourosBonusPendentes.size()) return false;
+        getJogadorAtual().adicionarTesouro(tesourosBonusPendentes.get(indice));
+        tesourosBonusPendentes.clear();
+        verificarConselheirosAbertos();
+        return true;
+    }
+
     boolean receberPecaBonus(PecaBonus peca) {
         if (encerrada || turnoAtual == null
                 || !turnoAtual.getJogador().adicionarPecaBonus(peca)) {
@@ -483,7 +530,7 @@ class Partida  {
     }
 
     boolean selecionarKhan(KhanID id) {
-        if (encerrada || turnoAtual == null || isSelecaoTesouroHabilidadePendente() || isEscolhaColunaMelhoriaPendente() || !getKhans().contains(id)) return false;
+        if (encerrada || turnoAtual == null || isSelecaoTesouroHabilidadePendente() || isEscolhaColunaMelhoriaPendente() || isEscolhaTesouroBonusPendente() || !getKhans().contains(id)) return false;
         ativandoKhan = id;
         selecaoKhan.clear();
         return id != KhanID.M || concluirAcaoKhan(id);
@@ -500,7 +547,7 @@ class Partida  {
     }
 
     boolean selecionarTributo(ProvinciaID id) {
-        if (encerrada || turnoAtual == null || isSelecaoTesouroHabilidadePendente() || isEscolhaColunaMelhoriaPendente()) return false;
+        if (encerrada || turnoAtual == null || isSelecaoTesouroHabilidadePendente() || isEscolhaColunaMelhoriaPendente() || isEscolhaTesouroBonusPendente()) return false;
         if (ativandoKhan == null) return pegarTributo(id);
         if (!tabuleiroPrincipal.getProvinicasKhan(ativandoKhan).contains(id)
                 || !selecaoKhan.add(id)) return false;
@@ -1032,7 +1079,7 @@ class Partida  {
 	
     HashSet<KhanID> getKhans() {
         HashSet<KhanID> destinos = new HashSet<>();
-        if (!encerrada && turnoAtual != null && !isEscolhaPeaoPendente() && !isSelecaoTesouroHabilidadePendente() && !isEscolhaColunaMelhoriaPendente() && turnoAtual.isKhanPendente()) {
+        if (!encerrada && turnoAtual != null && !isEscolhaPeaoPendente() && !isSelecaoTesouroHabilidadePendente() && !isEscolhaColunaMelhoriaPendente() && !isEscolhaTesouroBonusPendente() && turnoAtual.isKhanPendente()) {
             for (KhanID id : KhanID.values()) if (id != tabuleiroPrincipal.getKhan()) destinos.add(id);
         }
         return destinos;
@@ -1127,7 +1174,7 @@ class Partida  {
 	HashSet<ProvinciaID> getProvincias(){
 
 		HashSet<ProvinciaID> ret = new HashSet<ProvinciaID>();
-        if (turnoAtual == null || encerrada || isSelecaoTesouroHabilidadePendente() || isEscolhaColunaMelhoriaPendente()) return ret;
+        if (turnoAtual == null || encerrada || isSelecaoTesouroHabilidadePendente() || isEscolhaColunaMelhoriaPendente() || isEscolhaTesouroBonusPendente()) return ret;
         if (ativandoKhan != null) return new HashSet<>(selecaoKhan);
 		if(turnoAtual.getQuantidadeAcao(TipoAcao.PEGAR_TRIBUTO)<=0) return ret;
 		for(Provincia p: turnoAtual.getProvinciasVisitadas())
