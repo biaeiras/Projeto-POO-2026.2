@@ -338,20 +338,22 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         }
     }
 
- 	private void drawParadas(Graphics2D g, HashSet<ParadaID> paradas, Color color) {
-		g.setColor(color);
-		g.setStroke(new BasicStroke((float)(ESPACAMENTO_YURT*(getWidth() + getHeight())/4)));
-		for(ParadaID parada: paradas) {
-			Point2D.Double p = posicoesParadas.get(parada);
-			int x = (int)((p.getX()-RAIO_PARADA)*getWidth());
-			int y = (int)((p.getY()-RAIO_PARADA)*getHeight());
-			int w = (int) (2*RAIO_PARADA*getWidth());
-			int h = (int) (2*RAIO_PARADA*getHeight());
-			g.drawOval(x, y, w, h);
-		}
-		return;
-	}
-	
+    private void drawParadas(Graphics2D g, HashSet<ParadaID> paradas, Color cor) {
+        g.setColor(cor);
+        g.setStroke(new BasicStroke((float) (ESPACAMENTO_YURT * (getWidth() + getHeight()) / 4)));
+        for (ParadaID parada : paradas) {
+            Point2D.Double posicao = posicoesParadas.get(parada);
+            ArrayList<Cor> yurtsNaParada = yurts.get(parada);
+            double raio = yurtsNaParada == null || yurtsNaParada.isEmpty()
+                    ? RAIO_PARADA : RAIO_YURT + ESPACAMENTO_YURT * yurtsNaParada.size();
+            int x = (int) ((posicao.x - raio) * getWidth());
+            int y = (int) ((posicao.y - raio) * getHeight());
+            int largura = (int) (2 * raio * getWidth());
+            int altura = (int) (2 * raio * getHeight());
+            g.drawOval(x, y, largura, altura);
+        }
+    }
+
  	private void drawParadas(Graphics2D g, HashSet<ParadaID> vizinhos, HashSet<ParadaID> possiveis) {
         drawParadas(g, possiveis, COR_ALCANCAVEL);
         drawParadas(g, vizinhos, COR_MOVIMENTO);
@@ -552,9 +554,9 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         Graphics2D g2d = (Graphics2D) g.create();
         try {
             g2d.drawImage(imagemTabuleiro, 0, 0, getWidth(), getHeight(), this);
-            drawParadas(g2d, vizinhos, alcancaveis);
             drawProvincias(g2d, cargas, provinciasDisponiveis);
             drawYurts(g2d, yurts);
+            drawParadas(g2d, vizinhos, alcancaveis);
             drawPeoes(g2d, peoes);
             drawKhan(g2d, khans);
             drawCidades(g2d, cidades, cidadesConquistadas);

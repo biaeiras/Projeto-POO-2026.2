@@ -1,9 +1,11 @@
 package model;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Stack;
@@ -11,6 +13,26 @@ import java.util.Stack;
 import org.junit.Test;
 
 public class TabuleiroPrincipalTest {
+
+    @Test
+    public void retirarMelhoriaExpostaDeslocaRestantesParaDireitaSemRepor() {
+        TabuleiroPrincipal tabuleiro = new TabuleiroPrincipal(new HashMap<>());
+        Melhoria a = new Melhoria(TipoMelhoria.MOEDA_VIRTUAL, Regiao.CHINA);
+        Melhoria b = new Melhoria(TipoMelhoria.ESPADA_VIRTUAL, Regiao.CHINA);
+        Melhoria c = new Melhoria(TipoMelhoria.YURT_VIRTUAL, Regiao.CHINA);
+        Melhoria d = new Melhoria(TipoMelhoria.MOVIMENTO_EXTRA, Regiao.CHINA);
+        Melhoria e = new Melhoria(TipoMelhoria.PEGAR_TRIBUTO_EXTRA, Regiao.CHINA);
+        Stack<Melhoria> pilha = new Stack<>();
+        pilha.push(a);
+        tabuleiro.restaurarMelhorias(new ArrayList<>(Arrays.asList(a, b, c, d, e)), pilha);
+
+        assertEquals(c, tabuleiro.comprarMelhoria(2));
+        assertEquals(Arrays.asList(null, a, b, d, e), tabuleiro.getMelhorias());
+        assertNull(tabuleiro.comprarMelhoria(0));
+        assertEquals(e, tabuleiro.comprarMelhoria(4));
+        assertEquals(Arrays.asList(null, null, a, b, d), tabuleiro.getMelhorias());
+        assertEquals(pilha, tabuleiro.getPilhaMelhorias());
+    }
 
 	@Test
 	public void testTabuleiroPrincipal() {

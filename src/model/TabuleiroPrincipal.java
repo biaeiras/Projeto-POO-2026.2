@@ -948,15 +948,26 @@ class TabuleiroPrincipal {
         return pilhaMelhorias.isEmpty() ? null : pilhaMelhorias.peek();
     }
 
-    Melhoria comprarMelhoria(int index) {
-        if (consultarMelhoria(index) == null) return null;
-    	SlotMelhoria slot = melhorias.get(index);
-    	Melhoria ret = slot.getMelhoria();
-    	slot.setMelhoria(null);
-    	return ret;
-    	
+    Melhoria comprarMelhoria(int indice) {
+        Melhoria retirada = consultarMelhoria(indice);
+        if (retirada == null) return null;
+        melhorias.get(indice).setMelhoria(null);
+
+        // Move as peças, preservando os bônus impressos em cada espaço.
+        int destino = melhorias.size() - 1;
+        for (int origem = destino; origem >= 0; origem--) {
+            Melhoria restante = melhorias.get(origem).getMelhoria();
+            if (restante != null) {
+                melhorias.get(destino).setMelhoria(restante);
+                destino--;
+            }
+        }
+        for (int vazio = destino; vazio >= 0; vazio--) {
+            melhorias.get(vazio).setMelhoria(null);
+        }
+        return retirada;
     }
-    
+
     Melhoria comprarMelhoriaDaPilha() {
     	return pilhaMelhorias.isEmpty() ? null : pilhaMelhorias.pop();
     }
