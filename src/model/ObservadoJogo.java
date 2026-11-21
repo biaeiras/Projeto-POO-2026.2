@@ -8,6 +8,8 @@ public interface ObservadoJogo {
     void adicionarObservador(ObservadorJogo observador);
     void removerObservador(ObservadorJogo observador);
 
+    boolean isEscolhaMelhoriaInicialPendente();
+    ArrayList<Melhoria> getOpcoesMelhoriaInicial();
     boolean existePartida();
     String getNomePersonagemAtual();
     String getNomeConselheiroSecretoJogadorAtual();
@@ -16,6 +18,12 @@ public interface ObservadoJogo {
     boolean isColunaJogadorAtualAtivada(int coluna);
     boolean podeEscolherColuna();
     boolean isTurnoEmAndamento();
+    boolean possuiHabilidadeAtivavelJogadorAtual();
+    boolean podeAtivarHabilidadeJogadorAtual();
+    boolean isSelecaoTesouroHabilidadePendente();
+    HashMap<CidadeID, Integer> getCidadesSelecionaveisHabilidade();
+    boolean isEscolhaPeaoPendente();
+    HashMap<Integer, ParadaID> getPeoesSelecionaveisJogadorAtual();
     boolean isPartidaEncerrada();
     ArrayList<String> getMelhoriasTabuleiroJogador(int coluna);
     int getMoedasJogadorAtual();
@@ -50,5 +58,8 @@ public interface ObservadoJogo {
     HashMap<CidadeID, Cor> getCidadesConquistadas();
     HashMap<ParadaID, TipoBonus> getBonus();
     ArrayList<Melhoria> getMelhorias();
+    boolean isEscolhaColunaMelhoriaPendente();
+    ArrayList<Integer> getColunasDisponiveisMelhoria();
+    Melhoria getMelhoriaCompraPendente();
     boolean isCompravel();
 }

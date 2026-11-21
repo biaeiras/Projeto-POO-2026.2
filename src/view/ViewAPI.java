@@ -116,6 +116,10 @@ public class ViewAPI {
         return painel.getCollisionParada(x, y);
     }
 
+    public int getClickPeaoSelecionavel(int x, int y) {
+        return painel.getCollisionPeaoSelecionavel(x, y);
+    }
+
     public ProvinciaID getClickProvinciaID(int x, int y) {
         return painel.getCollisionProvincia(x, y);
     }

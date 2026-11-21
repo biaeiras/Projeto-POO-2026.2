@@ -77,6 +77,18 @@ public class ControllerAPI {
     }
 
     public void configurarAcoes(final PainelAcoesPartida painel) {
+        painel.getBotaoHabilidadeEspecial().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evento) {
+                if (fachada.isSelecaoTesouroHabilidadePendente()) {
+                    fachada.cancelarSelecaoTesouroHabilidade();
+                    return;
+                }
+                if (!fachada.ativarHabilidadeJogadorAtual()) {
+                    painel.mostrarInformacao("Não foi possível usar a habilidade especial neste momento.");
+                }
+            }
+        });
         painel.getBotaoTerminarTurno().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evento) {
@@ -148,6 +160,7 @@ public class ControllerAPI {
 
     private void abrirPreparacao() {
         preparacao = new TelaPreparacaoPartida();
+        preparacao.atualizar(registrarObservador(preparacao));
 
         for (Cor cor : Cor.values()) {
             final Cor escolhida = cor;
@@ -276,6 +289,10 @@ public class ControllerAPI {
     }
 
     private void escolherConselheiro(int indice) {
+        if (fachada.isEscolhaMelhoriaInicialPendente()) {
+            if (fachada.escolherMelhoriaInicial(indice)) avancarPreparacao();
+            return;
+        }
         boolean escolheu =
             fachada.escolherConselheiroJogadorAtual(indice);
 
@@ -287,6 +304,11 @@ public class ControllerAPI {
             return;
         }
 
+        if (fachada.isEscolhaMelhoriaInicialPendente()) return;
+        avancarPreparacao();
+    }
+
+    private void avancarPreparacao() {
         // Também avança depois da última escolha.
         // Assim, o primeiro jogador volta a ser o atual.
         fachada.avancarJogadorNaPreparacao();
@@ -328,6 +350,7 @@ public class ControllerAPI {
         });
 
         if (preparacao != null) {
+            removerObservador(preparacao);
             preparacao.dispose();
         }
         viewPrincipal.exibir();

@@ -209,6 +209,21 @@ class TabuleiroJogador {
     	return adicionarMelhoria(melhoria.getRegiao(), melhoria);
     }
 
+    boolean podeReceberMelhoriaComprada(Regiao regiao) {
+        if (regiao != null) return colunasRegiao.get(regiao).getQuantidadeMelhorias() < 5;
+        int bonusInicial = personagem.getQuantidadeOpcoesMelhoriaInicial() > 0 ? 1 : 0;
+        int quantidade = colunaBranca.getQuantidadeMelhorias();
+        return quantidade < 5 && quantidade - bonusInicial < getQuantidadeLinhasCompletas();
+    }
+
+    boolean adicionarMelhoriaComprada(Regiao regiao, Melhoria melhoria) {
+        if (melhoria == null || !podeReceberMelhoriaComprada(regiao)) return false;
+        if (regiao == null) return colunaBranca.adicionarMelhoria(melhoria);
+        if (!personagem.ignoraCorMelhoria()) return adicionarMelhoria(regiao, melhoria);
+        colunasRegiao.get(regiao).melhorias.add(melhoria);
+        return true;
+    }
+
     boolean adicionarMelhoriaBranca(Melhoria melhoria) {
         if (melhoria == null) {
             return false;

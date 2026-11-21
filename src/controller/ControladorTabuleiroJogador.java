@@ -39,6 +39,13 @@ public class ControladorTabuleiroJogador {
                     return;
                 }
 
+                if (fachada.isEscolhaColunaMelhoriaPendente()) {
+                    int destino = painel.getColunaMelhoriaNoPonto(evento.getX(), evento.getY());
+                    if (destino >= 0) fachada.escolherColunaMelhoria(destino);
+                    atualizarCursor(evento);
+                    return;
+                }
+
                 int coluna = painel.getColunaDisponivelNoPonto(
                     evento.getX(), evento.getY()
                 );
@@ -70,9 +77,9 @@ public class ControladorTabuleiroJogador {
             }
 
             private void atualizarCursor(MouseEvent evento) {
-                int coluna = painel.getColunaDisponivelNoPonto(
-                    evento.getX(), evento.getY()
-                );
+                int coluna = fachada.isEscolhaColunaMelhoriaPendente()
+                    ? painel.getColunaMelhoriaNoPonto(evento.getX(), evento.getY())
+                    : painel.getColunaDisponivelNoPonto(evento.getX(), evento.getY());
 
                 painel.setCursor(Cursor.getPredefinedCursor(
                     coluna >= 0 ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR

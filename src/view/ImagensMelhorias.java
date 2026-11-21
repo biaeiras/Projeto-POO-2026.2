@@ -38,7 +38,7 @@ class ImagensMelhorias {
 	    temp.put(new Melhoria(TipoMelhoria.YURT_VIRTUAL, Regiao.PERSIA), "yurt_virtual_persia.jpg");
 	    temp.put(new Melhoria(TipoMelhoria.PEGAR_TRIBUTO_EXTRA, Regiao.PERSIA), "pegar_tributo_extra_persia.jpg");
 	    temp.put(new Melhoria(TipoMelhoria.MOVIMENTO_EXTRA, Regiao.PERSIA), "movimento_extra_persia.jpg");
-	    temp.put(new Melhoria(TipoMelhoria.PELE_VIRTUAL, Regiao.PERSIA), "pele_virtual_china");
+	    temp.put(new Melhoria(TipoMelhoria.PELE_VIRTUAL, Regiao.PERSIA), "pele_virtual_persia.jpg");
 	    temp.put(new Melhoria(TipoMelhoria.TECIDO_VIRTUAL, Regiao.PERSIA), "tecido_virtual_persia.jpg");
 	    
 	    return Collections.unmodifiableMap(temp);
