@@ -105,34 +105,46 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
     }
 
     private Point2D.Double getPosicaoVoto(int votos) {
-        int casa = Math.max(0, Math.min(17, votos));
-        return casa <= 9
-                ? new Point2D.Double(0.391 + casa * 0.064, 0.901)
-                : new Point2D.Double(0.967 - (casa - 10) * 0.060, 0.958);
+        int casa = casaDaTrilha(votos);
+        if (casa <= 9) return new Point2D.Double(0.391 + casa * 0.064, 0.901);
+        if (casa == 10) return new Point2D.Double(0.967, 0.958);
+        // Centros da fila inferior, da primeira casa após a curva até a marca de 5 jogadores.
+        return new Point2D.Double(0.936 - (casa - 11) * 0.064, 0.958);
     }
 
     private void drawVotos(Graphics2D g) {
         if (!mostrarFichasVotos) return;
+        HashMap<Integer, Integer> totais = new HashMap<>();
+        for (int votos : votosPorCor.values()) totais.merge(casaDaTrilha(votos), 1, Integer::sum);
+        totais.merge(casaDaTrilha(votosNeutros), 1, Integer::sum);
         HashMap<Integer, Integer> ocupacoes = new HashMap<>();
         for (Cor cor : Cor.values()) {
             if (!votosPorCor.containsKey(cor)) continue;
             int votos = votosPorCor.get(cor);
             if (!imagensVotos.containsKey(cor)) imagensVotos.put(cor, criarFichaVoto(ViewAPI.getColor(cor)));
-            drawFichaVoto(g, imagensVotos.get(cor), votos, ocupacoes);
+            drawFichaVoto(g, imagensVotos.get(cor), votos, ocupacoes, totais);
         }
-        drawFichaVoto(g, imagemVotoNeutro, votosNeutros, ocupacoes);
+        drawFichaVoto(g, imagemVotoNeutro, votosNeutros, ocupacoes, totais);
+    }
+
+    private static int casaDaTrilha(int votos) {
+        return Math.max(0, Math.min(17, votos));
     }
 
     private void drawFichaVoto(Graphics2D g, BufferedImage imagem, int votos,
-            HashMap<Integer, Integer> ocupacoes) {
-        int casa = Math.max(0, Math.min(17, votos));
+            HashMap<Integer, Integer> ocupacoes, HashMap<Integer, Integer> totais) {
+        int casa = casaDaTrilha(votos);
         int lugar = ocupacoes.getOrDefault(casa, 0);
         ocupacoes.put(casa, lugar + 1);
         Point2D.Double p = getPosicaoVoto(votos);
         int largura = Math.max(8, (int) (getWidth() * 0.018));
         int altura = Math.max(8, (int) (getHeight() * 0.018));
-        int x = (int) (p.x * getWidth()) + (lugar % 3 - 1) * largura;
-        int y = (int) (p.y * getHeight()) + (lugar / 3 - 1) * altura;
+        int total = totais.get(casa);
+        int linha = lugar / 3;
+        int fichasNaLinha = Math.min(3, total - 3 * linha);
+        int linhas = (total + 2) / 3;
+        int x = (int) Math.round(p.x * getWidth() + (lugar % 3 - fichasNaLinha / 2.0) * largura);
+        int y = (int) Math.round(p.y * getHeight() + (linha - linhas / 2.0) * altura);
         g.drawImage(imagem, x, y, largura, altura, this);
         if (votos > 17) {
             g.setColor(Color.BLACK);
