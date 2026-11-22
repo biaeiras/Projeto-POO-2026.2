@@ -610,7 +610,6 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
 
 	ParadaID getCollisionParada(int x, int y) {
         if (getWidth() <= 0 || getHeight() <= 0) return null;
-        System.out.printf(Locale.US, "%.4f,%.4f\n", (double) x/getWidth(), (double) y/getHeight());
 		for(ParadaID p: posicoesParadas.keySet()) {
 			Point2D.Double pp = posicoesParadas.get(p);
 			double x0 = (double) x / getWidth();

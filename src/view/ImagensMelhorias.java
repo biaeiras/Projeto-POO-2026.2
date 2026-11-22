@@ -77,7 +77,6 @@ class ImagensMelhorias {
 	
 	static BufferedImage loadImage(Melhoria melhoria) {
 		String endereco = enderecos.get(melhoria);
-		System.out.println(endereco);
 		return loadImage(endereco);
 	}
 	
