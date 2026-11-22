@@ -42,7 +42,6 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
     private static final Color COR_ALCANCAVEL = Color.WHITE;
     private static final Color COR_TRIBUTO = Color.CYAN;
     private static final Color COR_TRIBUTO_SELECIONADO = Color.RED;
-    private static final Color COR_KHAN_SELECIONADO = Color.GREEN;
     private static final Color COR_KHAN = Color.WHITE;
 	private static final double RAIO_PARADA = 0.021;
 	private static final double RAIO_PEAO = 0.015;
@@ -76,7 +75,6 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
     private HashSet<ProvinciaID> provinciasDisponiveis = new HashSet<>();
     private HashSet<KhanID> khans = new HashSet<>();
     private HashMap<ParadaID, TipoBonus> bonus = new HashMap<>();
-    private KhanID khanSelecionado = null;
     private KhanID khan = null;
     private HashMap<CidadeID, ArrayList<TipoTesouro>> cidades = new HashMap<>();
     private HashMap<CidadeID, Cor> cidadesConquistadas = new HashMap<>();
@@ -107,34 +105,46 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
     }
 
     private Point2D.Double getPosicaoVoto(int votos) {
-        int casa = Math.max(0, Math.min(17, votos));
-        return casa <= 9
-                ? new Point2D.Double(0.391 + casa * 0.064, 0.901)
-                : new Point2D.Double(0.967 - (casa - 10) * 0.060, 0.958);
+        int casa = casaDaTrilha(votos);
+        if (casa <= 9) return new Point2D.Double(0.391 + casa * 0.064, 0.901);
+        if (casa == 10) return new Point2D.Double(0.967, 0.958);
+        // Centros da fila inferior, da primeira casa após a curva até a marca de 5 jogadores.
+        return new Point2D.Double(0.936 - (casa - 11) * 0.064, 0.958);
     }
 
     private void drawVotos(Graphics2D g) {
         if (!mostrarFichasVotos) return;
+        HashMap<Integer, Integer> totais = new HashMap<>();
+        for (int votos : votosPorCor.values()) totais.merge(casaDaTrilha(votos), 1, Integer::sum);
+        totais.merge(casaDaTrilha(votosNeutros), 1, Integer::sum);
         HashMap<Integer, Integer> ocupacoes = new HashMap<>();
         for (Cor cor : Cor.values()) {
             if (!votosPorCor.containsKey(cor)) continue;
             int votos = votosPorCor.get(cor);
             if (!imagensVotos.containsKey(cor)) imagensVotos.put(cor, criarFichaVoto(ViewAPI.getColor(cor)));
-            drawFichaVoto(g, imagensVotos.get(cor), votos, ocupacoes);
+            drawFichaVoto(g, imagensVotos.get(cor), votos, ocupacoes, totais);
         }
-        drawFichaVoto(g, imagemVotoNeutro, votosNeutros, ocupacoes);
+        drawFichaVoto(g, imagemVotoNeutro, votosNeutros, ocupacoes, totais);
+    }
+
+    private static int casaDaTrilha(int votos) {
+        return Math.max(0, Math.min(17, votos));
     }
 
     private void drawFichaVoto(Graphics2D g, BufferedImage imagem, int votos,
-            HashMap<Integer, Integer> ocupacoes) {
-        int casa = Math.max(0, Math.min(17, votos));
+            HashMap<Integer, Integer> ocupacoes, HashMap<Integer, Integer> totais) {
+        int casa = casaDaTrilha(votos);
         int lugar = ocupacoes.getOrDefault(casa, 0);
         ocupacoes.put(casa, lugar + 1);
         Point2D.Double p = getPosicaoVoto(votos);
         int largura = Math.max(8, (int) (getWidth() * 0.018));
         int altura = Math.max(8, (int) (getHeight() * 0.018));
-        int x = (int) (p.x * getWidth()) + (lugar % 3 - 1) * largura;
-        int y = (int) (p.y * getHeight()) + (lugar / 3 - 1) * altura;
+        int total = totais.get(casa);
+        int linha = lugar / 3;
+        int fichasNaLinha = Math.min(3, total - 3 * linha);
+        int linhas = (total + 2) / 3;
+        int x = (int) Math.round(p.x * getWidth() + (lugar % 3 - fichasNaLinha / 2.0) * largura);
+        int y = (int) Math.round(p.y * getHeight() + (linha - linhas / 2.0) * altura);
         g.drawImage(imagem, x, y, largura, altura, this);
         if (votos > 17) {
             g.setColor(Color.BLACK);
@@ -281,8 +291,7 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         if (khan != null) marcacoes.add(khan);
         for (KhanID id : marcacoes) {
             Point2D.Double p = posicoesKhan.get(id);
-            if(id == khanSelecionado) g.setColor(COR_KHAN_SELECIONADO);
-            else g.setColor(COR_KHAN);
+            g.setColor(COR_KHAN);
             int x = (int)((p.getX()-(RAIO_PARADA+ESPACAMENTO_YURT))*getWidth());
             int y = (int)((p.getY()-(RAIO_PARADA+ESPACAMENTO_YURT))*getHeight());
             int w = (int) (2*(RAIO_PARADA+ESPACAMENTO_YURT)*getWidth());
@@ -341,20 +350,22 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         }
     }
 
- 	private void drawParadas(Graphics2D g, HashSet<ParadaID> paradas, Color color) {
-		g.setColor(color);
-		g.setStroke(new BasicStroke((float)(ESPACAMENTO_YURT*(getWidth() + getHeight())/4)));
-		for(ParadaID parada: paradas) {
-			Point2D.Double p = posicoesParadas.get(parada);
-			int x = (int)((p.getX()-RAIO_PARADA)*getWidth());
-			int y = (int)((p.getY()-RAIO_PARADA)*getHeight());
-			int w = (int) (2*RAIO_PARADA*getWidth());
-			int h = (int) (2*RAIO_PARADA*getHeight());
-			g.drawOval(x, y, w, h);
-		}
-		return;
-	}
-	
+    private void drawParadas(Graphics2D g, HashSet<ParadaID> paradas, Color cor) {
+        g.setColor(cor);
+        g.setStroke(new BasicStroke((float) (ESPACAMENTO_YURT * (getWidth() + getHeight()) / 4)));
+        for (ParadaID parada : paradas) {
+            Point2D.Double posicao = posicoesParadas.get(parada);
+            ArrayList<Cor> yurtsNaParada = yurts.get(parada);
+            double raio = yurtsNaParada == null || yurtsNaParada.isEmpty()
+                    ? RAIO_PARADA : RAIO_YURT + ESPACAMENTO_YURT * yurtsNaParada.size();
+            int x = (int) ((posicao.x - raio) * getWidth());
+            int y = (int) ((posicao.y - raio) * getHeight());
+            int largura = (int) (2 * raio * getWidth());
+            int altura = (int) (2 * raio * getHeight());
+            g.drawOval(x, y, largura, altura);
+        }
+    }
+
  	private void drawParadas(Graphics2D g, HashSet<ParadaID> vizinhos, HashSet<ParadaID> possiveis) {
         drawParadas(g, possiveis, COR_ALCANCAVEL);
         drawParadas(g, vizinhos, COR_MOVIMENTO);
@@ -398,10 +409,9 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         legenda.setOpaque(false);
         adicionarLegenda(legenda, COR_MOVIMENTO, false, "Movimento imediato:<br>clique esquerdo.");
         adicionarLegenda(legenda, COR_ALCANCAVEL, false, "Parada alcançável com<br>os movimentos restantes.");
-        adicionarLegenda(legenda, COR_TRIBUTO_SELECIONADO, false, "Coleta disponível / tributo<br>selecionado no Khan.");
+        adicionarLegenda(legenda, COR_TRIBUTO_SELECIONADO, false, "Coleta de tributo disponível.");
         adicionarLegenda(legenda, COR_TRIBUTO, false, "Peças de tributo presentes no mapa.");
         adicionarLegenda(legenda, COR_KHAN, false, "Destino disponível<br>para mover o Khan.");
-        adicionarLegenda(legenda, COR_KHAN_SELECIONADO, false, "Região selecionada<br>para o Khan.");
         JLabel controles = new JLabel("<html>Tesouro: clique esquerdo para atacar.<br>"
                 + "Parada: clique direito para construir yurt.<br>Peões e yurts usam a cor do jogador.</html>");
         controles.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -479,7 +489,6 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         provinciasDisponiveis = observado.getProvincias();
         khans = observado.getKhans();
         khan = observado.getKhan();
-        khanSelecionado = observado.getKhanSelecionado();
         cidades = observado.getCidades();
         cidadesConquistadas = observado.getCidadesConquistadas();
         bonus = observado.getBonus();
@@ -557,9 +566,9 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
         Graphics2D g2d = (Graphics2D) g.create();
         try {
             g2d.drawImage(imagemTabuleiro, 0, 0, getWidth(), getHeight(), this);
-            drawParadas(g2d, vizinhos, alcancaveis);
             drawProvincias(g2d, cargas, provinciasDisponiveis);
             drawYurts(g2d, yurts);
+            drawParadas(g2d, vizinhos, alcancaveis);
             drawPeoes(g2d, peoes);
             drawKhan(g2d, khans);
             drawCidades(g2d, cidades, cidadesConquistadas);
@@ -601,7 +610,6 @@ class PainelTabuleiro extends JPanel implements ObservadorJogo {
 
 	ParadaID getCollisionParada(int x, int y) {
         if (getWidth() <= 0 || getHeight() <= 0) return null;
-        System.out.printf(Locale.US, "%.4f,%.4f\n", (double) x/getWidth(), (double) y/getHeight());
 		for(ParadaID p: posicoesParadas.keySet()) {
 			Point2D.Double pp = posicoesParadas.get(p);
 			double x0 = (double) x / getWidth();

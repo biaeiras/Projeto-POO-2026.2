@@ -47,13 +47,6 @@ class TabuleiroPrincipal {
 			moeda.carregar();
 			yurt.carregar();
 		}
-        HashSet<ProvinciaID> getProvincias(){
-            HashSet<ProvinciaID> ret = new HashSet<ProvinciaID>();
-            ret.add(espada.getId());
-            ret.add(moeda.getId());
-            ret.add(yurt.getId());
-            return ret;
-        }
 		Provincia getEspada() {
 			return this.espada;
 		}
@@ -690,24 +683,26 @@ class TabuleiroPrincipal {
     KhanID getKhan() {
 		return this.khan;
 	}
-    boolean ativarKhan(KhanID id, HashSet<ProvinciaID> tributos, Jogador jogador) {
-        if (id == null || id == khan || tributos == null) return false;
-        if (id != KhanID.M && (tributos.size() != 2
-                || !getProvinicasKhan(id).containsAll(tributos))) return false;
-        if (id == KhanID.M && !tributos.isEmpty()) return false;
-        this.khan = id;
+    boolean ativarKhan(KhanID id, Jogador jogador) {
+        if (id == null || id == khan) return false;
+
         if (id == KhanID.M) {
             for (SlotMelhoria slot : melhorias) {
-                if (slot.getMelhoria() == null && !pilhaMelhorias.isEmpty()) {
-                    slot.setMelhoria(pilhaMelhorias.pop());
-                    if(slot.getExtra()!=null) jogador.adicionarTributo(slot.getExtra(), 1);
+                if (slot.getMelhoria() == null) {
+                    if (slot.getExtra() != null) jogador.adicionarTributo(slot.getExtra(), 1);
+                    if (!pilhaMelhorias.isEmpty()) slot.setMelhoria(pilhaMelhorias.pop());
                 }
             }
         } else {
-            for (ProvinciaID pid : tributos) provincias.get(pid).carregar();
+            ProvinciaKhan provinciaKhan = provinciasKhan.get(KHAN_MAP.get(id));
+            for (Provincia provincia : provinciaKhan.provincias.values()) {
+                if (provincia.getCargas() < 3) provincia.carregar();
+            }
         }
+        khan = id;
         return true;
     }
+
     boolean colocarYurtInicial(Jogador jogador) {
         if (jogador == null) {
             return false;
@@ -789,10 +784,8 @@ class TabuleiroPrincipal {
         }
     }
 
-    int getQuantidadeYurtsGovernador(Jogador jogador, Regiao regiao) {
+    int getQuantidadeYurtsIncluindoConquistas(Jogador jogador, Regiao regiao) {
         int total = getQuantidadeYurts(jogador, regiao);
-        // A exclusão dos yurts de conquista vale para a maioria regional.
-        // Governador pede yurts na região, sem a restrição de adjacência das cartas de cidades.
         for (Cidade cidade : cidades.values()) {
             if (regiao != null && cidade.getRegiao() == regiao && cidade.getConquistador() == jogador) total++;
         }
@@ -899,11 +892,6 @@ class TabuleiroPrincipal {
         return total;
     }
 
-    HashSet<ProvinciaID> getProvinicasKhan(KhanID id) {
-        ProvinciaKhan provincia = provinciasKhan.get(KHAN_MAP.get(id));
-        return provincia == null ? new HashSet<>() : provincia.getProvincias();
-    }
-
     HashMap<ParadaID, TipoBonus> getBonus(){
         HashMap<ParadaID, TipoBonus> ret = new HashMap<>();
         for(Map.Entry<ParadaID, Parada> entry: mapa.entrySet())
@@ -945,6 +933,13 @@ class TabuleiroPrincipal {
         if (melhoria != null) pilhaMelhorias.insertElementAt(melhoria, 0);
     }
 
+    boolean temMelhoriaDisponivel() {
+        for (SlotMelhoria slot : melhorias) {
+            if (slot.getMelhoria() != null) return true;
+        }
+        return false;
+    }
+
     Melhoria consultarMelhoria(int index) {
         return index < 0 || index >= melhorias.size() ? null : melhorias.get(index).getMelhoria();
     }
@@ -953,15 +948,26 @@ class TabuleiroPrincipal {
         return pilhaMelhorias.isEmpty() ? null : pilhaMelhorias.peek();
     }
 
-    Melhoria comprarMelhoria(int index) {
-        if (consultarMelhoria(index) == null) return null;
-    	SlotMelhoria slot = melhorias.get(index);
-    	Melhoria ret = slot.getMelhoria();
-    	slot.setMelhoria(null);
-    	return ret;
-    	
+    Melhoria comprarMelhoria(int indice) {
+        Melhoria retirada = consultarMelhoria(indice);
+        if (retirada == null) return null;
+        melhorias.get(indice).setMelhoria(null);
+
+        // Move as peças, preservando os bônus impressos em cada espaço.
+        int destino = melhorias.size() - 1;
+        for (int origem = destino; origem >= 0; origem--) {
+            Melhoria restante = melhorias.get(origem).getMelhoria();
+            if (restante != null) {
+                melhorias.get(destino).setMelhoria(restante);
+                destino--;
+            }
+        }
+        for (int vazio = destino; vazio >= 0; vazio--) {
+            melhorias.get(vazio).setMelhoria(null);
+        }
+        return retirada;
     }
-    
+
     Melhoria comprarMelhoriaDaPilha() {
     	return pilhaMelhorias.isEmpty() ? null : pilhaMelhorias.pop();
     }

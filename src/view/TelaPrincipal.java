@@ -67,30 +67,7 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         criarMensagens();
         controlador.configurarAcoes(painelAcoes);
         
-        botaoSalvarPartida.addActionListener(evento -> {
-            JFileChooser seletor = new JFileChooser();
-            seletor.setDialogTitle("Salvar partida");
-
-            int resultado = seletor.showSaveDialog(this);
-
-            if (resultado == JFileChooser.APPROVE_OPTION) {
-                java.io.File arquivo = seletor.getSelectedFile();
-
-                if (!arquivo.getName().toLowerCase().endsWith(".txt")) {
-                    arquivo = new java.io.File( arquivo.getParentFile(),arquivo.getName() + ".txt" );
-                }
-
-                try {
-                    controlador.salvarPartida(arquivo);
-
-                    JOptionPane.showMessageDialog( this,"Partida salva com sucesso!");
-
-                } catch (java.io.IOException e) {
-                    JOptionPane.showMessageDialog( this,"Erro ao salvar a partida: " + e.getMessage(),"Erro",JOptionPane.ERROR_MESSAGE
-                    );
-                }
-            }
-        });
+        controlador.configurarSalvamento(this, botaoSalvarPartida);
 
         atualizar(controlador.registrarObservador(this));
         addWindowListener(new WindowAdapter() {
@@ -248,7 +225,11 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
 
         painelLateral.add(Box.createVerticalGlue());
 
-        JScrollPane rolagem = new JScrollPane(painelLateral);
+        // Reserva a largura da barra para estabilizar a altura das cartas,
+        // que é calculada a partir da largura do painel.
+        JScrollPane rolagem = new JScrollPane(painelLateral,
+                ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         rolagemLateral = rolagem;
         rolagem.setPreferredSize(new Dimension(larguraLateral(getWidth()), 0));
         rolagem.getVerticalScrollBar().setUnitIncrement(16);
@@ -264,9 +245,6 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
         });
         rolagem.setBorder(null);
         rolagem.getViewport().setBackground(pergaminho);
-        rolagem.setHorizontalScrollBarPolicy(
-            ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
-        );
 
         add(rolagem, BorderLayout.EAST);
     }
@@ -479,6 +457,8 @@ public class TelaPrincipal extends JFrame implements ObservadorJogo {
 
             if (observado.isPartidaEncerrada()) {
                 mensagemJogo.setText("Partida encerrada.");
+            } else if (observado.isMelhoriaGratisPendente()) {
+                mensagemJogo.setText("Linha completa! Escolha uma melhoria gratuita para a coluna branca.");
             } else if (observado.isEscolhaColunaMelhoriaPendente()) {
                 mensagemJogo.setText("Jochi: abra Jogador e clique na coluna que receberá a melhoria comprada.");
             } else if (observado.isSelecaoTesouroHabilidadePendente()) {

@@ -27,6 +27,14 @@ class MouseTabuleiro extends MouseAdapter {
             return;
         }
 
+        if (fachada.isMelhoriaGratisPendente()) {
+            if (evento.getButton() == MouseEvent.BUTTON1) {
+                int indice = viewAPI.getClickMelhorias(evento.getX(), evento.getY());
+                if (indice >= 0) fachada.comprarMelhoria(indice);
+            }
+            return;
+        }
+
         if (fachada.isEscolhaColunaMelhoriaPendente() || fachada.isEscolhaTesouroBonusPendente()) return;
 
         if (fachada.isEscolhaPeaoPendente()) {
@@ -63,11 +71,6 @@ class MouseTabuleiro extends MouseAdapter {
                 fachada.selecionarKhan(khan);
                 return;
             }
-            if (fachada.getAtivacaoKhan()) {
-                ProvinciaID provincia = viewAPI.getClickProvinciaID(evento.getX(), evento.getY());
-                if (provincia != null) fachada.selecionarTributo(provincia);
-                return;
-            }
             for (Map.Entry<CidadeID, Integer> entry : fachada.getCidadesAtacaveis().entrySet()) {
                 int indiceTesouro = viewAPI.getClickTesouro(evento.getX(), evento.getY(), entry.getKey(), entry.getValue());
                 if (indiceTesouro >= 0) {
@@ -81,7 +84,7 @@ class MouseTabuleiro extends MouseAdapter {
                 return;
             }
             ProvinciaID provincia = viewAPI.getClickProvinciaID(evento.getX(), evento.getY());
-            if (provincia != null) fachada.selecionarTributo(provincia);
+            if (provincia != null) fachada.pegarTributo(provincia);
             
             int indiceMelhoria = viewAPI.getClickMelhorias(evento.getX(), evento.getY());
             if(indiceMelhoria>=0) fachada.comprarMelhoria(indiceMelhoria);

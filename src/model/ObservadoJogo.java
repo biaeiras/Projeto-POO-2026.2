@@ -59,12 +59,12 @@ public interface ObservadoJogo {
     boolean[] getPecasBonusUsadasJogadorAtual();
     HashSet<KhanID> getKhans();
     KhanID getKhan();
-    KhanID getKhanSelecionado();
     HashMap<CidadeID, ArrayList<TipoTesouro>> getCidades();
     HashMap<CidadeID, Integer> getCidadesAtacaveis();
     HashMap<CidadeID, Cor> getCidadesConquistadas();
     HashMap<ParadaID, TipoBonus> getBonus();
     ArrayList<Melhoria> getMelhorias();
+    boolean isMelhoriaGratisPendente();
     boolean isEscolhaColunaMelhoriaPendente();
     ArrayList<Integer> getColunasDisponiveisMelhoria();
     Melhoria getMelhoriaCompraPendente();

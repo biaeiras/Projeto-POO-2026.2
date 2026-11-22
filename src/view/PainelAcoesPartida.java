@@ -79,11 +79,14 @@ public class PainelAcoesPartida extends JPanel implements ObservadorJogo {
                 ? "Cancelar sem gastar moeda ou usar a habilidade."
                 : "Ativar a habilidade do personagem uma vez neste turno.");
         botaoHabilidadeEspecial.setEnabled(selecionando || observado.podeAtivarHabilidadeJogadorAtual());
+        boolean melhoriaGratis = observado.isMelhoriaGratisPendente();
         boolean turno = observado.isTurnoEmAndamento() && !observado.isPartidaEncerrada();
-        botaoTerminarTurno.setEnabled(turno && !selecionando && !observado.isEscolhaColunaMelhoriaPendente() && !observado.isEscolhaTesouroBonusPendente());
+        botaoTerminarTurno.setEnabled(turno && !melhoriaGratis && !selecionando && !observado.isEscolhaColunaMelhoriaPendente() && !observado.isEscolhaTesouroBonusPendente());
         botaoEntregarTesouros.setEnabled(turno && !observado.getLocaisEntregaDisponiveis().isEmpty());
-        botaoComprarMelhoria.setEnabled(turno&&observado.isCompravel());
+        botaoComprarMelhoria.setText(melhoriaGratis ? "Pegar melhoria grátis da pilha" : "Comprar melhoria da pilha");
+        botaoComprarMelhoria.setEnabled(turno && observado.isCompravel());
         mostrarInformacao(observado.isPartidaEncerrada() ? "Partida encerrada."
+                : melhoriaGratis ? "Clique em uma melhoria no mapa ou pegue a do topo da pilha."
                 : observado.isEscolhaTesouroBonusPendente() ? "Conclua a escolha do tesouro na tela Jogador."
                 : observado.isEscolhaColunaMelhoriaPendente() ? "Abra Jogador e escolha a coluna da melhoria comprada."
                 : selecionando ? "Clique em um tesouro de uma cidade com pelo menos dois tesouros ou cancele a seleção."

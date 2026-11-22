@@ -761,25 +761,9 @@ public class FachadaJogo implements ObservadoJogo {
         return partida == null ? null : partida.getKhan();
     }
 
-    @Override
-    public KhanID getKhanSelecionado() {
-        return partida == null ? null : partida.getKhanSelecionado();
-    }
-
-    public boolean getAtivacaoKhan() {
-        return partida != null && partida.getAtivacaoKhan();
-    }
-
     public boolean selecionarKhan(KhanID id) {
         verificarPartidaIniciada();
         boolean selecionou = partida.selecionarKhan(id);
-        if (selecionou) notificarObservadores();
-        return selecionou;
-    }
-
-    public boolean selecionarTributo(ProvinciaID id) {
-        verificarPartidaIniciada();
-        boolean selecionou = partida.selecionarTributo(id);
         if (selecionou) notificarObservadores();
         return selecionou;
     }
@@ -821,10 +805,14 @@ public class FachadaJogo implements ObservadoJogo {
     }
     
     public void comprarMelhoriaDaPilha() {
-    	partida.comprarMelhoriaDaPilha();
-    	notificarObservadores();
+        if (partida.comprarMelhoriaDaPilha()) notificarObservadores();
     }
     
+    @Override
+    public boolean isMelhoriaGratisPendente() {
+        return partida != null && partida.isMelhoriaGratisPendente();
+    }
+
     @Override
     public boolean isEscolhaColunaMelhoriaPendente() {
         return partida != null && partida.isEscolhaColunaMelhoriaPendente();
@@ -877,7 +865,7 @@ public class FachadaJogo implements ObservadoJogo {
     }
 
     public boolean isCompravel() {
-    	return partida.isCompravel();
+        return partida != null && partida.isCompravel();
     }
     
     public boolean podeSalvarPartida() {
@@ -893,6 +881,7 @@ public class FachadaJogo implements ObservadoJogo {
     }
     
     public void salvarPartida(File arquivo) throws IOException {
+        if (!podeSalvarPartida()) throw new IOException("Só é possível salvar entre turnos.");
         PersistenciaPartida.salvarPartida(partida, arquivo);
     }
 }

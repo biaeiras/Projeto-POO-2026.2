@@ -4,10 +4,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
+import model.TipoBonus;
 
 public class PainelPecasBonus extends JPanel {
 
-	private final BufferedImage[] imagens = new BufferedImage[7];
+	private final BufferedImage[] imagens = new BufferedImage[TipoBonus.values().length];
 	private final int[] indicesImagens = new int[7];
 	private final boolean[] usadas = new boolean[7];
 
@@ -38,13 +39,13 @@ public class PainelPecasBonus extends JPanel {
    
 
     public void carregarImagensPecas() {
-        imagens[0] = carregarImagem("TesourosAleatorios.jpg");
-        imagens[1] = carregarImagem("1VotoExtraTrilha.jpg");
-        imagens[2] = carregarImagem("2PecasTributoEspada.jpg");
-        imagens[3] = carregarImagem("2PecasTributoYurt.jpg");
-        imagens[4] = carregarImagem("2TributoMoeda.jpg");
-        imagens[5] = carregarImagem("2ExtrasPegarTributos.jpg");
-        imagens[6] = carregarImagem("3MovimentosE1AcaoExtras.jpg");
+        imagens[TipoBonus.ESCOLHER_TESOURO.ordinal()] = carregarImagem("TesourosAleatorios.jpg");
+        imagens[TipoBonus.VOTO_EXTRA.ordinal()] = carregarImagem("1VotoExtraTrilha.jpg");
+        imagens[TipoBonus.DUAS_ESPADAS.ordinal()] = carregarImagem("2PecasTributoEspada.jpg");
+        imagens[TipoBonus.DOIS_YURTS.ordinal()] = carregarImagem("2PecasTributoYurt.jpg");
+        imagens[TipoBonus.DUAS_MOEDAS.ordinal()] = carregarImagem("2TributoMoeda.jpg");
+        imagens[TipoBonus.PEGAR_TRIBUTOS_EXTRAS.ordinal()] = carregarImagem("2ExtrasPegarTributos.jpg");
+        imagens[TipoBonus.MOVIMENTOS_EXTRAS.ordinal()] = carregarImagem("3MovimentosE1AcaoExtras.jpg");
 
         repaint();
     }
