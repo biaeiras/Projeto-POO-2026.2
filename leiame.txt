@@ -10,9 +10,14 @@ Matrícula: 2220373
 Nome: Bianca Eiras
 Matrícula: 2320351
 
-Nome: Igor
+Nome: Igor Gonçalves
 Matrícula: 2211315
 
 CLASSE QUE CONTÉM O MÉTODO MAIN:
 
 Main.java
+
+
+LINK DO VÍDEO:
+
+https://www.dropbox.com/scl/fi/qc3m0kpux2l2ni17ynzl4/HerdeirosDoKhan.mp4?rlkey=w91ba1twmqueqx2lbhtmia2ti&st=9sqvupn6&dl=0
